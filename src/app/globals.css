@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+:root {
+  --phone-width: 375px;
+  --phone-height: 667px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
