@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
-import { fetchToolById, resolveSourceTool, toggleFavorite, fetchFavoritedToolIds, fetchFavoriteCount, type Tool } from "@/lib/data";
+import { fetchToolById, resolveSourceTool, toggleFavorite, fetchFavoritedToolIds, fetchFavoriteCount, fetchReviews, fetchAverageRating, addReview, type Tool, type Review } from "@/lib/data";
 import { wrapSecureSrcDoc, IFRAME_SANDBOX } from "@/lib/sandbox";
 
 export default function ToolDetailPage() {
@@ -16,6 +16,14 @@ export default function ToolDetailPage() {
   const [favorited, setFavorited] = useState(false);
   const [favoriting, setFavoriting] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(0);
+
+  // Reviews state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [avgRating, setAvgRating] = useState({ average: 0, count: 0 });
+  const [newRating, setNewRating] = useState(0);
+  const [newContent, setNewContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState("");
 
   // Load tool
   useEffect(() => {
@@ -39,6 +47,12 @@ export default function ToolDetailPage() {
     }
   }, [id, user?.id]);
 
+  // Load reviews
+  useEffect(() => {
+    fetchReviews(id).then(setReviews);
+    fetchAverageRating(id).then(setAvgRating);
+  }, [id]);
+
   const handleFavorite = useCallback(async () => {
     if (!user || favoriting) return;
     setFavoriting(true);
@@ -50,6 +64,33 @@ export default function ToolDetailPage() {
       setFavoriting(false);
     }
   }, [user, id, favorited, favoriting]);
+
+  const handleSubmitReview = useCallback(async () => {
+    if (!user || submitting) return;
+    if (newRating === 0) {
+      setReviewError("请先选择评分");
+      return;
+    }
+    if (!newContent.trim()) {
+      setReviewError("请输入评价内容");
+      return;
+    }
+    setSubmitting(true);
+    setReviewError("");
+    try {
+      const review = await addReview(id, user.id, user.user_metadata?.name || user.email?.split("@")[0] || "匿名用户", newRating, newContent.trim());
+      setReviews((prev) => [review, ...prev]);
+      setAvgRating((prev) => {
+        const newTotal = prev.average * prev.count + newRating;
+        const newCount = prev.count + 1;
+        return { average: Math.round((newTotal / newCount) * 10) / 10, count: newCount };
+      });
+      setNewRating(0);
+      setNewContent("");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [user, id, newRating, newContent, submitting]);
 
   if (loading) {
     return (
@@ -247,6 +288,114 @@ export default function ToolDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <section className="mt-12 border-t border-gray-200 pt-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-lg font-bold text-gray-900">用户评价</h2>
+            {avgRating.count > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      className={`text-sm ${star <= Math.round(avgRating.average) ? "text-yellow-400" : "text-gray-200"}`}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <span className="text-sm font-semibold text-gray-700">{avgRating.average}</span>
+                <span className="text-xs text-gray-400">({avgRating.count} 条评价)</span>
+              </div>
+            )}
+          </div>
+
+          {/* Write review */}
+          {user ? (
+            <div className="bg-white rounded-xl p-5 mb-6 shadow-sm border border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">写评价</h3>
+              <div className="flex items-center gap-1 mb-3">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => { setNewRating(star); setReviewError(""); }}
+                    className={`text-2xl transition-colors ${star <= newRating ? "text-yellow-400" : "text-gray-200"} hover:text-yellow-400`}
+                  >
+                    ★
+                  </button>
+                ))}
+                {newRating > 0 && (
+                  <span className="text-xs text-gray-400 ml-2">
+                    {newRating === 5 ? "太棒了！" : newRating === 4 ? "很不错" : newRating === 3 ? "一般般" : newRating === 2 ? "有待改进" : "很差"}
+                  </span>
+                )}
+              </div>
+              <textarea
+                value={newContent}
+                onChange={(e) => { setNewContent(e.target.value); setReviewError(""); }}
+                placeholder="分享你的使用体验..."
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50"
+                rows={3}
+              />
+              {reviewError && (
+                <p className="text-xs text-red-500 mt-1">{reviewError}</p>
+              )}
+              <button
+                onClick={handleSubmitReview}
+                disabled={submitting}
+                className="mt-3 px-5 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              >
+                {submitting ? "提交中..." : "发布评价"}
+              </button>
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-xl p-5 mb-6 text-center">
+              <p className="text-sm text-gray-500">
+                <Link href="/auth" className="text-indigo-600 hover:underline font-medium">登录</Link>后即可发表评价
+              </p>
+            </div>
+          )}
+
+          {/* Review list */}
+          {reviews.length > 0 ? (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <div key={review.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                        {review.userName[0]?.toUpperCase() || "?"}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{review.userName}</p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(review.createdAt).toLocaleDateString("zh-CN")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span
+                          key={star}
+                          className={`text-sm ${star <= review.rating ? "text-yellow-400" : "text-gray-200"}`}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 leading-relaxed">{review.content}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-3xl mb-2">💬</p>
+              <p className="text-sm text-gray-400">还没有评价，来第一个评价吧</p>
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );
