@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { fetchTools, fetchFavoriteCounts, CATEGORIES, type Tool } from "@/lib/data";
+
+// ---- Constants ----
 
 // Extract first emoji from tool's HTML code for card icon
 const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
@@ -14,6 +17,8 @@ function getToolEmoji(tool: Tool): string {
   return cat[tool.category] || "🛠️";
 }
 
+// ---- Component ----
+
 export default function HomePage() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("全部");
@@ -23,11 +28,16 @@ export default function HomePage() {
   const [sortBy, setSortBy] = useState<"latest" | "popular">("latest");
 
   useEffect(() => {
+    let cancelled = false;
     fetchTools().then((data) => {
+      if (cancelled) return;
       setTools(data);
-      fetchFavoriteCounts(data.map((t) => t.id)).then(setFavoriteCounts);
+      fetchFavoriteCounts(data.map((t) => t.id)).then((counts) => {
+        if (!cancelled) setFavoriteCounts(counts);
+      });
       setLoading(false);
     });
+    return () => { cancelled = true; };
   }, []);
 
   const filtered = useMemo(() => {
@@ -165,9 +175,9 @@ export default function HomePage() {
   );
 }
 
-// ---- Tool Card ----
+// ---- ToolCard — React.memo 防止不必要的重渲染 ----
 
-function ToolCard({ tool, favoriteCount }: { tool: Tool; favoriteCount?: number }) {
+const ToolCard = memo(function ToolCard({ tool, favoriteCount }: { tool: Tool; favoriteCount?: number }) {
   const emoji = getToolEmoji(tool);
 
   return (
@@ -175,26 +185,38 @@ function ToolCard({ tool, favoriteCount }: { tool: Tool; favoriteCount?: number 
       href={`/tool/${tool.id}`}
       className="group block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-indigo-200 transition-all duration-200"
     >
-      {/* Thumbnail */}
-      <div
-        className="relative aspect-[4/3] flex flex-col items-center justify-center overflow-hidden"
-        style={{ background: tool.thumbnailGradient }}
-      >
-        {/* Large emoji icon */}
-        <span className="text-3xl sm:text-4xl mb-1.5 drop-shadow-lg group-hover:scale-110 transition-transform duration-200">
-          {emoji}
-        </span>
-        {/* Title */}
-        <span className="relative text-white font-bold text-xs sm:text-sm text-center drop-shadow-md line-clamp-2 px-3">
-          {tool.title}
-        </span>
+      {/* Thumbnail: cover_url > gradient placeholder */}
+      <div className="relative aspect-[4/3] flex flex-col items-center justify-center overflow-hidden">
+        {tool.coverUrl ? (
+          <Image
+            src={tool.coverUrl}
+            alt={tool.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            loading="lazy"
+          />
+        ) : (
+          <>
+            {/* Gradient background placeholder — 无 cover 时显示 */}
+            <div className="absolute inset-0" style={{ background: tool.thumbnailGradient }} />
+            {/* Large emoji icon */}
+            <span className="relative z-10 text-3xl sm:text-4xl mb-1.5 drop-shadow-lg group-hover:scale-110 transition-transform duration-200">
+              {emoji}
+            </span>
+            {/* Title */}
+            <span className="relative z-10 text-white font-bold text-xs sm:text-sm text-center drop-shadow-md line-clamp-2 px-3">
+              {tool.title}
+            </span>
+          </>
+        )}
         {/* Category badge */}
-        <span className="absolute top-2 right-2 bg-white/25 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full">
+        <span className="absolute top-2 right-2 z-10 bg-white/25 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full">
           {tool.category}
         </span>
         {/* Favorite count badge */}
         {favoriteCount !== undefined && favoriteCount > 0 && (
-          <span className="absolute bottom-2 left-2 flex items-center gap-0.5 bg-white/25 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded-full">
+          <span className="absolute bottom-2 left-2 z-10 flex items-center gap-0.5 bg-white/25 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded-full">
             ♥ {favoriteCount}
           </span>
         )}
@@ -214,13 +236,13 @@ function ToolCard({ tool, favoriteCount }: { tool: Tool; favoriteCount?: number 
       </div>
     </Link>
   );
-}
+});
 
 // ---- Loading skeleton ----
 
 function LoadingSkeleton() {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}

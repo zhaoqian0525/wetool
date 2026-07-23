@@ -8,6 +8,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { CATEGORIES, fetchToolById } from "@/lib/data";
 import { wrapSecureSrcDoc, IFRAME_SANDBOX, scanDangerousCode } from "@/lib/sandbox";
+import { useDebounce } from "@/hooks/useDebounce";
 
 // --- Constants ---
 
@@ -192,9 +193,18 @@ function CreatePageInner() {
   // Fullscreen preview
   const [fullscreenPreview, setFullscreenPreview] = useState(false);
 
+  // 🔥 关键优化：iframe 预览使用 500ms 防抖，避免每次按键都重建 iframe
+  const debouncedCode = useDebounce(code, 500);
+
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const initialLoadDone = useRef(false);
+
+  // Stable refs for callbacks to avoid stale closures in keyboard handlers
+  const codeRef = useRef(code);
+  codeRef.current = code;
+  const versionsRef = useRef(versions);
+  versionsRef.current = versions;
 
   // Restore versions
   useEffect(() => {
@@ -226,28 +236,30 @@ function CreatePageInner() {
     saveVersions(versions);
   }, [versions]);
 
-  // Save snapshot
+  // Save snapshot — uses refs to avoid recreating on every code change
   const saveSnapshot = useCallback(() => {
+    const currentCode = codeRef.current;
+    const currentVersions = versionsRef.current;
     const snapshot: Version = {
       id: generateId(),
       timestamp: Date.now(),
-      code,
-      gradientIndex: versions.length % THUMBNAIL_GRADIENTS.length,
+      code: currentCode,
+      gradientIndex: currentVersions.length % THUMBNAIL_GRADIENTS.length,
     };
-    const updated = [snapshot, ...versions];
+    const updated = [snapshot, ...currentVersions];
     setVersions(updated);
     setSavedIndicator(true);
     setTimeout(() => setSavedIndicator(false), 1500);
     if (timelineRef.current) {
       timelineRef.current.scrollTo({ left: 0, behavior: "smooth" });
     }
-  }, [code, versions]);
+  }, []); // 🔥 稳定的引用，不再依赖 code/versions
 
   const restoreVersion = useCallback((v: Version) => {
     setCode(v.code);
   }, []);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts — uses stable saveSnapshot ref
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
@@ -261,16 +273,17 @@ function CreatePageInner() {
         if (!textarea) return;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
-        const newValue = code.substring(0, start) + "  " + code.substring(end);
+        const newValue = codeRef.current.substring(0, start) + "  " + codeRef.current.substring(end);
         setCode(newValue);
         requestAnimationFrame(() => {
           textarea.selectionStart = textarea.selectionEnd = start + 2;
         });
       }
     },
-    [code, saveSnapshot]
+    [saveSnapshot] // 🔥 不再依赖 code
   );
 
+  // Global Ctrl+S handler — stable reference
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
@@ -280,7 +293,7 @@ function CreatePageInner() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [saveSnapshot]);
+  }, [saveSnapshot]); // 🔥 不再变化
 
   // Publish handler
   const handlePublish = async () => {
@@ -298,9 +311,10 @@ function CreatePageInner() {
     setPublishError("");
 
     try {
+      const currentVersions = versionsRef.current;
       const thumbnailIdx =
         THUMBNAIL_GRADIENTS.indexOf(
-          THUMBNAIL_GRADIENTS[versions.length % THUMBNAIL_GRADIENTS.length]
+          THUMBNAIL_GRADIENTS[currentVersions.length % THUMBNAIL_GRADIENTS.length]
         );
       const gradient =
         THUMBNAIL_GRADIENTS[thumbnailIdx < 0 ? 0 : thumbnailIdx];
@@ -312,7 +326,7 @@ function CreatePageInner() {
             title: publishTitle.trim(),
             description: publishDesc.trim(),
             category: publishCategory,
-            code,
+            code: codeRef.current,
             thumbnail_gradient: gradient,
             author_id: user.id,
             author: user.email?.split("@")[0] ?? "匿名",
@@ -329,7 +343,7 @@ function CreatePageInner() {
           title: publishTitle.trim(),
           description: publishDesc.trim(),
           category: publishCategory,
-          code,
+          code: codeRef.current,
           thumbnailGradient: gradient,
           author: user.email?.split("@")[0] ?? "匿名",
           author_id: user.id,
@@ -353,16 +367,16 @@ function CreatePageInner() {
     if (!user) return;
     setPublishOpen(true);
     setPublishError("");
-    const result = scanDangerousCode(code);
+    const result = scanDangerousCode(codeRef.current);
     setCodeWarnings(result.warnings);
   };
 
   const handleCopyCode = useCallback(() => {
-    navigator.clipboard.writeText(code).then(() => {
+    navigator.clipboard.writeText(codeRef.current).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
-  }, [code]);
+  }, []);
 
   const handleReset = useCallback(() => {
     setCode(DEFAULT_CODE);
@@ -385,7 +399,7 @@ function CreatePageInner() {
     </Link>
   );
 
-  // Mobile toolbar actions (simplified, passed to Navbar mobile top bar)
+  // Mobile toolbar actions
   const mobileActions = (
     <>
       <button
@@ -431,9 +445,12 @@ function CreatePageInner() {
     </div>
   );
 
+  // 🔥 预计算 srcDoc，避免每次渲染都重新计算
+  const previewSrcDoc = wrapSecureSrcDoc(debouncedCode);
+
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
-      {/* Navbar: desktop top bar + mobile top bar + mobile bottom tabs */}
+      {/* Navbar */}
       <Navbar
         children={
           <div className="flex items-center gap-2">
@@ -449,9 +466,9 @@ function CreatePageInner() {
         mobileActions={mobileActions}
       />
 
-      {/* Main Content: stacked on mobile, side-by-side on desktop */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 pb-14 lg:pb-0">
-        {/* === Editor Panel (top on mobile, left on desktop) === */}
+        {/* === Editor Panel === */}
         <div className="flex-1 flex flex-col min-h-0 bg-gray-900 lg:w-1/2">
           {/* Editor toolbar */}
           <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-800 border-b border-gray-700">
@@ -469,7 +486,7 @@ function CreatePageInner() {
             </div>
           </div>
 
-          {/* Code textarea */}
+          {/* Code textarea — 即时反馈，防抖在 iframe 层面 */}
           <textarea
             ref={editorRef}
             value={code}
@@ -538,13 +555,11 @@ function CreatePageInner() {
           )}
         </div>
 
-        {/* === Preview Panel (bottom on mobile, right on desktop) === */}
+        {/* === Preview Panel — 使用防抖后的代码 === */}
         <div className="flex-1 flex flex-col items-center justify-center bg-gray-200 p-3 lg:p-4 min-h-0 lg:w-1/2">
           <div className="relative flex flex-col items-center flex-1 w-full justify-center">
             {/* Desktop: phone frame */}
-            <div
-              className="hidden lg:flex flex-col items-center"
-            >
+            <div className="hidden lg:flex flex-col items-center">
               <div
                 className="relative bg-gray-800 rounded-[36px] p-3 shadow-2xl"
                 style={{
@@ -557,7 +572,7 @@ function CreatePageInner() {
                 <div className="w-full h-full overflow-hidden rounded-[24px] bg-white relative flex flex-col">
                   <div className="h-5 flex-shrink-0" />
                   <iframe
-                    srcDoc={wrapSecureSrcDoc(code)}
+                    srcDoc={previewSrcDoc}
                     title="工具预览"
                     className="flex-1 w-full border-0"
                     sandbox={IFRAME_SANDBOX}
@@ -571,7 +586,7 @@ function CreatePageInner() {
             <div className="lg:hidden flex flex-col w-full flex-1 min-h-0">
               <div className="flex-1 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200 min-h-0">
                 <iframe
-                  srcDoc={wrapSecureSrcDoc(code)}
+                  srcDoc={previewSrcDoc}
                   title="工具预览"
                   className="w-full h-full border-0"
                   sandbox={IFRAME_SANDBOX}
@@ -591,7 +606,7 @@ function CreatePageInner() {
         </div>
       </div>
 
-      {/* Fullscreen preview overlay (mobile) */}
+      {/* Fullscreen preview overlay */}
       {fullscreenPreview && (
         <div className="fixed inset-0 z-50 bg-white flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white shadow-sm flex-shrink-0">
@@ -604,7 +619,7 @@ function CreatePageInner() {
             </button>
           </div>
           <iframe
-            srcDoc={wrapSecureSrcDoc(code)}
+            srcDoc={previewSrcDoc}
             title="全屏预览"
             className="flex-1 w-full border-0"
             sandbox={IFRAME_SANDBOX}

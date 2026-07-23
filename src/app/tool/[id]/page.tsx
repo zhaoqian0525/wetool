@@ -32,49 +32,57 @@ export default function ToolDetailPage() {
   // Related tools
   const [related, setRelated] = useState<Tool[]>([]);
 
-  // Load tool
+  // 🔥 iframe 加载状态 — 显示骨架屏直到 iframe onLoad 触发
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  // 当 tool 变化时重置 iframe 加载状态
+  useEffect(() => {
+    setIframeLoaded(false);
+  }, [tool?.id]);
+
+  // 🔥 合并主数据加载
   useEffect(() => {
     let cancelled = false;
-    fetchToolById(id).then(async (t) => {
+
+    async function loadAll() {
+      // 并行加载 tool、reviews、rating
+      const [t, revs, avg] = await Promise.all([
+        fetchToolById(id),
+        fetchReviews(id),
+        fetchAverageRating(id),
+      ]);
+
       if (cancelled) return;
+
       if (t) {
         const resolved = await resolveSourceTool(t);
-        if (!cancelled) {
-          setTool(resolved);
-          setLoading(false);
-        }
+        if (cancelled) return;
+        setTool(resolved);
+        // 加载关联工具
+        fetchTools().then((all) => {
+          if (cancelled) return;
+          setRelated(all.filter((rt) => rt.category === resolved.category && rt.id !== resolved.id).slice(0, 4));
+        });
       } else {
         setTool(null);
-        setLoading(false);
       }
-    });
-    return () => { cancelled = true; };
-  }, [id]);
 
-  // Load favorite state & count
-  useEffect(() => {
-    fetchFavoriteCount(id).then(setFavoriteCount);
+      setReviews(revs);
+      setAvgRating(avg);
+      setLoading(false);
+    }
+
+    loadAll();
+
+    // 并行加载收藏状态
+    fetchFavoriteCount(id).then((c) => { if (!cancelled) setFavoriteCount(c); });
     if (user?.id) {
       fetchFavoritedToolIds(user.id).then((ids) => {
-        setFavorited(ids.includes(id));
+        if (!cancelled) setFavorited(ids.includes(id));
       });
     }
+
+    return () => { cancelled = true; };
   }, [id, user?.id]);
-
-  // Load reviews
-  useEffect(() => {
-    fetchReviews(id).then(setReviews);
-    fetchAverageRating(id).then(setAvgRating);
-  }, [id]);
-
-  // Load related tools (same category, excluding current)
-  useEffect(() => {
-    if (tool) {
-      fetchTools().then((all) => {
-        setRelated(all.filter((t) => t.category === tool.category && t.id !== tool.id).slice(0, 4));
-      });
-    }
-  }, [tool]);
 
   // Share handler
   const handleShare = useCallback(async () => {
@@ -129,10 +137,16 @@ export default function ToolDetailPage() {
     }
   }, [user, id, newRating, newContent, submitting]);
 
+  // 🔥 预计算 srcDoc（避免每次渲染都重新计算）
+  const previewSrcDoc = tool?.code ? wrapSecureSrcDoc(tool.code) : "";
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center pb-20 lg:pb-0">
-        <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
+        <Navbar />
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          <DetailSkeleton />
+        </main>
       </div>
     );
   }
@@ -155,6 +169,8 @@ export default function ToolDetailPage() {
       </div>
     );
   }
+
+  const categoryEmoji: Record<string, string> = { "旅行": "✈️", "工程计算": "🔧", "生活": "🏡", "教育": "📚" };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
@@ -224,17 +240,21 @@ export default function ToolDetailPage() {
           {/* Mobile: simple iframe preview */}
           <div className="lg:hidden">
             {tool.code ? (
-              <div className="rounded-xl overflow-hidden shadow-lg bg-white" style={{ height: "500px" }}>
+              <div className="rounded-xl overflow-hidden shadow-lg bg-white relative" style={{ height: "500px" }}>
+                {/* 🔥 骨架屏：iframe 加载完毕前显示 */}
+                {!iframeLoaded && <IframeSkeleton />}
                 <iframe
-                  srcDoc={wrapSecureSrcDoc(tool.code)}
+                  srcDoc={previewSrcDoc}
                   title={tool.title}
                   className="w-full h-full border-0"
                   sandbox={IFRAME_SANDBOX}
+                  onLoad={() => setIframeLoaded(true)}
+                  style={{ opacity: iframeLoaded ? 1 : 0, transition: "opacity 0.3s" }}
                 />
               </div>
             ) : (
               <div className="rounded-xl shadow-lg flex flex-col items-center justify-center p-8" style={{ background: tool.thumbnailGradient, height: "300px" }}>
-                <span className="text-4xl mb-2">{tool.category === "旅行" ? "✈️" : tool.category === "工程计算" ? "🔧" : tool.category === "教育" ? "📚" : "🏡"}</span>
+                <span className="text-4xl mb-2">{categoryEmoji[tool.category] || "🛠️"}</span>
                 <span className="text-white font-bold">{tool.title}</span>
               </div>
             )}
@@ -249,14 +269,18 @@ export default function ToolDetailPage() {
               >
                 {/* Smaller notch */}
                 <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-b-2xl z-10" />
-                <div className="w-full h-full overflow-hidden rounded-[24px] bg-white flex flex-col">
+                <div className="w-full h-full overflow-hidden rounded-[24px] bg-white flex flex-col relative">
                   {/* Spacer so notch doesn't cover content */}
                   <div className="h-5 flex-shrink-0" />
+                  {/* 🔥 骨骼屏 */}
+                  {!iframeLoaded && <IframeSkeleton />}
                   <iframe
-                    srcDoc={wrapSecureSrcDoc(tool.code)}
+                    srcDoc={previewSrcDoc}
                     title={tool.title}
                     className="flex-1 w-full border-0"
                     sandbox={IFRAME_SANDBOX}
+                    onLoad={() => setIframeLoaded(true)}
+                    style={{ opacity: iframeLoaded ? 1 : 0, transition: "opacity 0.3s" }}
                   />
                 </div>
               </div>
@@ -266,9 +290,7 @@ export default function ToolDetailPage() {
                 style={{ background: tool.thumbnailGradient, width: "320px", height: "400px" }}
               >
                 <div className="text-center text-white">
-                  <div className="text-4xl mb-4">
-                    {tool.category === "旅行" ? "✈️" : tool.category === "工程计算" ? "🔧" : tool.category === "教育" ? "📚" : "🏡"}
-                  </div>
+                  <div className="text-4xl mb-4">{categoryEmoji[tool.category] || "🛠️"}</div>
                   <h2 className="text-xl font-bold mb-2">{tool.title}</h2>
                   <p className="text-sm text-white/80">by @{tool.author}</p>
                 </div>
@@ -379,7 +401,7 @@ export default function ToolDetailPage() {
               </button>
             </div>
             <iframe
-              srcDoc={wrapSecureSrcDoc(tool.code)}
+              srcDoc={previewSrcDoc}
               title={tool.title}
               className="flex-1 w-full border-0"
               sandbox={IFRAME_SANDBOX}
@@ -496,6 +518,72 @@ export default function ToolDetailPage() {
           )}
         </section>
       </main>
+    </div>
+  );
+}
+
+// ---- Iframe 加载骨架屏 ----
+
+function IframeSkeleton() {
+  return (
+    <div className="absolute inset-0 bg-white flex flex-col items-center justify-center animate-pulse">
+      {/* 模拟手机内容的骨架 */}
+      <div className="w-full max-w-[280px] space-y-3 px-6">
+        {/* Header bar */}
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-full bg-gray-200" />
+          <div className="flex-1 h-3 bg-gray-200 rounded" />
+        </div>
+        {/* Card block */}
+        <div className="rounded-xl border border-gray-100 p-4 space-y-3">
+          <div className="h-4 bg-gray-200 rounded w-3/4" />
+          <div className="h-3 bg-gray-100 rounded w-full" />
+          <div className="h-3 bg-gray-100 rounded w-2/3" />
+          <div className="h-10 bg-gray-200 rounded-lg mt-2" />
+        </div>
+        {/* Small cards */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="h-16 bg-gray-100 rounded-xl" />
+          <div className="h-16 bg-gray-100 rounded-xl" />
+        </div>
+        {/* List items */}
+        <div className="space-y-2">
+          <div className="h-3 bg-gray-100 rounded w-full" />
+          <div className="h-3 bg-gray-100 rounded w-4/5" />
+          <div className="h-3 bg-gray-100 rounded w-3/4" />
+        </div>
+      </div>
+      <p className="mt-6 text-xs text-gray-300">工具加载中...</p>
+    </div>
+  );
+}
+
+// ---- 详情页加载骨架屏 ----
+
+function DetailSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="mb-8">
+        <div className="h-5 bg-gray-200 rounded-full w-16 mb-3" />
+        <div className="h-7 bg-gray-200 rounded w-1/2 mb-2" />
+        <div className="h-4 bg-gray-100 rounded w-3/4 mb-4" />
+        <div className="flex gap-4">
+          <div className="h-4 bg-gray-100 rounded w-24" />
+          <div className="h-4 bg-gray-100 rounded w-20" />
+        </div>
+      </div>
+      <div className="flex gap-8">
+        <div className="w-[399px] h-[731px] bg-gray-100 rounded-[36px] hidden lg:block" />
+        <div className="h-[300px] lg:hidden w-full bg-gray-100 rounded-xl" />
+        <div className="flex-1 space-y-3">
+          <div className="h-12 bg-gray-100 rounded-xl" />
+          <div className="flex gap-2">
+            <div className="flex-1 h-11 bg-gray-100 rounded-xl" />
+            <div className="flex-1 h-11 bg-gray-100 rounded-xl" />
+          </div>
+          <div className="h-11 bg-gray-100 rounded-xl" />
+        </div>
+      </div>
     </div>
   );
 }

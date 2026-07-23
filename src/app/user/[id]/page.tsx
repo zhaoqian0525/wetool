@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { fetchToolsByUser, fetchFavoritedToolsByUser, type Tool } from "@/lib/data";
 
@@ -146,21 +147,32 @@ function ToolGrid({
           href={`/tool/${tool.id}`}
           className="group block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-indigo-200 transition-all duration-200"
         >
-          {/* Thumbnail */}
-          <div
-            className="relative aspect-[4/3] flex flex-col items-center justify-center p-4 overflow-hidden"
-            style={{ background: tool.thumbnailGradient }}
-          >
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-2 left-2 w-12 h-1.5 rounded-full bg-white" />
-              <div className="absolute top-6 left-2 w-8 h-1 rounded-full bg-white" />
-              <div className="absolute top-2 right-2 w-10 h-1 rounded-full bg-white" />
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-16 h-8 rounded-lg bg-white/60" />
-            </div>
-            <span className="relative text-white font-bold text-sm text-center drop-shadow-md line-clamp-2">
-              {tool.title}
-            </span>
-            <span className="absolute top-2 right-2 bg-white/20 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full">
+          {/* Thumbnail: cover_url > gradient */}
+          <div className="relative aspect-[4/3] flex flex-col items-center justify-center overflow-hidden">
+            {tool.coverUrl ? (
+              <Image
+                src={tool.coverUrl}
+                alt={tool.title}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                loading="lazy"
+              />
+            ) : (
+              <>
+                <div className="absolute inset-0" style={{ background: tool.thumbnailGradient }} />
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-2 left-2 w-12 h-1.5 rounded-full bg-white" />
+                  <div className="absolute top-6 left-2 w-8 h-1 rounded-full bg-white" />
+                  <div className="absolute top-2 right-2 w-10 h-1 rounded-full bg-white" />
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-16 h-8 rounded-lg bg-white/60" />
+                </div>
+                <span className="relative text-white font-bold text-sm text-center drop-shadow-md line-clamp-2 px-3">
+                  {tool.title}
+                </span>
+              </>
+            )}
+            <span className="absolute top-2 right-2 z-10 bg-white/20 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full">
               {tool.category}
             </span>
           </div>

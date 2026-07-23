@@ -10,6 +10,7 @@ export interface Tool {
   category: ToolCategory;
   code: string;
   thumbnailGradient: string;
+  coverUrl?: string;
   createdAt: string;
   description?: string;
   sourceToolId?: string;
@@ -1220,6 +1221,7 @@ function mapRow(row: Record<string, unknown>): Tool {
     code: String(row.code ?? ""),
     thumbnailGradient:
       String(row.thumbnail_gradient ?? row.thumbnailGradient ?? ""),
+    coverUrl: row.cover_url ? String(row.cover_url) : undefined,
     createdAt: String(row.created_at ?? row.createdAt ?? new Date().toISOString()),
     description: row.description ? String(row.description) : undefined,
     sourceToolId: row.source_tool_id ? String(row.source_tool_id) : undefined,
