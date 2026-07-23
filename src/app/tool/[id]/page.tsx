@@ -34,14 +34,21 @@ export default function ToolDetailPage() {
 
   // Load tool
   useEffect(() => {
-    fetchToolById(id).then((t) => {
+    let cancelled = false;
+    fetchToolById(id).then(async (t) => {
+      if (cancelled) return;
       if (t) {
-        resolveSourceTool(t).then(setTool);
+        const resolved = await resolveSourceTool(t);
+        if (!cancelled) {
+          setTool(resolved);
+          setLoading(false);
+        }
       } else {
         setTool(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
+    return () => { cancelled = true; };
   }, [id]);
 
   // Load favorite state & count
