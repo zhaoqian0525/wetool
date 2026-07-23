@@ -1149,9 +1149,63 @@ const MOCK_REVIEWS: Review[] = [
   { id: "r12", toolId: "12", userId: "mock-user-1", userName: "旅行达人小明", rating: 5, content: "终于不用翻冰箱找过期的食材了！", createdAt: "2026-07-15T11:00:00Z" },
 ];
 
-// In-memory mutable copy for mock mode (so toggles persist during session)
-let mockFavorites = structuredClone(MOCK_FAVORITES);
-let mockReviews = structuredClone(MOCK_REVIEWS);
+// localStorage keys
+const FAV_KEY = "wetool-mock-favorites";
+const REV_KEY = "wetool-mock-reviews";
+
+// Lazy-loaded mock data backed by localStorage (survives page refresh)
+let _mockFavorites: Favorite[] | null = null;
+let _mockReviews: Review[] | null = null;
+
+function getMockFavorites(): Favorite[] {
+  if (_mockFavorites === null) {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(FAV_KEY);
+        _mockFavorites = raw ? JSON.parse(raw) : structuredClone(MOCK_FAVORITES);
+      } catch {
+        _mockFavorites = structuredClone(MOCK_FAVORITES);
+      }
+    } else {
+      _mockFavorites = structuredClone(MOCK_FAVORITES);
+    }
+  }
+  return _mockFavorites!;
+}
+
+function setMockFavorites(favs: Favorite[]): void {
+  _mockFavorites = favs;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(FAV_KEY, JSON.stringify(favs));
+    } catch { /* full */ }
+  }
+}
+
+function getMockReviews(): Review[] {
+  if (_mockReviews === null) {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(REV_KEY);
+        _mockReviews = raw ? JSON.parse(raw) : structuredClone(MOCK_REVIEWS);
+      } catch {
+        _mockReviews = structuredClone(MOCK_REVIEWS);
+      }
+    } else {
+      _mockReviews = structuredClone(MOCK_REVIEWS);
+    }
+  }
+  return _mockReviews!;
+}
+
+function setMockReviews(revs: Review[]): void {
+  _mockReviews = revs;
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(REV_KEY, JSON.stringify(revs));
+    } catch { /* full */ }
+  }
+}
 
 // ---- Helpers ----
 
@@ -1277,7 +1331,7 @@ export async function fetchFavoritedToolIds(userId: string): Promise<string[]> {
       // fall through
     }
   }
-  return mockFavorites
+  return getMockFavorites()
     .filter((f) => f.userId === userId)
     .map((f) => f.toolId);
 }
@@ -1314,16 +1368,17 @@ export async function toggleFavorite(
 
   // Mock mode
   if (currentlyFavorited) {
-    mockFavorites = mockFavorites.filter(
-      (f) => !(f.userId === userId && f.toolId === toolId)
+    setMockFavorites(
+      getMockFavorites().filter(
+        (f) => !(f.userId === userId && f.toolId === toolId)
+      )
     );
     return false;
   } else {
-    mockFavorites.push({
-      toolId,
-      userId,
-      createdAt: new Date().toISOString(),
-    });
+    setMockFavorites([
+      ...getMockFavorites(),
+      { toolId, userId, createdAt: new Date().toISOString() },
+    ]);
     return true;
   }
 }
@@ -1341,7 +1396,7 @@ export async function fetchFavoriteCount(toolId: string): Promise<number> {
       // fall through
     }
   }
-  return mockFavorites.filter((f) => f.toolId === toolId).length;
+  return getMockFavorites().filter((f) => f.toolId === toolId).length;
 }
 
 /** Batch: get favorite counts for multiple tool IDs */
@@ -1369,7 +1424,7 @@ export async function fetchFavoriteCounts(
     }
   }
   for (const tid of toolIds) {
-    counts[tid] = mockFavorites.filter((f) => f.toolId === tid).length;
+    counts[tid] = getMockFavorites().filter((f) => f.toolId === tid).length;
   }
   return counts;
 }
@@ -1409,7 +1464,7 @@ export async function fetchFavoritedToolsByUser(
   }
 
   // Mock mode
-  const favoritedToolIds = mockFavorites
+  const favoritedToolIds = getMockFavorites()
     .filter((f) => f.userId === userId)
     .map((f) => f.toolId);
   return MOCK_TOOLS.filter((t) => favoritedToolIds.includes(t.id));
@@ -1441,7 +1496,7 @@ export async function fetchReviews(toolId: string): Promise<Review[]> {
       // fall through
     }
   }
-  return mockReviews
+  return getMockReviews()
     .filter((r) => r.toolId === toolId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
@@ -1467,7 +1522,7 @@ export async function fetchAverageRating(
       // fall through
     }
   }
-  const reviews = mockReviews.filter((r) => r.toolId === toolId);
+  const reviews = getMockReviews().filter((r) => r.toolId === toolId);
   if (reviews.length === 0) return { average: 0, count: 0 };
   const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
   return { average: Math.round(avg * 10) / 10, count: reviews.length };
@@ -1521,6 +1576,6 @@ export async function addReview(
     content,
     createdAt: new Date().toISOString(),
   };
-  mockReviews.unshift(newReview);
+  setMockReviews([newReview, ...getMockReviews()]);
   return newReview;
 }

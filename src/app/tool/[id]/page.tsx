@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
-import { fetchToolById, resolveSourceTool, toggleFavorite, fetchFavoritedToolIds, fetchFavoriteCount, fetchReviews, fetchAverageRating, addReview, type Tool, type Review } from "@/lib/data";
+import { fetchToolById, resolveSourceTool, toggleFavorite, fetchFavoritedToolIds, fetchFavoriteCount, fetchReviews, fetchAverageRating, addReview, fetchTools, type Tool, type Review } from "@/lib/data";
 import { wrapSecureSrcDoc, IFRAME_SANDBOX } from "@/lib/sandbox";
 
 export default function ToolDetailPage() {
@@ -24,6 +24,13 @@ export default function ToolDetailPage() {
   const [newContent, setNewContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState("");
+
+  // Fullscreen + share
+  const [fullscreen, setFullscreen] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  // Related tools
+  const [related, setRelated] = useState<Tool[]>([]);
 
   // Load tool
   useEffect(() => {
@@ -52,6 +59,29 @@ export default function ToolDetailPage() {
     fetchReviews(id).then(setReviews);
     fetchAverageRating(id).then(setAvgRating);
   }, [id]);
+
+  // Load related tools (same category, excluding current)
+  useEffect(() => {
+    if (tool) {
+      fetchTools().then((all) => {
+        setRelated(all.filter((t) => t.category === tool.category && t.id !== tool.id).slice(0, 4));
+      });
+    }
+  }, [tool]);
+
+  // Share handler
+  const handleShare = useCallback(async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try { await navigator.share({ title: tool?.title, url }); } catch { /* cancelled */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      } catch { /* ignore */ }
+    }
+  }, [tool]);
 
   const handleFavorite = useCallback(async () => {
     if (!user || favoriting) return;
@@ -184,21 +214,41 @@ export default function ToolDetailPage() {
 
         {/* Preview & Actions */}
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Phone preview */}
-          <div className="flex-shrink-0 flex justify-center">
+          {/* Mobile: simple iframe preview */}
+          <div className="lg:hidden">
+            {tool.code ? (
+              <div className="rounded-xl overflow-hidden shadow-lg bg-white" style={{ height: "500px" }}>
+                <iframe
+                  srcDoc={wrapSecureSrcDoc(tool.code)}
+                  title={tool.title}
+                  className="w-full h-full border-0"
+                  sandbox={IFRAME_SANDBOX}
+                />
+              </div>
+            ) : (
+              <div className="rounded-xl shadow-lg flex flex-col items-center justify-center p-8" style={{ background: tool.thumbnailGradient, height: "300px" }}>
+                <span className="text-4xl mb-2">{tool.category === "旅行" ? "✈️" : tool.category === "工程计算" ? "🔧" : tool.category === "教育" ? "📚" : "🏡"}</span>
+                <span className="text-white font-bold">{tool.title}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop: phone frame preview */}
+          <div className="hidden lg:flex flex-shrink-0 justify-center">
             {tool.code ? (
               <div
                 className="relative bg-gray-800 rounded-[36px] p-3 shadow-2xl"
-                style={{ width: "399px", height: "731px", maxWidth: "calc(100vw - 32px)" }}
+                style={{ width: "399px", height: "731px" }}
               >
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-gray-900 rounded-b-2xl z-10 flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-gray-700" />
-                </div>
-                <div className="w-full h-full overflow-hidden rounded-[24px] bg-white">
+                {/* Smaller notch */}
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-b-2xl z-10" />
+                <div className="w-full h-full overflow-hidden rounded-[24px] bg-white flex flex-col">
+                  {/* Spacer so notch doesn't cover content */}
+                  <div className="h-5 flex-shrink-0" />
                   <iframe
                     srcDoc={wrapSecureSrcDoc(tool.code)}
                     title={tool.title}
-                    className="w-full h-full border-0"
+                    className="flex-1 w-full border-0"
                     sandbox={IFRAME_SANDBOX}
                   />
                 </div>
@@ -206,12 +256,7 @@ export default function ToolDetailPage() {
             ) : (
               <div
                 className="relative rounded-2xl shadow-lg flex flex-col items-center justify-center p-8"
-                style={{
-                  background: tool.thumbnailGradient,
-                  width: "320px",
-                  height: "400px",
-                  maxWidth: "calc(100vw - 32px)",
-                }}
+                style={{ background: tool.thumbnailGradient, width: "320px", height: "400px" }}
               >
                 <div className="text-center text-white">
                   <div className="text-4xl mb-4">
@@ -220,19 +265,17 @@ export default function ToolDetailPage() {
                   <h2 className="text-xl font-bold mb-2">{tool.title}</h2>
                   <p className="text-sm text-white/80">by @{tool.author}</p>
                 </div>
-                <div className="absolute bottom-6 flex gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-white/40" />
-                  <div className="w-2 h-2 rounded-full bg-white/60" />
-                  <div className="w-2 h-2 rounded-full bg-white/40" />
-                </div>
               </div>
             )}
           </div>
 
           {/* Actions sidebar */}
           <div className="flex-1 space-y-4">
-            <button className="w-full py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors">
-              打开使用
+            <button
+              onClick={() => setFullscreen(true)}
+              className="w-full py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors"
+            >
+              📱 打开使用
             </button>
 
             <div className="flex gap-2">
@@ -256,8 +299,11 @@ export default function ToolDetailPage() {
                   登录后收藏
                 </Link>
               )}
-              <button className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
-                🔗 分享
+              <button
+                onClick={handleShare}
+                className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                {shareCopied ? "✓ 链接已复制" : "🔗 分享"}
               </button>
             </div>
 
@@ -288,6 +334,51 @@ export default function ToolDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Related tools */}
+        {related.length > 0 && (
+          <section className="mt-12 border-t border-gray-200 pt-8">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">相关工具</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {related.map((rt) => (
+                <Link
+                  key={rt.id}
+                  href={`/tool/${rt.id}`}
+                  className="group block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-indigo-200 transition-all"
+                >
+                  <div className="relative aspect-[4/3] flex items-center justify-center overflow-hidden" style={{ background: rt.thumbnailGradient }}>
+                    <span className="text-white font-bold text-xs text-center drop-shadow-md line-clamp-2 px-2">{rt.title}</span>
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-medium text-gray-700 group-hover:text-indigo-600 truncate">{rt.title}</p>
+                    <p className="text-[10px] text-gray-400 truncate">@{rt.author}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Fullscreen tool overlay */}
+        {fullscreen && tool.code && (
+          <div className="fixed inset-0 z-50 bg-white flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white shadow-sm">
+              <span className="text-sm font-medium text-gray-800 truncate">{tool.title}</span>
+              <button
+                onClick={() => setFullscreen(false)}
+                className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+              >
+                ✕ 退出全屏
+              </button>
+            </div>
+            <iframe
+              srcDoc={wrapSecureSrcDoc(tool.code)}
+              title={tool.title}
+              className="flex-1 w-full border-0"
+              sandbox={IFRAME_SANDBOX}
+            />
+          </div>
+        )}
 
         {/* Reviews Section */}
         <section className="mt-12 border-t border-gray-200 pt-8">

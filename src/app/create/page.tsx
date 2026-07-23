@@ -558,16 +558,14 @@ function CreatePageInner() {
                 maxHeight: "calc(100vh - 200px)",
               }}
             >
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-gray-900 rounded-b-2xl z-10 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-gray-700" />
-              </div>
-              <div className="w-full h-full overflow-hidden rounded-[24px] bg-white relative">
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-b-2xl z-10" />
+              <div className="w-full h-full overflow-hidden rounded-[24px] bg-white relative flex flex-col">
+                <div className="h-5 flex-shrink-0" />
                 <iframe
                   srcDoc={wrapSecureSrcDoc(code)}
                   title="工具预览"
-                  className="w-full h-full border-0"
+                  className="flex-1 w-full border-0"
                   sandbox={IFRAME_SANDBOX}
-                  style={{ width: "375px", height: "667px" }}
                 />
               </div>
             </div>
