@@ -42,7 +42,7 @@ export const CATEGORIES: { key: string; label: string; icon: string }[] = [
 
 // ---- Mock data ----
 
-const MOCK_TOOLS: Tool[] = [
+export const MOCK_TOOLS: Tool[] = [
   {
     id: "1",
     title: "旅行分账计算器",
