@@ -9,6 +9,7 @@ import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { CATEGORIES, fetchToolById } from "@/lib/data";
 import { wrapSecureSrcDoc, IFRAME_SANDBOX, scanDangerousCode } from "@/lib/sandbox";
 import { useDebounce } from "@/hooks/useDebounce";
+import { captureCover, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
 
 // --- Constants ---
 
@@ -118,6 +119,13 @@ interface Version {
   gradientIndex: number;
 }
 
+interface PublishResult {
+  toolId: string;
+  title: string;
+  description: string;
+  coverUrl: string | null;
+}
+
 // --- Helpers ---
 
 function generateId(): string {
@@ -189,18 +197,27 @@ function CreatePageInner() {
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState("");
   const [codeWarnings, setCodeWarnings] = useState<{ level: string; label: string; count: number }[]>([]);
+  const [publishStep, setPublishStep] = useState<"" | "screenshot" | "uploading" | "done">("");
+
+  // Share card state
+  const [shareCardOpen, setShareCardOpen] = useState(false);
+  const [shareCardData, setShareCardData] = useState<PublishResult | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  // Toast
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: "", visible: false });
 
   // Fullscreen preview
   const [fullscreenPreview, setFullscreenPreview] = useState(false);
 
-  // 🔥 关键优化：iframe 预览使用 500ms 防抖，避免每次按键都重建 iframe
   const debouncedCode = useDebounce(code, 500);
+  const debouncedCodeRef = useRef(debouncedCode);
+  debouncedCodeRef.current = debouncedCode;
 
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const initialLoadDone = useRef(false);
 
-  // Stable refs for callbacks to avoid stale closures in keyboard handlers
   const codeRef = useRef(code);
   codeRef.current = code;
   const versionsRef = useRef(versions);
@@ -214,7 +231,7 @@ function CreatePageInner() {
     if (saved.length > 0) setVersions(saved);
   }, []);
 
-  // Load source tool when adapting
+  // Load source tool
   useEffect(() => {
     if (sourceLoaded) return;
     if (!sourceToolIdParam) return;
@@ -222,9 +239,7 @@ function CreatePageInner() {
       if (tool) {
         setSourceToolId(tool.id);
         setSourceToolTitle(tool.title);
-        if (tool.code) {
-          setCode(tool.code);
-        }
+        if (tool.code) setCode(tool.code);
       }
       setSourceLoaded(true);
     });
@@ -236,7 +251,7 @@ function CreatePageInner() {
     saveVersions(versions);
   }, [versions]);
 
-  // Save snapshot — uses refs to avoid recreating on every code change
+  // Save snapshot
   const saveSnapshot = useCallback(() => {
     const currentCode = codeRef.current;
     const currentVersions = versionsRef.current;
@@ -246,20 +261,16 @@ function CreatePageInner() {
       code: currentCode,
       gradientIndex: currentVersions.length % THUMBNAIL_GRADIENTS.length,
     };
-    const updated = [snapshot, ...currentVersions];
-    setVersions(updated);
+    setVersions([snapshot, ...currentVersions]);
     setSavedIndicator(true);
     setTimeout(() => setSavedIndicator(false), 1500);
     if (timelineRef.current) {
       timelineRef.current.scrollTo({ left: 0, behavior: "smooth" });
     }
-  }, []); // 🔥 稳定的引用，不再依赖 code/versions
-
-  const restoreVersion = useCallback((v: Version) => {
-    setCode(v.code);
   }, []);
 
-  // Keyboard shortcuts — uses stable saveSnapshot ref
+  const restoreVersion = useCallback((v: Version) => setCode(v.code), []);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
@@ -280,10 +291,9 @@ function CreatePageInner() {
         });
       }
     },
-    [saveSnapshot] // 🔥 不再依赖 code
+    [saveSnapshot]
   );
 
-  // Global Ctrl+S handler — stable reference
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
@@ -293,9 +303,39 @@ function CreatePageInner() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [saveSnapshot]); // 🔥 不再变化
+  }, [saveSnapshot]);
 
-  // Publish handler
+  // --- Toast helper ---
+  const showToast = useCallback((message: string) => {
+    setToast({ message, visible: true });
+    setTimeout(() => setToast({ message: "", visible: false }), 3000);
+  }, []);
+
+  // --- Copy to clipboard with animation ---
+  const copyAndAnimate = useCallback(
+    async (text: string, cb: (v: boolean) => void) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        cb(true);
+        setTimeout(() => cb(false), 2000);
+      } catch {
+        // fallback
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        cb(true);
+        setTimeout(() => cb(false), 2000);
+      }
+    },
+    []
+  );
+
+  // --- Publish handler ---
   const handlePublish = async () => {
     if (!user) return;
     if (!publishTitle.trim()) {
@@ -312,38 +352,50 @@ function CreatePageInner() {
 
     try {
       const currentVersions = versionsRef.current;
-      const thumbnailIdx =
-        THUMBNAIL_GRADIENTS.indexOf(
-          THUMBNAIL_GRADIENTS[currentVersions.length % THUMBNAIL_GRADIENTS.length]
-        );
-      const gradient =
-        THUMBNAIL_GRADIENTS[thumbnailIdx < 0 ? 0 : thumbnailIdx];
+      const thumbnailIdx = THUMBNAIL_GRADIENTS.indexOf(
+        THUMBNAIL_GRADIENTS[currentVersions.length % THUMBNAIL_GRADIENTS.length]
+      );
+      const gradient = THUMBNAIL_GRADIENTS[thumbnailIdx < 0 ? 0 : thumbnailIdx];
+      const currentCode = codeRef.current;
+      const title = publishTitle.trim();
+      const desc = publishDesc.trim();
+      const category = publishCategory;
+
+      // Step 1: Insert tool into DB first (get real toolId)
+      setPublishStep("done");
+      let toolId: string;
 
       if (isSupabaseConfigured()) {
         const client = getSupabase();
-        if (client) {
-          const { error } = await client.from("tools").insert({
-            title: publishTitle.trim(),
-            description: publishDesc.trim(),
-            category: publishCategory,
-            code: codeRef.current,
+        if (!client) throw new Error("Supabase client unavailable");
+
+        const { data, error } = await client
+          .from("tools")
+          .insert({
+            title,
+            description: desc,
+            category,
+            code: currentCode,
             thumbnail_gradient: gradient,
             author_id: user.id,
             author: user.email?.split("@")[0] ?? "匿名",
             source_tool_id: sourceToolId || null,
-          });
-          if (error) throw error;
-        }
+          })
+          .select("id")
+          .single();
+
+        if (error) throw error;
+        toolId = String((data as { id: string | number }).id);
       } else {
-        // Fallback: save to localStorage for demo
+        toolId = generateId();
         const key = "wetool-published-tools";
         const existing = JSON.parse(localStorage.getItem(key) ?? "[]");
         existing.unshift({
-          id: generateId(),
-          title: publishTitle.trim(),
-          description: publishDesc.trim(),
-          category: publishCategory,
-          code: codeRef.current,
+          id: toolId,
+          title,
+          description: desc,
+          category,
+          code: currentCode,
           thumbnailGradient: gradient,
           author: user.email?.split("@")[0] ?? "匿名",
           author_id: user.id,
@@ -353,13 +405,68 @@ function CreatePageInner() {
         localStorage.setItem(key, JSON.stringify(existing));
       }
 
-      router.push("/");
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "发布失败，请稍后重试";
-      setPublishError(message);
-    } finally {
+      // Step 2: Generate & upload cover image
+      setPublishStep("screenshot");
+      let coverUrl: string | null = null;
+
+      if (isSupabaseConfigured()) {
+        // Try screenshot first
+        try {
+          const coverBlob = await captureCover(currentCode);
+          if (coverBlob) {
+            setPublishStep("uploading");
+            coverUrl = await uploadCoverToStorage(coverBlob, toolId);
+          }
+        } catch {
+          console.warn("Cover screenshot failed");
+        }
+
+        // Fallback: default gradient cover
+        if (!coverUrl) {
+          try {
+            setPublishStep("screenshot");
+            const fallbackBlob = await generateDefaultCoverBlob(title, currentVersions.length);
+            setPublishStep("uploading");
+            coverUrl = await uploadCoverToStorage(fallbackBlob, toolId);
+          } catch {
+            console.warn("Fallback cover generation also failed");
+          }
+        }
+
+        // Update tool record with cover_url
+        if (coverUrl) {
+          try {
+            const client = getSupabase();
+            if (client) {
+              await client.from("tools").update({ cover_url: coverUrl }).eq("id", toolId);
+            }
+          } catch {
+            // Non-critical: tool is already published
+          }
+        }
+      }
+
+      setPublishStep("");
       setPublishing(false);
+      setPublishOpen(false);
+
+      // Build share card data
+      const toolUrl = `${window.location.origin}/tool/${toolId}`;
+      const result: PublishResult = { toolId, title, description: desc, coverUrl };
+
+      // Auto-copy link
+      await copyAndAnimate(toolUrl, setShareCopied);
+      showToast("发布成功！链接已复制到剪贴板");
+
+      // Show share card
+      setShareCardData(result);
+      setShareCardOpen(true);
+
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "发布失败，请稍后重试";
+      setPublishError(message);
+      setPublishing(false);
+      setPublishStep("");
     }
   };
 
@@ -367,20 +474,33 @@ function CreatePageInner() {
     if (!user) return;
     setPublishOpen(true);
     setPublishError("");
+    setPublishStep("");
     const result = scanDangerousCode(codeRef.current);
     setCodeWarnings(result.warnings);
   };
 
-  const handleCopyCode = useCallback(() => {
-    navigator.clipboard.writeText(codeRef.current).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }, []);
+  const closeShareCard = () => {
+    setShareCardOpen(false);
+    setShareCardData(null);
+    router.push("/");
+  };
 
-  const handleReset = useCallback(() => {
-    setCode(DEFAULT_CODE);
-  }, []);
+  const handleCopyCode = useCallback(() => {
+    copyAndAnimate(codeRef.current, setCopied);
+  }, [copyAndAnimate]);
+
+  const handleReset = useCallback(() => setCode(DEFAULT_CODE), []);
+
+  // Publish button text based on current step
+  const publishBtnText = publishing
+    ? publishStep === "screenshot"
+      ? "正在生成封面..."
+      : publishStep === "uploading"
+      ? "正在上传封面..."
+      : publishStep === "done"
+      ? "发布中..."
+      : "发布中..."
+    : "确认发布";
 
   // Publish button
   const publishBtn = user ? (
@@ -399,7 +519,6 @@ function CreatePageInner() {
     </Link>
   );
 
-  // Mobile toolbar actions
   const mobileActions = (
     <>
       <button
@@ -416,7 +535,6 @@ function CreatePageInner() {
     </>
   );
 
-  // Desktop toolbar actions
   const desktopActions = (
     <div className="flex items-center gap-2">
       <button
@@ -445,7 +563,6 @@ function CreatePageInner() {
     </div>
   );
 
-  // 🔥 预计算 srcDoc，避免每次渲染都重新计算
   const previewSrcDoc = wrapSecureSrcDoc(debouncedCode);
 
   return (
@@ -470,7 +587,6 @@ function CreatePageInner() {
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 pb-14 lg:pb-0">
         {/* === Editor Panel === */}
         <div className="flex-1 flex flex-col min-h-0 bg-gray-900 lg:w-1/2">
-          {/* Editor toolbar */}
           <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-800 border-b border-gray-700">
             <div className="flex items-center gap-2">
               <div className="flex gap-1.5">
@@ -486,7 +602,6 @@ function CreatePageInner() {
             </div>
           </div>
 
-          {/* Code textarea — 即时反馈，防抖在 iframe 层面 */}
           <textarea
             ref={editorRef}
             value={code}
@@ -499,7 +614,6 @@ function CreatePageInner() {
             aria-label="代码编辑器"
           />
 
-          {/* Version Timeline */}
           {versions.length > 0 && (
             <div className="flex-shrink-0 border-t border-gray-700">
               <div className="flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-800/50">
@@ -544,7 +658,6 @@ function CreatePageInner() {
             </div>
           )}
 
-          {/* Adapting source banner */}
           {sourceToolId && sourceToolTitle && (
             <div className="flex-shrink-0 border-t border-gray-700 bg-purple-900/30 px-3 lg:px-4 py-2 flex items-center gap-2">
               <span className="text-xs">✨</span>
@@ -555,10 +668,9 @@ function CreatePageInner() {
           )}
         </div>
 
-        {/* === Preview Panel — 使用防抖后的代码 === */}
+        {/* === Preview Panel === */}
         <div className="flex-1 flex flex-col items-center justify-center bg-gray-200 p-3 lg:p-4 min-h-0 lg:w-1/2">
           <div className="relative flex flex-col items-center flex-1 w-full justify-center">
-            {/* Desktop: phone frame */}
             <div className="hidden lg:flex flex-col items-center">
               <div
                 className="relative bg-gray-800 rounded-[36px] p-3 shadow-2xl"
@@ -582,7 +694,6 @@ function CreatePageInner() {
               <p className="mt-4 text-xs text-gray-400 text-center">手机预览 · 375 × 667</p>
             </div>
 
-            {/* Mobile: simple iframe + fullscreen button */}
             <div className="lg:hidden flex flex-col w-full flex-1 min-h-0">
               <div className="flex-1 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200 min-h-0">
                 <iframe
@@ -635,7 +746,6 @@ function CreatePageInner() {
               <h2 className="text-lg font-bold text-gray-900 mb-4">发布工具</h2>
 
               <div className="space-y-4">
-                {/* Title */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">工具名称 *</label>
                   <input
@@ -645,10 +755,10 @@ function CreatePageInner() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     style={{ fontSize: "16px" }}
                     autoFocus
+                    disabled={publishing}
                   />
                 </div>
 
-                {/* Description */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">一句话介绍</label>
                   <input
@@ -657,10 +767,10 @@ function CreatePageInner() {
                     placeholder="简单说说这个工具能做什么"
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     style={{ fontSize: "16px" }}
+                    disabled={publishing}
                   />
                 </div>
 
-                {/* Category */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">分类</label>
                   <select
@@ -668,6 +778,7 @@ function CreatePageInner() {
                     onChange={(e) => setPublishCategory(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                     style={{ fontSize: "16px" }}
+                    disabled={publishing}
                   >
                     {CATEGORIES.filter((c) => c.key !== "全部").map((cat) => (
                       <option key={cat.key} value={cat.key}>
@@ -677,19 +788,15 @@ function CreatePageInner() {
                   </select>
                 </div>
 
-                {/* Error */}
                 {publishError && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
                     {publishError}
                   </div>
                 )}
 
-                {/* Code safety warnings */}
                 {codeWarnings.length > 0 && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
-                    <p className="font-medium text-amber-800 mb-2">
-                      ⚠️ 代码安全提示
-                    </p>
+                    <p className="font-medium text-amber-800 mb-2">⚠️ 代码安全提示</p>
                     <p className="text-amber-700 text-xs mb-2">
                       检测到以下可能不安全的 API 调用。微坞会在运行时自动拦截这些操作，但建议你移除或替换它们以确保工具在所有环境下正常运行：
                     </p>
@@ -707,7 +814,6 @@ function CreatePageInner() {
                   </div>
                 )}
 
-                {/* Publish info */}
                 {!isSupabaseConfigured() && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-600">
                     当前为演示模式，工具将保存到本地浏览器。配置 Supabase 后可发布到云端。
@@ -716,11 +822,11 @@ function CreatePageInner() {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="flex border-t border-gray-100 flex-shrink-0">
               <button
-                onClick={() => setPublishOpen(false)}
-                className="flex-1 min-h-[48px] py-3 text-base text-gray-500 hover:bg-gray-50 transition-colors font-medium"
+                onClick={() => { if (!publishing) setPublishOpen(false); }}
+                className="flex-1 min-h-[48px] py-3 text-base text-gray-500 hover:bg-gray-50 transition-colors font-medium disabled:opacity-40"
+                disabled={publishing}
               >
                 取消
               </button>
@@ -729,12 +835,195 @@ function CreatePageInner() {
                 disabled={publishing}
                 className="flex-1 min-h-[48px] py-3 text-base bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium"
               >
-                {publishing ? "发布中..." : "确认发布"}
+                {publishBtnText}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Share Card Modal */}
+      {shareCardOpen && shareCardData && (
+        <ShareCard
+          data={shareCardData}
+          copied={shareCopied}
+          onCopyLink={() => {
+            const url = `${window.location.origin}/tool/${shareCardData.toolId}`;
+            copyAndAnimate(url, setShareCopied);
+            showToast("链接已复制到剪贴板");
+          }}
+          onShare={() => {
+            const url = `${window.location.origin}/tool/${shareCardData.toolId}`;
+            const text = `看看这个工具：「${shareCardData.title}」${shareCardData.description ? " — " + shareCardData.description : ""}`;
+            if (navigator.share) {
+              navigator.share({ title: shareCardData.title, text, url }).catch(() => {});
+            } else {
+              copyAndAnimate(url, setShareCopied);
+              showToast("已复制链接，粘贴给你的朋友吧！");
+            }
+          }}
+          onClose={closeShareCard}
+        />
+      )}
+
+      {/* Toast */}
+      <Toast message={toast.message} visible={toast.visible} />
+    </div>
+  );
+}
+
+// --- Share Card Component ---
+
+function ShareCard({
+  data,
+  copied,
+  onCopyLink,
+  onShare,
+  onClose,
+}: {
+  data: PublishResult;
+  copied: boolean;
+  onCopyLink: () => void;
+  onShare: () => void;
+  onClose: () => void;
+}) {
+  const toolUrl = typeof window !== "undefined" ? `${window.location.origin}/tool/${data.toolId}` : "";
+  const qrUrl = toolUrl
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(toolUrl)}&bgcolor=ffffff&color=4f46e5`
+    : "";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900">🎉 发布成功</h3>
+          <button
+            onClick={onClose}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Card Body */}
+        <div className="p-5 space-y-4">
+          {/* Cover */}
+          <div className="relative rounded-xl overflow-hidden shadow-md bg-gray-100 aspect-[375/200]">
+            {data.coverUrl ? (
+              <img
+                src={data.coverUrl}
+                alt={data.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center"
+                style={{
+                  background: "linear-gradient(135deg, #667eea, #764ba2)",
+                }}
+              >
+                <span className="text-white/80 text-lg font-bold px-4 text-center line-clamp-2">
+                  {data.title}
+                </span>
+              </div>
+            )}
+            {/* Overlay gradient at bottom for readability */}
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+            <div className="absolute bottom-3 left-3 right-3">
+              <p className="text-white text-base font-bold truncate drop-shadow-md">{data.title}</p>
+              {data.description && (
+                <p className="text-white/80 text-xs mt-0.5 truncate drop-shadow-md">{data.description}</p>
+              )}
+            </div>
+          </div>
+
+          {/* QR Code */}
+          <div className="flex items-center gap-4 bg-gray-50 rounded-xl p-4">
+            <div className="flex-shrink-0 w-[90px] h-[90px] bg-white rounded-lg border border-gray-200 overflow-hidden">
+              {qrUrl ? (
+                <img
+                  src={qrUrl}
+                  alt="扫码访问工具"
+                  className="w-full h-full object-contain p-1"
+                  loading="eager"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-300">
+                  <svg className="w-8 h-8 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2m6-6v2m0-2h-2m-2 0H8m4-4V4m0 0H8m4 0h4" />
+                  </svg>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-500 mb-2">扫码或复制链接分享给朋友</p>
+              <p className="text-[11px] text-gray-400 break-all leading-relaxed bg-white rounded-lg border border-gray-200 p-2 truncate">
+                {toolUrl}
+              </p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={onCopyLink}
+              className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                copied
+                  ? "bg-green-50 text-green-600 border border-green-200 scale-[0.97]"
+                  : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
+              }`}
+            >
+              {copied ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  已复制
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  复制链接
+                </>
+              )}
+            </button>
+            <button
+              onClick={onShare}
+              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 active:scale-95 transition-all duration-200"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+              分享给朋友
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Toast Component ---
+
+function Toast({ message, visible }: { message: string; visible: boolean }) {
+  if (!visible || !message) return null;
+
+  return (
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
+      <div className="animate-in slide-in-from-top-2 fade-in duration-300 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2">
+        <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        {message}
+      </div>
     </div>
   );
 }
