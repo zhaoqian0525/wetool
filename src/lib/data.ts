@@ -1228,15 +1228,41 @@ function mapRow(row: Record<string, unknown>): Tool {
   };
 }
 
-// ---- Helper: get Supabase client when configured ----
+// ---- Supabase client singleton (cached, lazy) ----
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _supabaseClient: any | null | undefined;
 
 async function getSupabaseClient() {
+  // Return cached null if already known to be unavailable
+  if (_supabaseClient === null) return null;
+  // Return cached client if already created
+  if (_supabaseClient) return _supabaseClient;
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseKey) return null;
+  if (!supabaseUrl || !supabaseKey) {
+    _supabaseClient = null;
+    return null;
+  }
   try {
     const { createClient } = await import("@supabase/supabase-js");
-    return createClient(supabaseUrl, supabaseKey);
+    _supabaseClient = createClient(supabaseUrl, supabaseKey);
+    return _supabaseClient;
+  } catch {
+    _supabaseClient = null;
+    return null;
+  }
+}
+
+/** Wrap a Supabase query with a 3-second timeout. Returns null on timeout. */
+async function queryWithTimeout<T>(promise: Promise<T>, timeoutMs = 3000): Promise<T | null> {
+  try {
+    const result = await Promise.race([
+      promise,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+    ]);
+    return result;
   } catch {
     return null;
   }
@@ -1247,59 +1273,39 @@ async function getSupabaseClient() {
 export async function fetchTools(): Promise<Tool[]> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from("tools")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (!error && data) {
-        return data.map(mapRow);
-      }
-    } catch {
-      // fall through
+    const result = await queryWithTimeout(
+      supabase.from("tools").select("*").order("created_at", { ascending: false })
+    );
+    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+      return ((result as { data: Record<string, unknown>[] }).data).map(mapRow);
     }
   }
-  await new Promise((r) => setTimeout(r, 400));
   return MOCK_TOOLS;
 }
 
 export async function fetchToolById(id: string): Promise<Tool | null> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from("tools")
-        .select("*")
-        .eq("id", id)
-        .single();
-      if (!error && data) {
-        return mapRow(data);
-      }
-    } catch {
-      // fall through
+    const result = await queryWithTimeout(
+      supabase.from("tools").select("*").eq("id", id).single()
+    );
+    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+      return mapRow((result as { data: Record<string, unknown> }).data);
     }
   }
-  await new Promise((r) => setTimeout(r, 200));
   return MOCK_TOOLS.find((t) => t.id === id) ?? null;
 }
 
 export async function fetchToolsByUser(userId: string): Promise<Tool[]> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from("tools")
-        .select("*")
-        .eq("author_id", userId)
-        .order("created_at", { ascending: false });
-      if (!error && data) {
-        return data.map(mapRow);
-      }
-    } catch {
-      // fall through
+    const result = await queryWithTimeout(
+      supabase.from("tools").select("*").eq("author_id", userId).order("created_at", { ascending: false })
+    );
+    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+      return ((result as { data: Record<string, unknown>[] }).data).map(mapRow);
     }
   }
-  await new Promise((r) => setTimeout(r, 300));
   return MOCK_TOOLS.filter((t) => t.authorId === userId);
 }
 
@@ -1321,16 +1327,11 @@ export async function resolveSourceTool(tool: Tool): Promise<Tool> {
 export async function fetchFavoritedToolIds(userId: string): Promise<string[]> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from("favorites")
-        .select("tool_id")
-        .eq("user_id", userId);
-      if (!error && data) {
-        return data.map((row: Record<string, unknown>) => String(row.tool_id));
-      }
-    } catch {
-      // fall through
+    const result = await queryWithTimeout(
+      supabase.from("favorites").select("tool_id").eq("user_id", userId)
+    );
+    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+      return ((result as { data: Record<string, unknown>[] }).data).map((row) => String(row.tool_id));
     }
   }
   return getMockFavorites()
@@ -1345,26 +1346,20 @@ export async function toggleFavorite(
 ): Promise<boolean> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    try {
-      if (currentlyFavorited) {
-        const { error } = await supabase
-          .from("favorites")
-          .delete()
-          .eq("user_id", userId)
-          .eq("tool_id", toolId);
-        if (!error) return false;
-      } else {
-        const { error } = await supabase
-          .from("favorites")
-          .insert({
-            user_id: userId,
-            tool_id: toolId,
-            created_at: new Date().toISOString(),
-          });
-        if (!error) return true;
-      }
-    } catch {
-      // fall through
+    if (currentlyFavorited) {
+      const result = await queryWithTimeout(
+        supabase.from("favorites").delete().eq("user_id", userId).eq("tool_id", toolId)
+      );
+      if (result && !(result as { error: unknown }).error) return false;
+    } else {
+      const result = await queryWithTimeout(
+        supabase.from("favorites").insert({
+          user_id: userId,
+          tool_id: toolId,
+          created_at: new Date().toISOString(),
+        })
+      );
+      if (result && !(result as { error: unknown }).error) return true;
     }
   }
 
@@ -1388,14 +1383,11 @@ export async function toggleFavorite(
 export async function fetchFavoriteCount(toolId: string): Promise<number> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    try {
-      const { count, error } = await supabase
-        .from("favorites")
-        .select("*", { count: "exact", head: true })
-        .eq("tool_id", toolId);
-      if (!error && count !== null) return count;
-    } catch {
-      // fall through
+    const result = await queryWithTimeout(
+      supabase.from("favorites").select("*", { count: "exact", head: true }).eq("tool_id", toolId)
+    );
+    if (result && !(result as { error: unknown }).error && (result as { count: number }).count !== null) {
+      return (result as { count: number }).count;
     }
   }
   return getMockFavorites().filter((f) => f.toolId === toolId).length;
@@ -1408,21 +1400,14 @@ export async function fetchFavoriteCounts(
   const supabase = await getSupabaseClient();
   const counts: Record<string, number> = {};
   if (supabase) {
-    try {
-      // Supabase doesn't support GROUP BY in client SDK cleanly;
-      // fetch all rows and count in JS for mock-like simplicity
-      const { data, error } = await supabase
-        .from("favorites")
-        .select("tool_id")
-        .in("tool_id", toolIds);
-      if (!error && data) {
-        for (const row of data as { tool_id: string }[]) {
-          counts[row.tool_id] = (counts[row.tool_id] || 0) + 1;
-        }
-        return counts;
+    const result = await queryWithTimeout(
+      supabase.from("favorites").select("tool_id").in("tool_id", toolIds)
+    );
+    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+      for (const row of (result as { data: { tool_id: string }[] }).data) {
+        counts[row.tool_id] = (counts[row.tool_id] || 0) + 1;
       }
-    } catch {
-      // fall through
+      return counts;
     }
   }
   for (const tid of toolIds) {
@@ -1436,33 +1421,25 @@ export async function fetchFavoritedToolsByUser(
 ): Promise<Tool[]> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    try {
-      // Get favorited tool_ids
-      const { data: favRows, error: favError } = await supabase
-        .from("favorites")
-        .select("tool_id")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-      if (!favError && favRows && favRows.length > 0) {
-        const toolIds = favRows.map((r: Record<string, unknown>) => String(r.tool_id));
-        const { data: tools, error: toolsError } = await supabase
-          .from("tools")
-          .select("*")
-          .in("id", toolIds);
-        if (!toolsError && tools) {
+    const favResult = await queryWithTimeout(
+      supabase.from("favorites").select("tool_id").eq("user_id", userId).order("created_at", { ascending: false })
+    );
+    if (favResult && !(favResult as { error: unknown }).error && (favResult as { data: unknown }).data) {
+      const favRows = (favResult as { data: Record<string, unknown>[] }).data;
+      if (favRows.length > 0) {
+        const toolIds = favRows.map((r) => String(r.tool_id));
+        const toolsResult = await queryWithTimeout(
+          supabase.from("tools").select("*").in("id", toolIds)
+        );
+        if (toolsResult && !(toolsResult as { error: unknown }).error && (toolsResult as { data: unknown }).data) {
           const toolMap = new Map(
-            (tools as Record<string, unknown>[]).map((row) => [String(row.id), mapRow(row)])
+            ((toolsResult as { data: Record<string, unknown>[] }).data).map((row) => [String(row.id), mapRow(row)])
           );
-          // Preserve favorite order
-          return toolIds
-            .map((id) => toolMap.get(id))
-            .filter(Boolean) as Tool[];
+          return toolIds.map((id) => toolMap.get(id)).filter(Boolean) as Tool[];
         }
       }
-      return [];
-    } catch {
-      // fall through
     }
+    return [];
   }
 
   // Mock mode
@@ -1477,25 +1454,19 @@ export async function fetchFavoritedToolsByUser(
 export async function fetchReviews(toolId: string): Promise<Review[]> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from("reviews")
-        .select("*")
-        .eq("tool_id", toolId)
-        .order("created_at", { ascending: false });
-      if (!error && data) {
-        return (data as Record<string, unknown>[]).map((row) => ({
-          id: String(row.id),
-          toolId: String(row.tool_id),
-          userId: String(row.user_id),
-          userName: String(row.user_name ?? ""),
-          rating: Number(row.rating),
-          content: String(row.content ?? ""),
-          createdAt: String(row.created_at),
-        }));
-      }
-    } catch {
-      // fall through
+    const result = await queryWithTimeout(
+      supabase.from("reviews").select("*").eq("tool_id", toolId).order("created_at", { ascending: false })
+    );
+    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+      return ((result as { data: Record<string, unknown>[] }).data).map((row) => ({
+        id: String(row.id),
+        toolId: String(row.tool_id),
+        userId: String(row.user_id),
+        userName: String(row.user_name ?? ""),
+        rating: Number(row.rating),
+        content: String(row.content ?? ""),
+        createdAt: String(row.created_at),
+      }));
     }
   }
   return getMockReviews()
@@ -1508,21 +1479,17 @@ export async function fetchAverageRating(
 ): Promise<{ average: number; count: number }> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    try {
-      const { data, error, count } = await supabase
-        .from("reviews")
-        .select("rating", { count: "exact" })
-        .eq("tool_id", toolId);
-      if (!error && data && data.length > 0) {
-        const avg =
-          (data as { rating: number }[]).reduce((s, r) => s + r.rating, 0) /
-          data.length;
-        return { average: Math.round(avg * 10) / 10, count: count ?? data.length };
+    const result = await queryWithTimeout(
+      supabase.from("reviews").select("rating", { count: "exact" }).eq("tool_id", toolId)
+    );
+    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+      const data = (result as { data: { rating: number }[]; count: number }).data;
+      if (data.length > 0) {
+        const avg = data.reduce((s, r) => s + r.rating, 0) / data.length;
+        return { average: Math.round(avg * 10) / 10, count: (result as { count: number }).count ?? data.length };
       }
-      return { average: 0, count: 0 };
-    } catch {
-      // fall through
     }
+    return { average: 0, count: 0 };
   }
   const reviews = getMockReviews().filter((r) => r.toolId === toolId);
   if (reviews.length === 0) return { average: 0, count: 0 };
@@ -1539,33 +1506,27 @@ export async function addReview(
 ): Promise<Review> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from("reviews")
-        .insert({
-          tool_id: toolId,
-          user_id: userId,
-          user_name: userName,
-          rating,
-          content,
-          created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-      if (!error && data) {
-        const row = data as Record<string, unknown>;
-        return {
-          id: String(row.id),
-          toolId: String(row.tool_id),
-          userId: String(row.user_id),
-          userName: String(row.user_name ?? ""),
-          rating: Number(row.rating),
-          content: String(row.content ?? ""),
-          createdAt: String(row.created_at),
-        };
-      }
-    } catch {
-      // fall through
+    const result = await queryWithTimeout(
+      supabase.from("reviews").insert({
+        tool_id: toolId,
+        user_id: userId,
+        user_name: userName,
+        rating,
+        content,
+        created_at: new Date().toISOString(),
+      }).select().single()
+    );
+    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+      const row = (result as { data: Record<string, unknown> }).data;
+      return {
+        id: String(row.id),
+        toolId: String(row.tool_id),
+        userId: String(row.user_id),
+        userName: String(row.user_name ?? ""),
+        rating: Number(row.rating),
+        content: String(row.content ?? ""),
+        createdAt: String(row.created_at),
+      };
     }
   }
   // Mock mode
