@@ -8,8 +8,9 @@ import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { CATEGORIES, fetchToolById } from "@/lib/data";
-import { wrapSecureSrcDoc, IFRAME_SANDBOX, scanDangerousCode } from "@/lib/sandbox";
+import { scanDangerousCode } from "@/lib/sandbox";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { captureCover, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
 
 // --- Constants ---
@@ -575,7 +576,8 @@ function CreatePageInner() {
     </div>
   );
 
-  const previewSrcDoc = wrapSecureSrcDoc(debouncedCode);
+  // 🔥 Blob URL for iframe preview (more compatible than srcdoc)
+  const { blobUrl: previewBlobUrl, sandbox: previewSandbox } = useBlobSrcDoc(debouncedCode);
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
@@ -696,10 +698,10 @@ function CreatePageInner() {
                 <div className="w-full h-full overflow-hidden rounded-[24px] bg-white relative flex flex-col">
                   <div className="h-5 flex-shrink-0" />
                   <iframe
-                    srcDoc={previewSrcDoc}
+                    src={previewBlobUrl}
                     title="工具预览"
                     className="flex-1 w-full border-0"
-                    sandbox={IFRAME_SANDBOX}
+                    sandbox={previewSandbox}
                   />
                 </div>
               </div>
@@ -709,10 +711,10 @@ function CreatePageInner() {
             <div className="lg:hidden flex flex-col w-full flex-1 min-h-0">
               <div className="flex-1 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200 min-h-0">
                 <iframe
-                  srcDoc={previewSrcDoc}
+                  src={previewBlobUrl}
                   title="工具预览"
                   className="w-full h-full border-0"
-                  sandbox={IFRAME_SANDBOX}
+                  sandbox={previewSandbox}
                 />
               </div>
               <button
@@ -742,10 +744,10 @@ function CreatePageInner() {
             </button>
           </div>
           <iframe
-            srcDoc={previewSrcDoc}
+            src={previewBlobUrl}
             title="全屏预览"
             className="flex-1 w-full border-0"
-            sandbox={IFRAME_SANDBOX}
+            sandbox={previewSandbox}
           />
         </div>
       )}

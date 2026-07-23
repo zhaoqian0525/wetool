@@ -6,8 +6,8 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
+import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { fetchToolById, resolveSourceTool, toggleFavorite, fetchFavoritedToolIds, fetchFavoriteCount, fetchReviews, fetchAverageRating, addReview, fetchTools, type Tool, type Review } from "@/lib/data";
-import { wrapSecureSrcDoc, IFRAME_SANDBOX } from "@/lib/sandbox";
 
 export default function ToolDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -145,8 +145,8 @@ export default function ToolDetailPage() {
     }
   }, [user, id, newRating, newContent, submitting]);
 
-  // 🔥 预计算 srcDoc（避免每次渲染都重新计算）
-  const previewSrcDoc = tool?.code ? wrapSecureSrcDoc(tool.code) : "";
+  // 🔥 使用 Blob URL 替代 srcdoc（兼容微信/QQ 等内嵌浏览器）
+  const { blobUrl: previewBlobUrl, sandbox: blobSandbox } = useBlobSrcDoc(tool?.code ?? "");
 
   if (loading) {
     return (
@@ -252,10 +252,10 @@ export default function ToolDetailPage() {
                 {/* 🔥 骨架屏：iframe 加载完毕前显示 */}
                 {!iframeLoaded && <IframeSkeleton />}
                 <iframe
-                  srcDoc={previewSrcDoc}
+                  src={previewBlobUrl}
                   title={tool.title}
                   className="w-full h-full border-0"
-                  sandbox={IFRAME_SANDBOX}
+                  sandbox={blobSandbox}
                   onLoad={() => setIframeLoaded(true)}
                   style={{ opacity: iframeLoaded ? 1 : 0, transition: "opacity 0.3s" }}
                 />
@@ -283,10 +283,10 @@ export default function ToolDetailPage() {
                   {/* 🔥 骨骼屏 */}
                   {!iframeLoaded && <IframeSkeleton />}
                   <iframe
-                    srcDoc={previewSrcDoc}
+                    src={previewBlobUrl}
                     title={tool.title}
                     className="flex-1 w-full border-0"
-                    sandbox={IFRAME_SANDBOX}
+                    sandbox={blobSandbox}
                     onLoad={() => setIframeLoaded(true)}
                     style={{ opacity: iframeLoaded ? 1 : 0, transition: "opacity 0.3s" }}
                   />
@@ -409,10 +409,10 @@ export default function ToolDetailPage() {
               </button>
             </div>
             <iframe
-              srcDoc={previewSrcDoc}
+              src={previewBlobUrl}
               title={tool.title}
               className="flex-1 w-full border-0"
-              sandbox={IFRAME_SANDBOX}
+              sandbox={blobSandbox}
             />
           </div>
         )}
