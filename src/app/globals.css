@@ -99,3 +99,55 @@ body {
 .duration-300 {
   animation-duration: 0.3s;
 }
+
+/* --- Toast animations --- */
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-8px) scale(0.95); }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.25s ease-out both;
+}
+
+.animate-toast-out {
+  animation: toast-out 0.3s ease-in both;
+}
+
+/* --- Heart animation for favorite --- */
+
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.4); }
+  50% { transform: scale(0.9); }
+  75% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.animate-heart-pop {
+  animation: heart-pop 0.5s ease-out;
+}
+
+/* --- Card hover float --- */
+
+.card-hover-float {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card-hover-float:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+@media (hover: none) {
+  .card-hover-float:active {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+  }
+}

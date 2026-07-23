@@ -5,16 +5,19 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
+import { useToast } from "@/components/ToastProvider";
 import { fetchToolById, resolveSourceTool, toggleFavorite, fetchFavoritedToolIds, fetchFavoriteCount, fetchReviews, fetchAverageRating, addReview, fetchTools, type Tool, type Review } from "@/lib/data";
 import { wrapSecureSrcDoc, IFRAME_SANDBOX } from "@/lib/sandbox";
 
 export default function ToolDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const toast = useToast();
   const [tool, setTool] = useState<Tool | null>(null);
   const [loading, setLoading] = useState(true);
   const [favorited, setFavorited] = useState(false);
   const [favoriting, setFavoriting] = useState(false);
+  const [heartAnim, setHeartAnim] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(0);
 
   // Reviews state
@@ -93,6 +96,7 @@ export default function ToolDetailPage() {
       try {
         await navigator.clipboard.writeText(url);
         setShareCopied(true);
+        toast.success("链接已复制");
         setTimeout(() => setShareCopied(false), 2000);
       } catch { /* ignore */ }
     }
@@ -105,6 +109,10 @@ export default function ToolDetailPage() {
       const newState = await toggleFavorite(user.id, id, favorited);
       setFavorited(newState);
       setFavoriteCount((c) => (newState ? c + 1 : Math.max(0, c - 1)));
+      toast.success(newState ? "已收藏" : "已取消收藏");
+      // Trigger heart animation
+      setHeartAnim(true);
+      setTimeout(() => setHeartAnim(false), 500);
     } finally {
       setFavoriting(false);
     }
@@ -318,7 +326,7 @@ export default function ToolDetailPage() {
                       : "border-gray-200 text-gray-700 hover:bg-gray-50"
                   } ${favoriting ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
-                  {favoriting ? "..." : favorited ? "❤️ 已收藏" : "🤍 收藏"}
+                  {favoriting ? "..." : favorited ? <span className={heartAnim ? "inline-block animate-heart-pop" : ""}>❤️ 已收藏</span> : <span className={heartAnim ? "inline-block animate-heart-pop" : ""}>🤍 收藏</span>}
                 </button>
               ) : (
                 <Link
@@ -373,7 +381,7 @@ export default function ToolDetailPage() {
                 <Link
                   key={rt.id}
                   href={`/tool/${rt.id}`}
-                  className="group block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-indigo-200 transition-all"
+                  className="group card-hover-float block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
                 >
                   <div className="relative aspect-[4/3] flex items-center justify-center overflow-hidden" style={{ background: rt.thumbnailGradient }}>
                     <span className="text-white font-bold text-xs text-center drop-shadow-md line-clamp-2 px-2">{rt.title}</span>

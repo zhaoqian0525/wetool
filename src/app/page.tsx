@@ -183,7 +183,7 @@ const ToolCard = memo(function ToolCard({ tool, favoriteCount }: { tool: Tool; f
   return (
     <Link
       href={`/tool/${tool.id}`}
-      className="group block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-indigo-200 transition-all duration-200"
+      className="group card-hover-float block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
     >
       {/* Thumbnail: cover_url > gradient placeholder */}
       <div className="relative aspect-[4/3] flex flex-col items-center justify-center overflow-hidden">
@@ -263,22 +263,36 @@ function LoadingSkeleton() {
 
 function EmptyState({ category, search }: { category: string; search: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="text-5xl mb-4">🔍</div>
-      <h3 className="text-lg font-medium text-gray-600 mb-1">
-        {search ? `没有找到「${search}」相关的工具` : "还没有工具"}
+    <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-center animate-in fade-in duration-300">
+      {/* Illustration */}
+      <div className="relative mb-6">
+        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center shadow-inner">
+          <svg className="w-12 h-12 sm:w-14 sm:h-14 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        </div>
+        {/* Floating sparkles */}
+        <div className="absolute -top-1 -right-1 text-lg animate-bounce" style={{ animationDuration: "1.5s" }}>✨</div>
+        <div className="absolute -bottom-2 -left-1 text-base animate-bounce" style={{ animationDuration: "2s", animationDelay: "0.3s" }}>💡</div>
+      </div>
+
+      <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
+        {search ? `没有找到「${search}」相关的工具` : "这里还是空的"}
       </h3>
-      <p className="text-sm text-gray-400 mb-6">
+      <p className="text-sm text-gray-400 mb-6 max-w-xs leading-relaxed">
         {search
           ? "换个关键词试试，或者成为第一个分享这类工具的人"
           : category === "全部"
-          ? "成为第一个分享工具的人吧"
-          : `「${category}」分类下暂无工具，去创作一个吧`}
+          ? "还没有人发布工具！成为第一个创作者，把你的想法变成一个实用小工具分享给大家"
+          : `「${category}」分类下还没有工具，做第一个吃螃蟹的人吧`}
       </p>
       <Link
         href="/create"
-        className="min-h-[44px] flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+        className="min-h-[44px] flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all shadow-md shadow-indigo-200"
       >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
         开始创作
       </Link>
     </div>

@@ -131,9 +131,17 @@ function ToolGrid({
 }) {
   if (tools.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="text-4xl mb-3">📭</div>
-        <p className="text-sm text-gray-500">{emptyMessage}</p>
+      <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-center animate-in fade-in duration-300">
+        {/* Illustration */}
+        <div className="relative mb-5">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+            <svg className="w-9 h-9 sm:w-10 sm:h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+          </div>
+          <div className="absolute -top-1 -right-1 text-base animate-bounce" style={{ animationDuration: "2s" }}>📭</div>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">{emptyMessage}</p>
         {emptyCta}
       </div>
     );
@@ -145,7 +153,7 @@ function ToolGrid({
         <Link
           key={tool.id}
           href={`/tool/${tool.id}`}
-          className="group block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-indigo-200 transition-all duration-200"
+          className="group card-hover-float block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
         >
           {/* Thumbnail: cover_url > gradient */}
           <div className="relative aspect-[4/3] flex flex-col items-center justify-center overflow-hidden">

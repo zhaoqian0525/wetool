@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
+import { useToast } from "@/components/ToastProvider";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { CATEGORIES, fetchToolById } from "@/lib/data";
 import { wrapSecureSrcDoc, IFRAME_SANDBOX, scanDangerousCode } from "@/lib/sandbox";
@@ -178,6 +179,7 @@ function CreatePageInner() {
   const searchParams = useSearchParams();
   const sourceToolIdParam = searchParams.get("source_tool_id");
   const { user } = useAuth();
+  const toast = useToast();
 
   const [code, setCode] = useState(DEFAULT_CODE);
   const [versions, setVersions] = useState<Version[]>([]);
@@ -203,9 +205,6 @@ function CreatePageInner() {
   const [shareCardOpen, setShareCardOpen] = useState(false);
   const [shareCardData, setShareCardData] = useState<PublishResult | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
-
-  // Toast
-  const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: "", visible: false });
 
   // Fullscreen preview
   const [fullscreenPreview, setFullscreenPreview] = useState(false);
@@ -241,6 +240,7 @@ function CreatePageInner() {
         setSourceToolTitle(tool.title);
         if (tool.code) setCode(tool.code);
       }
+      toast.info("已加载改编源");
       setSourceLoaded(true);
     });
   }, [sourceToolIdParam, sourceLoaded]);
@@ -264,6 +264,7 @@ function CreatePageInner() {
     setVersions([snapshot, ...currentVersions]);
     setSavedIndicator(true);
     setTimeout(() => setSavedIndicator(false), 1500);
+    toast.info("快照已保存");
     if (timelineRef.current) {
       timelineRef.current.scrollTo({ left: 0, behavior: "smooth" });
     }
@@ -304,12 +305,6 @@ function CreatePageInner() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [saveSnapshot]);
-
-  // --- Toast helper ---
-  const showToast = useCallback((message: string) => {
-    setToast({ message, visible: true });
-    setTimeout(() => setToast({ message: "", visible: false }), 3000);
-  }, []);
 
   // --- Copy to clipboard with animation ---
   const copyAndAnimate = useCallback(
@@ -456,7 +451,7 @@ function CreatePageInner() {
 
       // Auto-copy link
       await copyAndAnimate(toolUrl, setShareCopied);
-      showToast("发布成功！链接已复制到剪贴板");
+      toast.success("发布成功！链接已复制到剪贴板");
 
       // Show share card
       setShareCardData(result);
@@ -465,6 +460,7 @@ function CreatePageInner() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "发布失败，请稍后重试";
       setPublishError(message);
+      toast.error(message);
       setPublishing(false);
       setPublishStep("");
     }
@@ -487,7 +483,8 @@ function CreatePageInner() {
 
   const handleCopyCode = useCallback(() => {
     copyAndAnimate(codeRef.current, setCopied);
-  }, [copyAndAnimate]);
+    toast.success("代码已复制");
+  }, [copyAndAnimate, toast]);
 
   const handleReset = useCallback(() => setCode(DEFAULT_CODE), []);
 
@@ -522,6 +519,12 @@ function CreatePageInner() {
   const mobileActions = (
     <>
       <button
+        onClick={() => { setCode(DEFAULT_CODE); toast.info("已填入示例工具"); }}
+        className="min-w-[44px] min-h-[44px] flex items-center justify-center px-2 py-1 text-xs rounded-lg transition-all font-medium bg-indigo-500 text-white hover:bg-indigo-600"
+      >
+        示例
+      </button>
+      <button
         onClick={saveSnapshot}
         className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-2.5 py-1 text-xs rounded-lg transition-all font-medium ${
           savedIndicator
@@ -542,6 +545,15 @@ function CreatePageInner() {
         className="min-w-[44px] min-h-[44px] flex items-center px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
       >
         重置
+      </button>
+      <button
+        onClick={() => { setCode(DEFAULT_CODE); toast.info("已填入示例工具"); }}
+        className="min-w-[44px] min-h-[44px] flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        试试示例
       </button>
       <button
         onClick={handleCopyCode}
@@ -850,7 +862,7 @@ function CreatePageInner() {
           onCopyLink={() => {
             const url = `${window.location.origin}/tool/${shareCardData.toolId}`;
             copyAndAnimate(url, setShareCopied);
-            showToast("链接已复制到剪贴板");
+            toast.success("链接已复制到剪贴板");
           }}
           onShare={() => {
             const url = `${window.location.origin}/tool/${shareCardData.toolId}`;
@@ -859,15 +871,13 @@ function CreatePageInner() {
               navigator.share({ title: shareCardData.title, text, url }).catch(() => {});
             } else {
               copyAndAnimate(url, setShareCopied);
-              showToast("已复制链接，粘贴给你的朋友吧！");
+              toast.success("已复制链接，粘贴给你的朋友吧！");
             }
           }}
           onClose={closeShareCard}
         />
       )}
 
-      {/* Toast */}
-      <Toast message={toast.message} visible={toast.visible} />
     </div>
   );
 }
@@ -1006,23 +1016,6 @@ function ShareCard({
             </button>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// --- Toast Component ---
-
-function Toast({ message, visible }: { message: string; visible: boolean }) {
-  if (!visible || !message) return null;
-
-  return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
-      <div className="animate-in slide-in-from-top-2 fade-in duration-300 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2">
-        <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-        {message}
       </div>
     </div>
   );
