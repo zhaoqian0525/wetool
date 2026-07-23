@@ -1151,8 +1151,8 @@ const MOCK_REVIEWS: Review[] = [
 ];
 
 // localStorage keys
-const FAV_KEY = "wetool-mock-favorites";
-const REV_KEY = "wetool-mock-reviews";
+const FAV_KEY = "wewoo-mock-favorites";
+const REV_KEY = "wewoo-mock-reviews";
 
 // Lazy-loaded mock data backed by localStorage (survives page refresh)
 let _mockFavorites: Favorite[] | null = null;

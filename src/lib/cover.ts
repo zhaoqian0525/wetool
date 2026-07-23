@@ -137,7 +137,7 @@ export async function generateDefaultCoverBlob(
   // 品牌角标
   ctx.fillStyle = "rgba(255,255,255,0.6)";
   ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillText("微坞 WeTool", canvas.width / 2, canvas.height - 30);
+  ctx.fillText("微坞 WeWoo", canvas.width / 2, canvas.height - 30);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(

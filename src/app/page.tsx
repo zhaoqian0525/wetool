@@ -168,7 +168,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="max-w-6xl mx-auto px-4 pb-8 lg:pb-12 text-center">
         <p className="text-xs text-gray-400">
-          微坞 WeTool · 像发朋友圈一样分享你做的 AI 小工具
+          微坞 WeWoo · 像发朋友圈一样分享你做的 AI 小工具
         </p>
       </footer>
     </div>

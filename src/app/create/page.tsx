@@ -97,7 +97,7 @@ const DEFAULT_CODE = `<!DOCTYPE html>
 </body>
 </html>`;
 
-const LOCAL_STORAGE_KEY = "wetool-versions";
+const LOCAL_STORAGE_KEY = "wewoo-versions";
 
 const THUMBNAIL_GRADIENTS = [
   "linear-gradient(135deg, #667eea, #764ba2)",
@@ -388,7 +388,7 @@ function CreatePageInner() {
         toolId = String((data as { id: string | number }).id);
       } else {
         toolId = generateId();
-        const key = "wetool-published-tools";
+        const key = "wewoo-published-tools";
         const existing = JSON.parse(localStorage.getItem(key) ?? "[]");
         existing.unshift({
           id: toolId,

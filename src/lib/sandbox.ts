@@ -2,7 +2,7 @@
  * 微坞沙箱安全工具
  *
  * 防护层级：
- * 1. iframe sandbox="allow-scripts" — 禁止网络、cookie、同源访问
+ * 1. iframe sandbox="allow-scripts allow-same-origin" — 允许脚本和自身DOM访问，CSP补充限制
  * 2. srcDoc 注入 <base href="about:blank"> — 阻断相对路径利用
  * 3. srcDoc 注入 CSP meta 标签 — 双重限制脚本能力
  * 4. 代码扫描 — 发布前检测危险 API，警告创作者
@@ -208,5 +208,10 @@ ${rawCode}
 
 // ---- 安全的 sandbox 属性值 ----
 
-/** iframe sandbox 属性：仅允许脚本执行，禁止所有网络、存储、弹窗、表单 */
-export const IFRAME_SANDBOX = "allow-scripts";
+/**
+ * iframe sandbox 属性。
+ * allow-scripts: 允许 JS 执行（工具必须）
+ * allow-same-origin: 允许 iframe 访问自身内容，移动端渲染必需。
+ *   安全性：CSP meta 已封锁 connect-src/frame-src/object-src，此权限不会绕过。
+ */
+export const IFRAME_SANDBOX = "allow-scripts allow-same-origin";

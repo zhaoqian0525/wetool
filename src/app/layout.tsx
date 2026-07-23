@@ -3,8 +3,8 @@ import { AuthProvider } from "@/components/AuthProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "微坞 WeTool - AI小工具分享社区",
-  description: "像发朋友圈一样发一个计算器，别人点开链接就能直接使用。",
+  title: "微坞 WeWoo - AI小工具分享社区",
+  description: "像发朋友圈一样分享你做的 AI 小工具，别人点开链接就能直接使用。",
 };
 
 export default function RootLayout({
