@@ -1123,6 +1123,282 @@ nextQ();
     description: "改编自古诗词随机抽查，改为填空模式更适合作业",
     sourceToolId: "3",
   },
+  {
+    id: "15",
+    title: "科学计算器",
+    author: "数学课代表",
+    authorId: "user-005",
+    category: "工程计算",
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>科学计算器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:#0f172a;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:12px}
+.calc{width:100%;max-width:360px;background:#1e293b;border-radius:20px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.display{background:#0f172a;border-radius:14px;padding:16px 20px;margin-bottom:16px;min-height:80px;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end}
+.display .expr{color:#94a3b8;font-size:14px;word-break:break-all;text-align:right;min-height:20px}
+.display .result{color:#f8fafc;font-size:32px;font-weight:700;word-break:break-all;text-align:right;margin-top:4px}
+.mode-row{display:flex;gap:6px;margin-bottom:10px}
+.mode-btn{flex:1;min-height:36px;border:none;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;color:#94a3b8;background:#334155}
+.mode-btn.active{background:#6366f1;color:#fff}
+.mode-btn:active{transform:scale(.96)}
+.btns{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.btns button{min-height:48px;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;transition:all .12s;display:flex;align-items:center;justify-content:center}
+.btns button:active{transform:scale(.94);opacity:.8}
+.btn-num{background:#334155;color:#f1f5f9}
+.btn-op{background:#475569;color:#f1f5f9}
+.btn-func{background:#1e293b;color:#818cf8;border:1px solid #334155}
+.btn-eq{background:#6366f1;color:#fff;font-size:18px!important;font-weight:700!important}
+.btn-clr{background:#ef4444;color:#fff}
+.btn-del{background:#f59e0b;color:#fff}
+</style>
+</head>
+<body>
+<div class="calc">
+<div class="display"><div class="expr" id="expr"></div><div class="result" id="result">0</div></div>
+<div class="mode-row">
+<button class="mode-btn active" onclick="setMode('rad')">RAD</button>
+<button class="mode-btn" onclick="setMode('deg')">DEG</button>
+</div>
+<div class="btns" id="btns"></div>
+</div>
+<script>
+var expr='',mode='rad',memory=0,lastWasEq=false,lastResult='';
+
+function setMode(m){mode=m;document.querySelectorAll('.mode-btn').forEach(function(b,i){b.className='mode-btn'+(i===(m==='rad'?0:1)?' active':'')})}
+
+function append(v){
+  if(lastWasEq&&!/[\+\-\*\/\^%]/.test(v)){expr='';lastWasEq=false}
+  expr+=v;render()
+}
+
+function appendFunc(fn){
+  if(lastWasEq){lastWasEq=false}
+  expr+=fn+'(';render()
+}
+
+function calc(){
+  try{
+    var e=expr;
+    // Replace constants
+    e=e.replace(/π/g,'Math.PI').replace(/e(?![xp])/g,'Math.E');
+    // Replace functions (sin/cos/tan/asin/acos/atan/log/ln/sqrt/cbrt)
+    var repls={sin:'Math.sin',cos:'Math.cos',tan:'Math.tan',asin:'Math.asin',acos:'Math.acos',atan:'Math.atan',log:'Math.log10',ln:'Math.log',sqrt:'Math.sqrt',cbrt:'Math.cbrt',abs:'Math.abs',ceil:'Math.ceil',floor:'Math.floor',round:'Math.round'};
+    for(var k in repls){e=e.replace(new RegExp(k+'\\(','g'),repls[k]+'(')}
+    // Convert deg to rad for trig functions
+    if(mode==='deg'){
+      e=e.replace(/Math\.(sin|cos|tan)\(/g,function(_,fn){return 'Math.'+fn+'(('});
+      e=e.replace(/Math\.(asin|acos|atan)\(/g,function(_,fn){return '(Math.'+fn+'('});
+      // Close the deg conversion: need to wrap in * Math.PI/180
+      // Simple approach: for output functions, multiply input; for inverse, multiply output
+      // Actually let's do a simpler approach
+    }
+    if(mode==='deg'){
+      // Pre-process: wrap trig inputs with deg2rad
+      // This is a simplified version - replace sin(...) → sin(deg2rad(...))
+      e=e.replace(/Math\.(sin|cos|tan)\(([^)]+)\)/g,function(_,fn,a){return 'Math.'+fn+'(('+a+')*Math.PI/180)'});
+      e=e.replace(/Math\.(asin|acos|atan)\(([^)]+)\)/g,function(_,fn,a){return '(Math.'+fn+'('+a+')*180/Math.PI)'});
+    }
+    // Replace ^ with **
+    e=e.replace(/\^/g,'**');
+    var r=Function('"use strict";return ('+e+')')();
+    if(typeof r==='number'&&!isFinite(r)){document.getElementById('result').textContent='错误';return}
+    lastResult=Number(r).toPrecision(12).replace(/\.?0+$/,'');
+    lastWasEq=true;
+    document.getElementById('result').textContent=lastResult;
+    document.getElementById('expr').textContent=expr+' =';
+  }catch(x){
+    document.getElementById('result').textContent='错误';
+  }
+}
+
+function clearAll(){expr='';lastWasEq=false;render();document.getElementById('result').textContent='0'}
+function del(){
+  if(expr.endsWith('(')){var i=expr.length-1;while(i>0&&expr[i-1]!=='('&&!/[+\-\*\/\^%]/.test(expr[i-1]))i--;expr=expr.substring(0,i)}
+  else expr=expr.slice(0,-1);
+  render()
+}
+function memRecall(){append(String(memory))}
+function memClear(){memory=0}
+function memPlus(){try{calc();memory+=parseFloat(lastResult||'0');render()}catch(e){}}
+function memMinus(){try{calc();memory-=parseFloat(lastResult||'0');render()}catch(e){}}
+
+function render(){
+  document.getElementById('expr').textContent=expr||' ';
+  document.getElementById('btns').innerHTML=renderBtns()
+}
+
+function renderBtns(){
+  return [
+    btn('MC','btn-func',memClear),btn('MR','btn-func',memRecall),btn('M+','btn-func',memPlus),btn('M−','btn-func',memMinus),btn('DEL','btn-del',del),
+    btn('AC','btn-clr',clearAll),btn('(','btn-func',function(){append('(')}),btn(')','btn-func',function(){append(')')}),btn('^','btn-op',function(){append('^')}),btn('÷','btn-op',function(){append('/')}),
+    btn('sin','btn-func',function(){appendFunc('sin')}),btn('7','btn-num',function(){append('7')}),btn('8','btn-num',function(){append('8')}),btn('9','btn-num',function(){append('9')}),btn('×','btn-op',function(){append('*')}),
+    btn('cos','btn-func',function(){appendFunc('cos')}),btn('4','btn-num',function(){append('4')}),btn('5','btn-num',function(){append('5')}),btn('6','btn-num',function(){append('6')}),btn('−','btn-op',function(){append('-')}),
+    btn('tan','btn-func',function(){appendFunc('tan')}),btn('1','btn-num',function(){append('1')}),btn('2','btn-num',function(){append('2')}),btn('3','btn-num',function(){append('3')}),btn('+','btn-op',function(){append('+')}),
+    btn('log','btn-func',function(){appendFunc('log')}),btn('0','btn-num',function(){append('0')}),btn('.','btn-num',function(){append('.')}),btn('π','btn-func',function(){append('π')}),btn('=','btn-eq',calc),
+    btn('ln','btn-func',function(){appendFunc('ln')}),btn('√','btn-func',function(){appendFunc('sqrt')}),btn('³√','btn-func',function(){appendFunc('cbrt')}),btn('|x|','btn-func',function(){appendFunc('abs')}),btn('','btn-num',function(){})
+  ].join('')
+}
+
+function btn(label,cls,fn){
+  return '<button class="'+cls+'" onclick="('+fn.toString()+')()">'+label+'</button>'
+}
+</script>
+</body>
+</html>`,
+    thumbnailGradient: "linear-gradient(135deg, #0f172a, #1e293b)",
+    createdAt: "2026-07-23T10:00:00Z",
+    description: "支持 sin/cos/tan/ln/log/√/π/幂运算/Memory 的科学计算器，可切换角度弧度",
+  },
+  {
+    id: "16",
+    title: "密码生成器",
+    author: "安全第一",
+    authorId: "user-006",
+    category: "生活",
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>密码生成器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:linear-gradient(135deg,#1e1b4b,#312e81);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.card{background:#fff;border-radius:24px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 25px 80px rgba(0,0,0,.25)}
+h2{font-size:20px;color:#1e1b4b;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+h2 .icon{font-size:24px}
+.sub{color:#6b7280;font-size:13px;margin-bottom:20px}
+.pw-box{background:#f3f4f6;border-radius:14px;padding:16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:56px}
+.pw-text{font-family:'Courier New',monospace;font-size:18px;font-weight:700;color:#1e1b4b;word-break:break-all;flex:1;user-select:all}
+.copy-btn{flex-shrink:0;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;background:#6366f1;color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:16px;transition:all .15s}
+.copy-btn:active{transform:scale(.93)}
+.copy-btn.copied{background:#10b981}
+.strength{margin-bottom:16px}
+.strength-bar{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;margin-bottom:4px}
+.strength-fill{height:100%;border-radius:3px;transition:all .3s}
+.strength-label{font-size:12px;color:#6b7280}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.setting{display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;min-height:36px}
+.setting input[type="checkbox"]{width:18px;height:18px;accent-color:#6366f1;cursor:pointer}
+.setting label{cursor:pointer;user-select:none}
+.length-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.length-row label{font-size:13px;color:#374151;flex-shrink:0}
+.length-row input[type="range"]{flex:1;accent-color:#6366f1}
+.length-row .len-val{font-size:14px;font-weight:700;color:#6366f1;min-width:28px;text-align:center}
+.gen-btn{width:100%;min-height:48px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;transition:all .15s}
+.gen-btn:active{transform:scale(.97)}
+.history{margin-top:16px}
+.history h3{font-size:13px;color:#6b7280;margin-bottom:8px}
+.history-list{max-height:120px;overflow-y:auto}
+.history-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f9fafb;border-radius:8px;margin-bottom:4px;font-size:12px;font-family:'Courier New',monospace;color:#374151}
+.history-item .copy-sm{background:none;border:none;color:#6366f1;cursor:pointer;font-size:12px;padding:4px 8px;border-radius:6px}
+.history-item .copy-sm:active{background:#eef2ff}
+</style>
+</head>
+<body>
+<div class="card">
+<h2><span class="icon">🔐</span>密码生成器</h2>
+<p class="sub">一次生成一个高强度随机密码</p>
+<div class="pw-box">
+<span class="pw-text" id="pw">点击生成</span>
+<button class="copy-btn" id="copyBtn" onclick="copyPw()">📋</button>
+</div>
+<div class="strength">
+<div class="strength-bar"><div class="strength-fill" id="bar" style="width:0%"></div></div>
+<span class="strength-label" id="label">—</span>
+</div>
+<div class="settings">
+<div class="setting"><input type="checkbox" id="upper" checked onchange="update()"><label for="upper">大写 A-Z</label></div>
+<div class="setting"><input type="checkbox" id="lower" checked onchange="update()"><label for="lower">小写 a-z</label></div>
+<div class="setting"><input type="checkbox" id="num" checked onchange="update()"><label for="num">数字 0-9</label></div>
+<div class="setting"><input type="checkbox" id="sym" onchange="update()"><label for="sym">符号 !@#$</label></div>
+</div>
+<div class="length-row">
+<label>长度</label>
+<input type="range" id="len" min="6" max="32" value="16" oninput="updateLen()">
+<span class="len-val" id="lenVal">16</span>
+</div>
+<button class="gen-btn" onclick="generate()">🎲 生成密码</button>
+<div class="history">
+<h3>📜 生成历史</h3>
+<div class="history-list" id="hist"></div>
+</div>
+</div>
+<script>
+var history=[];
+var chars={upper:'ABCDEFGHIJKLMNOPQRSTUVWXYZ',lower:'abcdefghijklmnopqrstuvwxyz',num:'0123456789',sym:'!@#$%^&*()-_=+[]{}|;:,.<>?'};
+
+function updateLen(){
+document.getElementById('lenVal').textContent=document.getElementById('len').value;
+generate()
+}
+
+function update(){generate()}
+
+function generate(){
+var pool='';
+if(document.getElementById('upper').checked)pool+=chars.upper;
+if(document.getElementById('lower').checked)pool+=chars.lower;
+if(document.getElementById('num').checked)pool+=chars.num;
+if(document.getElementById('sym').checked)pool+=chars.sym;
+if(!pool){document.getElementById('pw').textContent='请选择字符类型';return}
+var len=parseInt(document.getElementById('len').value);
+var pw='';
+var arr=new Uint32Array(len);
+if(window.crypto&&crypto.getRandomValues){crypto.getRandomValues(arr)}else{for(var i=0;i<len;i++)arr[i]=Math.floor(Math.random()*0xFFFFFFFF)}
+for(var i=0;i<len;i++)pw+=pool[arr[i]%pool.length];
+document.getElementById('pw').textContent=pw;
+// Strength
+var score=0;
+if(pool.length>=26)score++;
+if(pool.length>=52)score++;
+if(pool.length>=62)score++;
+if(pool.length>=70)score++;
+if(len>=12)score++;if(len>=16)score++;if(len>=24)score++;
+var pct=Math.min(100,Math.round(score/7*100));
+var bar=document.getElementById('bar');
+bar.style.width=pct+'%';
+if(pct<=30){bar.style.background='#ef4444';document.getElementById('label').textContent='弱 — 容易被破解'}
+else if(pct<=60){bar.style.background='#f59e0b';document.getElementById('label').textContent='中等 — 还可以更强'}
+else if(pct<=85){bar.style.background='#6366f1';document.getElementById('label').textContent='强 — 足够安全'}
+else {bar.style.background='#10b981';document.getElementById('label').textContent='极强 — 非常安全'}
+// History
+history.unshift(pw);
+if(history.length>10)history.pop();
+renderHistory()
+}
+
+function copyPw(){
+var pw=document.getElementById('pw').textContent;
+if(pw==='点击生成')return;
+navigator.clipboard.writeText(pw).then(function(){
+var btn=document.getElementById('copyBtn');
+btn.textContent='✓';btn.classList.add('copied');
+setTimeout(function(){btn.textContent='📋';btn.classList.remove('copied')},1500)
+}).catch(function(){})
+}
+
+function renderHistory(){
+var h=document.getElementById('hist');
+h.innerHTML=history.map(function(p,i){return '<div class="history-item"><span>'+p.substring(0,24)+(p.length>24?'…':'')+'</span><button class="copy-sm" onclick="copyHistory('+i+')">复制</button></div>'}).join('')
+}
+function copyHistory(i){
+navigator.clipboard.writeText(history[i]).catch(function(){})
+}
+
+generate()
+</script>
+</body>
+</html>`,
+    thumbnailGradient: "linear-gradient(135deg, #1e1b4b, #312e81)",
+    createdAt: "2026-07-23T11:00:00Z",
+    description: "一键生成高强度随机密码，支持大小写数字符号组合，显示密码强度评级",
+  },
 ];
 
 // Pre-seeded favorites for mock mode
