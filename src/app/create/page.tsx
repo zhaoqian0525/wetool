@@ -172,7 +172,6 @@ function CreatePageInner() {
 
   const [code, setCode] = useState(DEFAULT_CODE);
   const [versions, setVersions] = useState<Version[]>([]);
-  const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor");
   const [copied, setCopied] = useState(false);
   const [savedIndicator, setSavedIndicator] = useState(false);
 
@@ -189,6 +188,9 @@ function CreatePageInner() {
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState("");
   const [codeWarnings, setCodeWarnings] = useState<{ level: string; label: string; count: number }[]>([]);
+
+  // Fullscreen preview
+  const [fullscreenPreview, setFullscreenPreview] = useState(false);
 
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -351,7 +353,6 @@ function CreatePageInner() {
     if (!user) return;
     setPublishOpen(true);
     setPublishError("");
-    // 扫描代码中的危险调用，用于发布前告警
     const result = scanDangerousCode(code);
     setCodeWarnings(result.warnings);
   };
@@ -367,26 +368,72 @@ function CreatePageInner() {
     setCode(DEFAULT_CODE);
   }, []);
 
-  // Publish button: show login prompt if not authenticated
-  const publishButton = user ? (
+  // Publish button
+  const publishBtn = user ? (
     <button
       onClick={openPublish}
-      className="px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+      className="min-w-[44px] min-h-[44px] flex items-center justify-center px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
     >
-      发布工具
+      发布
     </button>
   ) : (
     <Link
       href="/auth"
-      className="px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+      className="min-w-[44px] min-h-[44px] flex items-center justify-center px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
     >
       登录后发布
     </Link>
   );
 
+  // Mobile toolbar actions (simplified, passed to Navbar mobile top bar)
+  const mobileActions = (
+    <>
+      <button
+        onClick={saveSnapshot}
+        className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-2.5 py-1 text-xs rounded-lg transition-all font-medium ${
+          savedIndicator
+            ? "bg-green-500 text-white"
+            : "bg-amber-500 text-white hover:bg-amber-600"
+        }`}
+      >
+        {savedIndicator ? "已保存" : "保存"}
+      </button>
+      {publishBtn}
+    </>
+  );
+
+  // Desktop toolbar actions
+  const desktopActions = (
+    <div className="flex items-center gap-2">
+      <button
+        onClick={handleReset}
+        className="min-w-[44px] min-h-[44px] flex items-center px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        重置
+      </button>
+      <button
+        onClick={handleCopyCode}
+        className="min-w-[44px] min-h-[44px] flex items-center px-3 py-1.5 text-sm bg-gray-700 text-gray-100 rounded-lg hover:bg-gray-600 transition-colors"
+      >
+        {copied ? "已复制 ✓" : "复制代码"}
+      </button>
+      <button
+        onClick={saveSnapshot}
+        className={`min-w-[44px] min-h-[44px] flex items-center px-3 py-1.5 text-sm rounded-lg transition-all font-medium ${
+          savedIndicator
+            ? "bg-green-500 text-white"
+            : "bg-amber-500 text-white hover:bg-amber-600"
+        }`}
+      >
+        {savedIndicator ? "已保存 ✓" : "保存快照"}
+      </button>
+      {publishBtn}
+    </div>
+  );
+
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
-      {/* Navbar */}
+    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
+      {/* Navbar: desktop top bar + mobile top bar + mobile bottom tabs */}
       <Navbar
         children={
           <div className="flex items-center gap-2">
@@ -398,89 +445,38 @@ function CreatePageInner() {
             )}
           </div>
         }
-        actions={
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleReset}
-              className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              重置
-            </button>
-            <button
-              onClick={handleCopyCode}
-              className="px-3 py-1.5 text-sm bg-gray-700 text-gray-100 rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              {copied ? "已复制 ✓" : "复制代码"}
-            </button>
-            <button
-              onClick={saveSnapshot}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-all font-medium ${
-                savedIndicator
-                  ? "bg-green-500 text-white"
-                  : "bg-amber-500 text-white hover:bg-amber-600"
-              }`}
-            >
-              {savedIndicator ? "已保存 ✓" : "保存快照"}
-            </button>
-            {publishButton}
-          </div>
-        }
+        actions={desktopActions}
+        mobileActions={mobileActions}
       />
 
-      {/* Mobile Tab Switcher */}
-      <div className="flex-shrink-0 flex lg:hidden border-b border-gray-200 bg-white">
-        <button
-          onClick={() => setMobileTab("editor")}
-          className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
-            mobileTab === "editor"
-              ? "text-indigo-600 border-b-2 border-indigo-600"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          编辑代码
-        </button>
-        <button
-          onClick={() => setMobileTab("preview")}
-          className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
-            mobileTab === "preview"
-              ? "text-indigo-600 border-b-2 border-indigo-600"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          实时预览
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-        {/* Left Panel */}
-        <div
-          className={`flex-1 flex flex-col min-h-0 bg-gray-900 ${
-            mobileTab === "editor" ? "flex" : "hidden"
-          } lg:flex`}
-        >
-          <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+      {/* Main Content: stacked on mobile, side-by-side on desktop */}
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 pb-14 lg:pb-0">
+        {/* === Editor Panel (top on mobile, left on desktop) === */}
+        <div className="flex-1 flex flex-col min-h-0 bg-gray-900 lg:w-1/2">
+          {/* Editor toolbar */}
+          <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-800 border-b border-gray-700">
             <div className="flex items-center gap-2">
               <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-red-500/80" />
+                <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-yellow-500/80" />
+                <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-green-500/80" />
               </div>
-              <span className="text-xs text-gray-400 ml-2">HTML</span>
+              <span className="text-xs text-gray-400 ml-1.5">HTML</span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-500 hidden sm:inline">Ctrl+S 保存快照</span>
-              <span className="text-xs text-gray-500">{code.length.toLocaleString()} 字符</span>
+            <div className="flex items-center gap-2 lg:gap-3">
+              <span className="text-[10px] lg:text-xs text-gray-500 hidden sm:inline">Ctrl+S 保存快照</span>
+              <span className="text-[10px] lg:text-xs text-gray-500">{code.length.toLocaleString()} 字符</span>
             </div>
           </div>
 
+          {/* Code textarea */}
           <textarea
             ref={editorRef}
             value={code}
             onChange={(e) => setCode(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 w-full bg-gray-900 text-gray-100 font-mono text-sm leading-relaxed p-4 resize-none outline-none"
-            style={{ tabSize: 2, MozTabSize: 2 }}
+            className="flex-1 w-full bg-gray-900 text-gray-100 font-mono text-sm lg:text-sm leading-relaxed p-3 lg:p-4 resize-none outline-none"
+            style={{ tabSize: 2, MozTabSize: 2, fontSize: "16px" }}
             spellCheck={false}
             placeholder="将 AI 生成的 HTML 代码粘贴到这里..."
             aria-label="代码编辑器"
@@ -489,16 +485,16 @@ function CreatePageInner() {
           {/* Version Timeline */}
           {versions.length > 0 && (
             <div className="flex-shrink-0 border-t border-gray-700">
-              <div className="flex items-center justify-between px-4 py-2 bg-gray-800/50">
-                <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">版本快照</span>
-                <span className="text-xs text-gray-500">{versions.length} 个版本</span>
+              <div className="flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-800/50">
+                <span className="text-[10px] lg:text-xs font-medium text-gray-400 uppercase tracking-wider">版本快照</span>
+                <span className="text-[10px] lg:text-xs text-gray-500">{versions.length} 个版本</span>
               </div>
-              <div ref={timelineRef} className="flex gap-2 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: "thin" }}>
+              <div ref={timelineRef} className="flex gap-2 px-3 lg:px-4 pb-2.5 lg:pb-3 overflow-x-auto" style={{ scrollbarWidth: "thin" }}>
                 {versions.map((v, idx) => (
                   <button
                     key={v.id}
                     onClick={() => restoreVersion(v)}
-                    className="flex-shrink-0 group flex flex-col items-center gap-1.5 w-[72px] focus:outline-none"
+                    className="flex-shrink-0 group flex flex-col items-center gap-1 w-[60px] lg:w-[72px] focus:outline-none min-h-[44px] justify-center"
                     title={`恢复至 ${formatTime(v.timestamp)}`}
                   >
                     <div
@@ -506,34 +502,34 @@ function CreatePageInner() {
                       style={{ background: THUMBNAIL_GRADIENTS[v.gradientIndex] }}
                     >
                       <div className="absolute inset-0 flex flex-col items-center justify-center opacity-30">
-                        <div className="w-8 h-1.5 rounded-full bg-white mb-1" />
-                        <div className="w-10 h-1 rounded-full bg-white mb-1" />
-                        <div className="w-6 h-1 rounded-full bg-white" />
+                        <div className="w-6 lg:w-8 h-1 lg:h-1.5 rounded-full bg-white mb-0.5" />
+                        <div className="w-8 lg:w-10 h-0.5 lg:h-1 rounded-full bg-white mb-0.5" />
+                        <div className="w-5 lg:w-6 h-0.5 lg:h-1 rounded-full bg-white" />
                       </div>
-                      <div className="absolute top-1 right-1 bg-black/40 text-white text-[10px] px-1 rounded font-mono">#{idx + 1}</div>
+                      <div className="absolute top-1 right-1 bg-black/40 text-white text-[9px] lg:text-[10px] px-1 rounded font-mono">#{idx + 1}</div>
                     </div>
-                    <span className="text-[11px] text-gray-400 group-hover:text-gray-200 text-center leading-tight">{formatTime(v.timestamp)}</span>
+                    <span className="text-[10px] lg:text-[11px] text-gray-400 group-hover:text-gray-200 text-center leading-tight">{formatTime(v.timestamp)}</span>
                   </button>
                 ))}
                 <div className="flex-shrink-0 flex items-center">
-                  <span className="text-xs text-gray-600 whitespace-nowrap">← 向左滑动</span>
+                  <span className="text-[10px] lg:text-xs text-gray-600 whitespace-nowrap">← 向左滑动</span>
                 </div>
               </div>
             </div>
           )}
 
           {versions.length === 0 && (
-            <div className="flex-shrink-0 border-t border-gray-700 px-4 py-2.5 flex items-center gap-2">
-              <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex-shrink-0 border-t border-gray-700 px-3 lg:px-4 py-2 flex items-center gap-2">
+              <svg className="w-3 h-3 lg:w-3.5 lg:h-3.5 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-xs text-gray-500">点击「保存快照」或按 Ctrl+S 保存当前版本</span>
+              <span className="text-[10px] lg:text-xs text-gray-500">点击「保存快照」或按 Ctrl+S 保存当前版本</span>
             </div>
           )}
 
           {/* Adapting source banner */}
           {sourceToolId && sourceToolTitle && (
-            <div className="flex-shrink-0 border-t border-gray-700 bg-purple-900/30 px-4 py-2 flex items-center gap-2">
+            <div className="flex-shrink-0 border-t border-gray-700 bg-purple-900/30 px-3 lg:px-4 py-2 flex items-center gap-2">
               <span className="text-xs">✨</span>
               <span className="text-xs text-gray-300">
                 正在改编：<span className="text-purple-300 font-medium">{sourceToolTitle}</span>
@@ -542,43 +538,85 @@ function CreatePageInner() {
           )}
         </div>
 
-        {/* Right Panel */}
-        <div
-          className={`flex-1 flex items-center justify-center bg-gray-200 p-4 min-h-0 ${
-            mobileTab === "preview" ? "flex" : "hidden"
-          } lg:flex`}
-        >
-          <div className="relative flex flex-col items-center">
+        {/* === Preview Panel (bottom on mobile, right on desktop) === */}
+        <div className="flex-1 flex flex-col items-center justify-center bg-gray-200 p-3 lg:p-4 min-h-0 lg:w-1/2">
+          <div className="relative flex flex-col items-center flex-1 w-full justify-center">
+            {/* Desktop: phone frame */}
             <div
-              className="relative bg-gray-800 rounded-[36px] p-3 shadow-2xl"
-              style={{
-                width: "calc(375px + 24px)",
-                height: "calc(667px + 64px)",
-                maxWidth: "calc(100vw - 32px)",
-                maxHeight: "calc(100vh - 200px)",
-              }}
+              className="hidden lg:flex flex-col items-center"
             >
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-b-2xl z-10" />
-              <div className="w-full h-full overflow-hidden rounded-[24px] bg-white relative flex flex-col">
-                <div className="h-5 flex-shrink-0" />
+              <div
+                className="relative bg-gray-800 rounded-[36px] p-3 shadow-2xl"
+                style={{
+                  width: "calc(375px + 24px)",
+                  height: "calc(667px + 64px)",
+                  maxHeight: "calc(100vh - 200px)",
+                }}
+              >
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-b-2xl z-10" />
+                <div className="w-full h-full overflow-hidden rounded-[24px] bg-white relative flex flex-col">
+                  <div className="h-5 flex-shrink-0" />
+                  <iframe
+                    srcDoc={wrapSecureSrcDoc(code)}
+                    title="工具预览"
+                    className="flex-1 w-full border-0"
+                    sandbox={IFRAME_SANDBOX}
+                  />
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-gray-400 text-center">手机预览 · 375 × 667</p>
+            </div>
+
+            {/* Mobile: simple iframe + fullscreen button */}
+            <div className="lg:hidden flex flex-col w-full flex-1 min-h-0">
+              <div className="flex-1 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200 min-h-0">
                 <iframe
                   srcDoc={wrapSecureSrcDoc(code)}
                   title="工具预览"
-                  className="flex-1 w-full border-0"
+                  className="w-full h-full border-0"
                   sandbox={IFRAME_SANDBOX}
                 />
               </div>
+              <button
+                onClick={() => setFullscreenPreview(true)}
+                className="mt-2 flex-shrink-0 w-full min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+                全屏预览
+              </button>
             </div>
-            <p className="mt-4 text-xs text-gray-400 text-center">手机预览 · 375 × 667</p>
           </div>
         </div>
       </div>
 
+      {/* Fullscreen preview overlay (mobile) */}
+      {fullscreenPreview && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white shadow-sm flex-shrink-0">
+            <span className="text-sm font-medium text-gray-800 truncate">预览工具效果</span>
+            <button
+              onClick={() => setFullscreenPreview(false)}
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              ✕ 退出预览
+            </button>
+          </div>
+          <iframe
+            srcDoc={wrapSecureSrcDoc(code)}
+            title="全屏预览"
+            className="flex-1 w-full border-0"
+            sandbox={IFRAME_SANDBOX}
+          />
+        </div>
+      )}
+
       {/* Publish Modal */}
       {publishOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="p-6">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="p-5 lg:p-6 overflow-y-auto">
               <h2 className="text-lg font-bold text-gray-900 mb-4">发布工具</h2>
 
               <div className="space-y-4">
@@ -589,7 +627,8 @@ function CreatePageInner() {
                     value={publishTitle}
                     onChange={(e) => setPublishTitle(e.target.value)}
                     placeholder="给你的工具取个名字"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    style={{ fontSize: "16px" }}
                     autoFocus
                   />
                 </div>
@@ -601,7 +640,8 @@ function CreatePageInner() {
                     value={publishDesc}
                     onChange={(e) => setPublishDesc(e.target.value)}
                     placeholder="简单说说这个工具能做什么"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    style={{ fontSize: "16px" }}
                   />
                 </div>
 
@@ -611,7 +651,8 @@ function CreatePageInner() {
                   <select
                     value={publishCategory}
                     onChange={(e) => setPublishCategory(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                    style={{ fontSize: "16px" }}
                   >
                     {CATEGORIES.filter((c) => c.key !== "全部").map((cat) => (
                       <option key={cat.key} value={cat.key}>
@@ -623,14 +664,14 @@ function CreatePageInner() {
 
                 {/* Error */}
                 {publishError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
                     {publishError}
                   </div>
                 )}
 
                 {/* Code safety warnings */}
                 {codeWarnings.length > 0 && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
                     <p className="font-medium text-amber-800 mb-2">
                       ⚠️ 代码安全提示
                     </p>
@@ -653,7 +694,7 @@ function CreatePageInner() {
 
                 {/* Publish info */}
                 {!isSupabaseConfigured() && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-600">
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-600">
                     当前为演示模式，工具将保存到本地浏览器。配置 Supabase 后可发布到云端。
                   </div>
                 )}
@@ -661,17 +702,17 @@ function CreatePageInner() {
             </div>
 
             {/* Footer */}
-            <div className="flex border-t border-gray-100">
+            <div className="flex border-t border-gray-100 flex-shrink-0">
               <button
                 onClick={() => setPublishOpen(false)}
-                className="flex-1 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors font-medium"
+                className="flex-1 min-h-[48px] py-3 text-base text-gray-500 hover:bg-gray-50 transition-colors font-medium"
               >
                 取消
               </button>
               <button
                 onClick={handlePublish}
                 disabled={publishing}
-                className="flex-1 py-3 text-sm bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium"
+                className="flex-1 min-h-[48px] py-3 text-base bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium"
               >
                 {publishing ? "发布中..." : "确认发布"}
               </button>

@@ -50,7 +50,7 @@ export default function HomePage() {
   }, [tools, activeCategory, search, sortBy, favoriteCounts]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       <Navbar
         children={
           <span className="hidden sm:inline text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
@@ -60,7 +60,7 @@ export default function HomePage() {
         actions={
           <Link
             href="/create"
-            className="px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            className="min-w-[44px] min-h-[44px] flex items-center px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium"
           >
             开始创作
           </Link>
@@ -68,27 +68,31 @@ export default function HomePage() {
       />
 
       {/* Hero / Search / Category Filter */}
-      <section className="max-w-6xl mx-auto px-4 pt-8 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-3 sm:pb-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
           发现实用小工具
         </h1>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-xs sm:text-sm text-gray-500 mb-4">
           像逛街一样，逛逛大家用 AI 做的好东西
         </p>
 
         {/* Search bar */}
         <div className="relative mb-4">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
           </svg>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="搜索工具名称、作者或描述..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50 transition-all"
+            className="w-full pl-10 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-base focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50 transition-all"
+            style={{ fontSize: "16px" }}
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full"
+            >
               ✕
             </button>
           )}
@@ -101,7 +105,7 @@ export default function HomePage() {
               <button
                 key={cat.key}
                 onClick={() => setActiveCategory(cat.key)}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                className={`flex-shrink-0 min-h-[44px] flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   activeCategory === cat.key
                     ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
                     : "bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200"
@@ -115,7 +119,7 @@ export default function HomePage() {
           <div className="flex gap-1 flex-shrink-0">
             <button
               onClick={() => setSortBy("latest")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 rounded-lg text-xs font-medium transition-all ${
                 sortBy === "latest" ? "bg-indigo-50 text-indigo-600" : "text-gray-400 hover:text-gray-600"
               }`}
             >
@@ -123,7 +127,7 @@ export default function HomePage() {
             </button>
             <button
               onClick={() => setSortBy("popular")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 rounded-lg text-xs font-medium transition-all ${
                 sortBy === "popular" ? "bg-indigo-50 text-indigo-600" : "text-gray-400 hover:text-gray-600"
               }`}
             >
@@ -134,7 +138,7 @@ export default function HomePage() {
       </section>
 
       {/* Tool Grid */}
-      <section className="max-w-6xl mx-auto px-4 pb-16">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-20 lg:pb-16">
         {loading ? (
           <LoadingSkeleton />
         ) : filtered.length === 0 ? (
@@ -142,7 +146,7 @@ export default function HomePage() {
         ) : (
           <>
             <p className="text-xs text-gray-400 mb-3">{filtered.length} 个工具</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {filtered.map((tool) => (
                 <ToolCard key={tool.id} tool={tool} favoriteCount={favoriteCounts[tool.id]} />
               ))}
@@ -152,7 +156,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="max-w-6xl mx-auto px-4 pb-12 text-center">
+      <footer className="max-w-6xl mx-auto px-4 pb-8 lg:pb-12 text-center">
         <p className="text-xs text-gray-400">
           微坞 WeTool · 像发朋友圈一样分享你做的 AI 小工具
         </p>
@@ -169,7 +173,7 @@ function ToolCard({ tool, favoriteCount }: { tool: Tool; favoriteCount?: number 
   return (
     <Link
       href={`/tool/${tool.id}`}
-      className="group block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-indigo-200 transition-all duration-200"
+      className="group block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-indigo-200 transition-all duration-200"
     >
       {/* Thumbnail */}
       <div
@@ -220,7 +224,7 @@ function LoadingSkeleton() {
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse"
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-pulse"
         >
           <div className="aspect-[4/3] bg-gray-200" />
           <div className="p-3 space-y-2">
@@ -251,7 +255,7 @@ function EmptyState({ category, search }: { category: string; search: string }) 
       </p>
       <Link
         href="/create"
-        className="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+        className="min-h-[44px] flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
       >
         开始创作
       </Link>

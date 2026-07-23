@@ -29,7 +29,7 @@ export default function UserProfilePage() {
     creations[0]?.author ?? favs[0]?.author ?? id.slice(0, 8);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       <Navbar
         children={
           <Link
@@ -44,14 +44,14 @@ export default function UserProfilePage() {
         }
       />
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Profile header */}
         <div className="flex items-center gap-4 mb-8">
-          <div className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xl sm:text-2xl font-bold flex-shrink-0">
             {displayName[0].toUpperCase()}
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">@{displayName}</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900">@{displayName}</h1>
             <p className="text-sm text-gray-500">
               {creations.length} 个工具 · {favs.length} 个收藏
             </p>
@@ -59,10 +59,10 @@ export default function UserProfilePage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 border border-gray-200 w-fit">
+        <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 border border-gray-200 w-auto inline-flex">
           <button
             onClick={() => setActiveTab("creations")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`min-h-[44px] flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               activeTab === "creations"
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "text-gray-600 hover:text-gray-900"
@@ -72,7 +72,7 @@ export default function UserProfilePage() {
           </button>
           <button
             onClick={() => setActiveTab("favorites")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`min-h-[44px] flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               activeTab === "favorites"
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "text-gray-600 hover:text-gray-900"
@@ -97,14 +97,14 @@ export default function UserProfilePage() {
               activeTab === "creations" ? (
                 <Link
                   href="/create"
-                  className="inline-block mt-2 px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                  className="inline-block mt-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
                 >
                   开始创作
                 </Link>
               ) : (
                 <Link
                   href="/"
-                  className="inline-block mt-2 px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                  className="inline-block mt-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
                 >
                   去广场逛逛
                 </Link>
@@ -144,7 +144,7 @@ function ToolGrid({
         <Link
           key={tool.id}
           href={`/tool/${tool.id}`}
-          className="group block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-indigo-200 transition-all duration-200"
+          className="group block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-indigo-200 transition-all duration-200"
         >
           {/* Thumbnail */}
           <div
@@ -186,7 +186,7 @@ function LoadingSkeleton() {
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse"
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-pulse"
         >
           <div className="aspect-[4/3] bg-gray-200" />
           <div className="p-3 space-y-2">

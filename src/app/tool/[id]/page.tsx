@@ -131,7 +131,7 @@ export default function ToolDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pb-20 lg:pb-0">
         <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
       </div>
     );
@@ -139,7 +139,7 @@ export default function ToolDetailPage() {
 
   if (!tool) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
         <Navbar />
         <div className="flex flex-col items-center justify-center px-4 py-20">
           <div className="text-5xl mb-4">🔍</div>
@@ -147,7 +147,7 @@ export default function ToolDetailPage() {
           <p className="text-sm text-gray-500 mb-6">这个链接可能已经失效，或工具已被作者删除</p>
           <Link
             href="/"
-            className="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+            className="min-h-[44px] flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
           >
             返回广场
           </Link>
@@ -157,7 +157,7 @@ export default function ToolDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       <Navbar
         children={
           <Link
@@ -172,13 +172,13 @@ export default function ToolDetailPage() {
         }
       />
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Tool Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <span className="inline-block text-xs font-medium text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full mb-3">
             {tool.category}
           </span>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{tool.title}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{tool.title}</h1>
           {tool.description && (
             <p className="text-sm text-gray-500 mb-4">{tool.description}</p>
           )}
@@ -277,12 +277,12 @@ export default function ToolDetailPage() {
           </div>
 
           {/* Actions sidebar */}
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 space-y-3 sm:space-y-4">
             <button
               onClick={() => setFullscreen(true)}
-              className="w-full py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors"
+              className="w-full min-h-[48px] py-3 bg-indigo-600 text-white rounded-xl text-base font-medium hover:bg-indigo-700 transition-colors"
             >
-              📱 打开使用
+              打开使用
             </button>
 
             <div className="flex gap-2">
@@ -290,7 +290,7 @@ export default function ToolDetailPage() {
                 <button
                   onClick={handleFavorite}
                   disabled={favoriting}
-                  className={`flex-1 py-2.5 border rounded-xl text-sm font-medium transition-colors ${
+                  className={`flex-1 min-h-[44px] py-2.5 border rounded-xl text-sm font-medium transition-colors ${
                     favorited
                       ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
                       : "border-gray-200 text-gray-700 hover:bg-gray-50"
@@ -301,14 +301,14 @@ export default function ToolDetailPage() {
               ) : (
                 <Link
                   href="/auth"
-                  className="flex-1 py-2.5 border border-gray-200 text-gray-400 rounded-xl text-sm font-medium text-center hover:bg-gray-50 transition-colors"
+                  className="flex-1 min-h-[44px] flex items-center justify-center py-2.5 border border-gray-200 text-gray-400 rounded-xl text-sm font-medium text-center hover:bg-gray-50 transition-colors"
                 >
                   登录后收藏
                 </Link>
               )}
               <button
                 onClick={handleShare}
-                className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 min-h-[44px] py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 {shareCopied ? "✓ 链接已复制" : "🔗 分享"}
               </button>
@@ -316,7 +316,7 @@ export default function ToolDetailPage() {
 
             <Link
               href={`/create?source_tool_id=${tool.id}`}
-              className="block w-full py-2.5 border border-indigo-200 text-indigo-600 rounded-xl text-sm font-medium text-center hover:bg-indigo-50 transition-colors"
+              className="block w-full min-h-[44px] flex items-center justify-center py-2.5 border border-indigo-200 text-indigo-600 rounded-xl text-sm font-medium text-center hover:bg-indigo-50 transition-colors"
             >
               ✨ 改编这个工具
             </Link>
@@ -351,7 +351,7 @@ export default function ToolDetailPage() {
                 <Link
                   key={rt.id}
                   href={`/tool/${rt.id}`}
-                  className="group block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:border-indigo-200 transition-all"
+                  className="group block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-indigo-200 transition-all"
                 >
                   <div className="relative aspect-[4/3] flex items-center justify-center overflow-hidden" style={{ background: rt.thumbnailGradient }}>
                     <span className="text-white font-bold text-xs text-center drop-shadow-md line-clamp-2 px-2">{rt.title}</span>
@@ -411,14 +411,14 @@ export default function ToolDetailPage() {
 
           {/* Write review */}
           {user ? (
-            <div className="bg-white rounded-xl p-5 mb-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-2xl p-4 sm:p-5 mb-6 shadow-sm border border-gray-100">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">写评价</h3>
               <div className="flex items-center gap-1 mb-3">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     onClick={() => { setNewRating(star); setReviewError(""); }}
-                    className={`text-2xl transition-colors ${star <= newRating ? "text-yellow-400" : "text-gray-200"} hover:text-yellow-400`}
+                    className={`min-w-[44px] min-h-[44px] flex items-center justify-center text-2xl transition-colors ${star <= newRating ? "text-yellow-400" : "text-gray-200"} hover:text-yellow-400`}
                   >
                     ★
                   </button>
@@ -433,7 +433,8 @@ export default function ToolDetailPage() {
                 value={newContent}
                 onChange={(e) => { setNewContent(e.target.value); setReviewError(""); }}
                 placeholder="分享你的使用体验..."
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50"
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-base resize-none focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50"
+                style={{ fontSize: "16px" }}
                 rows={3}
               />
               {reviewError && (
@@ -442,13 +443,13 @@ export default function ToolDetailPage() {
               <button
                 onClick={handleSubmitReview}
                 disabled={submitting}
-                className="mt-3 px-5 py-2 bg-indigo-600 text-white text-sm rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                className="mt-3 min-h-[44px] px-5 py-2 bg-indigo-600 text-white text-sm rounded-xl font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
               >
                 {submitting ? "提交中..." : "发布评价"}
               </button>
             </div>
           ) : (
-            <div className="bg-gray-50 rounded-xl p-5 mb-6 text-center">
+            <div className="bg-gray-50 rounded-2xl p-5 mb-6 text-center">
               <p className="text-sm text-gray-500">
                 <Link href="/auth" className="text-indigo-600 hover:underline font-medium">登录</Link>后即可发表评价
               </p>
@@ -459,7 +460,7 @@ export default function ToolDetailPage() {
           {reviews.length > 0 ? (
             <div className="space-y-4">
               {reviews.map((review) => (
-                <div key={review.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div key={review.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">

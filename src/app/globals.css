@@ -7,4 +7,52 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile safe-area bottom spacer for fixed bottom bars */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Ensure all touch targets are at least 44x44px on mobile */
+@media (max-width: 1023px) {
+  /* 输入框最小字号 16px，防止 iOS 缩放 */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input:not([type]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* 确保可点击元素最小触控区域 */
+  a:not([class*="min-h-"]),
+  button:not([class*="min-h-"]) {
+    min-height: 44px;
+  }
+}
+
+/* Custom scrollbar for version timeline */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.3);
+  border-radius: 2px;
+}
+
+/* Hide scrollbar for category tabs */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
