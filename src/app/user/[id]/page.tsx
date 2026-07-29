@@ -6,7 +6,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
-import { getPinnedTools, togglePinnedTool, fetchToolsByUser, fetchTools, type Tool } from "@/lib/data";
+import { getPinnedTools, togglePinnedTool, fetchToolsByUser, fetchTools, fetchUserLikedTools, type Tool } from "@/lib/data";
 
 export default function UserPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +17,7 @@ export default function UserPage() {
   const [pinned, setPinned] = useState<string[]>([]);
   const [allTools, setAllTools] = useState<Tool[]>([]);
   const [myTools, setMyTools] = useState<Tool[]>([]);
+  const [likedTools, setLikedTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,9 +27,11 @@ export default function UserPage() {
     Promise.all([
       fetchToolsByUser(id),
       fetchTools(),
-    ]).then(([userTools, all]) => {
+      fetchUserLikedTools(id),
+    ]).then(([userTools, all, liked]) => {
       setMyTools(userTools);
       setAllTools(all);
+      setLikedTools(liked);
       setLoading(false);
     }).catch(() => { setLoading(false); });
   }, [id]);
@@ -124,6 +127,36 @@ export default function UserPage() {
                 ))}
               </div>
             )}
+          </section>
+        )}
+
+        {/* 赞过的工具 */}
+        {likedTools.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <span>❤️</span>{isSelf ? "我赞过的工具" : "赞过的工具"}
+              <span className="text-xs font-normal text-gray-400">({likedTools.length} 个)</span>
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {likedTools.map((t) => (
+                <Link
+                  key={t.id}
+                  href={`/tool/${t.id}`}
+                  className="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                >
+                  <div
+                    className="aspect-[4/3] flex items-center justify-center"
+                    style={{ background: t.thumbnailGradient || "linear-gradient(135deg,#4f46e5,#7c3aed)" }}
+                  >
+                    <span className="text-2xl">{t.title?.charAt(0) || "🛠"}</span>
+                  </div>
+                  <div className="p-2.5">
+                    <p className="text-xs font-medium text-gray-800 truncate">{t.title}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{t.category}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </section>
         )}
 

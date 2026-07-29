@@ -11,7 +11,7 @@ import { ToolPageErrorBoundary } from "@/components/ToolPageErrorBoundary";
 import { ToolHistoryDrawer } from "@/components/ToolHistoryDrawer";
 import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
-import { fetchToolById, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, togglePinnedTool, isPinned, type Tool, type Review, type Visibility } from "@/lib/data";
+import { fetchToolById, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, togglePinnedTool, isPinned, toggleLike, fetchUserLikes, fetchLikeCount, type Tool, type Review, type LikeTargetType, type Visibility } from "@/lib/data";
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
 
 export default function ToolDetailPage() {
@@ -39,6 +39,10 @@ export default function ToolDetailPage() {
   }, []);
   const [pinned, setPinned] = useState(false);
   const [viewCount, setViewCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(0);
+  const [liked, setLiked] = useState(false);
+  const [liking, setLiking] = useState(false);
+  const [reviewLikes, setReviewLikes] = useState<Set<string>>(new Set());
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -103,6 +107,12 @@ export default function ToolDetailPage() {
       }
 
       setReviews(revs);
+      // 加载评论点赞状态
+      if (user?.id && revs.length > 0) {
+        fetchUserLikes(user.id, "review", revs.map(r => r.id)).then(s => {
+          if (!cancelled) setReviewLikes(s);
+        });
+      }
       setAvgRating(avg);
       setLoading(false);
     }
@@ -116,6 +126,9 @@ export default function ToolDetailPage() {
     });
     if (user?.id) {
       setPinned(isPinned(user.id, id));
+      // 加载点赞状态
+      fetchLikeCount("tool", id).then(c => { if (!cancelled) setLikeCount(c); });
+      fetchUserLikes(user.id, "tool", [id]).then(s => { if (!cancelled) setLiked(s.has(id)); });
     }
 
     return () => { cancelled = true; };
@@ -557,21 +570,42 @@ export default function ToolDetailPage() {
         <div className="flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
           {/* Action bar — compact row above iframe */}
           <div className="flex items-center gap-2 pb-3 flex-wrap">
-            {user && (
-              <button
-                onClick={() => {
-                  const added = togglePinnedTool(user.id, id);
-                  setPinned(added);
-                  toast.success(added ? "已添加到常用" : "已取消常用");
-                }}
-                className={`inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border rounded-lg text-xs font-medium transition-colors ${
-                  pinned ? "bg-indigo-50 border-indigo-200 text-indigo-600" : "border-gray-200 text-gray-400 hover:bg-gray-50"
-                }`}
-              >
-                📌 {pinned ? "已常用" : "添加到常用"}
-              </button>
-            )}
-            {!user && (
+            {user ? (
+              <>
+                <button
+                  onClick={async () => {
+                    if (liking) return;
+                    setLiking(true);
+                    try {
+                      const newLiked = await toggleLike(user.id, "tool", id, liked);
+                      setLiked(newLiked);
+                      setLikeCount(c => newLiked ? c + 1 : Math.max(0, c - 1));
+                      toast.success(newLiked ? "已点赞" : "已取消点赞");
+                    } catch (e: unknown) {
+                      toast.error(e instanceof Error ? e.message : "操作失败");
+                    } finally { setLiking(false); }
+                  }}
+                  disabled={liking}
+                  className={`inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border rounded-lg text-xs font-medium transition-colors ${
+                    liked ? "bg-red-50 border-red-200 text-red-600" : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                  } ${liking ? "opacity-60" : ""}`}
+                >
+                  {liked ? "❤️ " : "🤍 "}{likeCount > 0 ? likeCount : ""}
+                </button>
+                <button
+                  onClick={() => {
+                    const added = togglePinnedTool(user.id, id);
+                    setPinned(added);
+                    toast.success(added ? "已添加到常用" : "已取消常用");
+                  }}
+                  className={`inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border rounded-lg text-xs font-medium transition-colors ${
+                    pinned ? "bg-indigo-50 border-indigo-200 text-indigo-600" : "border-gray-200 text-gray-400 hover:bg-gray-50"
+                  }`}
+                >
+                  📌 {pinned ? "已常用" : "常用"}
+                </button>
+              </>
+            ) : (
               <Link href="/auth" className="inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border border-gray-200 text-gray-400 rounded-lg text-xs font-medium hover:bg-gray-50">
                 登录后使用
               </Link>
@@ -786,6 +820,31 @@ export default function ToolDetailPage() {
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 leading-relaxed">{review.content}</p>
+                  {/* 评论点赞 */}
+                  {user && (
+                    <div className="mt-2 flex items-center gap-1">
+                      <button
+                        onClick={async () => {
+                          const liked = reviewLikes.has(review.id);
+                          try {
+                            const newLiked = await toggleLike(user.id, "review", review.id, liked);
+                            setReviewLikes(prev => {
+                              const next = new Set(prev);
+                              newLiked ? next.add(review.id) : next.delete(review.id);
+                              return next;
+                            });
+                          } catch (e: unknown) {
+                            toast.error(e instanceof Error ? e.message : "操作失败");
+                          }
+                        }}
+                        className={`inline-flex items-center gap-0.5 text-xs px-2 py-1 rounded-lg transition-colors ${
+                          reviewLikes.has(review.id) ? "text-red-500 bg-red-50" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {reviewLikes.has(review.id) ? "❤️" : "🤍"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

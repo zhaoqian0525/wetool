@@ -3048,6 +3048,115 @@ export async function addReview(
   return newReview;
 }
 
+// ---- Likes (替代收藏，支持工具和评论点赞) ----
+
+export type LikeTargetType = "tool" | "review";
+
+export interface Like {
+  id: string;
+  userId: string;
+  targetType: LikeTargetType;
+  targetId: string;
+  createdAt: string;
+}
+
+/** 获取用户对指定目标的点赞状态 */
+export async function fetchUserLikes(
+  userId: string,
+  targetType: LikeTargetType,
+  targetIds: string[]
+): Promise<Set<string>> {
+  if (targetIds.length === 0) return new Set();
+  const supabase = await getSupabaseClient();
+  if (supabase) {
+    const result = await queryWithTimeout(
+      supabase.from("likes")
+        .select("target_id")
+        .eq("user_id", userId)
+        .eq("target_type", targetType)
+        .in("target_id", targetIds)
+    );
+    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+      return new Set(((result as { data: Record<string, unknown>[] }).data).map(r => String(r.target_id)));
+    }
+  }
+  return new Set();
+}
+
+/** 切换点赞状态，返回新状态 */
+export async function toggleLike(
+  userId: string,
+  targetType: LikeTargetType,
+  targetId: string,
+  currentlyLiked: boolean
+): Promise<boolean> {
+  const supabase = await getSupabaseClient();
+  if (!supabase) throw new Error("数据库未连接");
+
+  if (currentlyLiked) {
+    const result = await queryWithTimeout(
+      supabase.from("likes").delete()
+        .eq("user_id", userId)
+        .eq("target_type", targetType)
+        .eq("target_id", targetId)
+    );
+    if (result && !(result as { error: unknown }).error) return false;
+  } else {
+    const result = await queryWithTimeout(
+      supabase.from("likes").insert({
+        user_id: userId,
+        target_type: targetType,
+        target_id: targetId,
+        created_at: new Date().toISOString(),
+      })
+    );
+    if (result && !(result as { error: unknown }).error) return true;
+  }
+  throw new Error("操作失败，请稍后重试");
+}
+
+/** 获取指定工具的点赞数 */
+export async function fetchLikeCount(
+  targetType: LikeTargetType,
+  targetId: string
+): Promise<number> {
+  const supabase = await getSupabaseClient();
+  if (supabase) {
+    const result = await queryWithTimeout(
+      supabase.from("likes").select("*", { count: "exact", head: true })
+        .eq("target_type", targetType)
+        .eq("target_id", targetId)
+    );
+    if (result && !(result as { error: unknown }).error && (result as { count: number }).count !== null) {
+      return (result as { count: number }).count;
+    }
+  }
+  return 0;
+}
+
+/** 获取用户点赞过的工具列表 */
+export async function fetchUserLikedTools(userId: string): Promise<Tool[]> {
+  const supabase = await getSupabaseClient();
+  if (supabase) {
+    const { data: likeRows, error } = await supabase
+      .from("likes")
+      .select("target_id")
+      .eq("user_id", userId)
+      .eq("target_type", "tool")
+      .order("created_at", { ascending: false });
+
+    if (!error && likeRows && likeRows.length > 0) {
+      const toolIds = likeRows.map((r: Record<string, unknown>) => String(r.target_id));
+      const { data: tools } = await supabase
+        .from("tools")
+        .select("*")
+        .in("id", toolIds);
+      if (tools) return tools.map(mapRow);
+    }
+  }
+  return [];
+}
+
 // ---- View counts ----
 
 const MOCK_VIEW_COUNTS: Record<string, number> = {
