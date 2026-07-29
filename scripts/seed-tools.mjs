@@ -4,9 +4,13 @@
  */
 import { createClient } from "@supabase/supabase-js";
 
+// 播种需要 service_role key（绕过 RLS），用法：
+// 1. 在 Supabase Dashboard → Settings → API 获取 service_role key
+// 2. 替换下面的 key
+// 3. 运行：node scripts/seed-tools.mjs
 const supabase = createClient(
   "https://cvacrykzcppiflmvwwfe.supabase.co",
-  "sb_publishable_HedSPsepnDWtvd3IuQhlWw_JPeVevVu"
+  "YOUR_SERVICE_ROLE_KEY"
 );
 
 const tools = [
