@@ -6,7 +6,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
-import { getPinnedTools, togglePinnedTool, fetchToolsByUser, type Tool } from "@/lib/data";
+import { getPinnedTools, togglePinnedTool, fetchToolsByUser, fetchTools, type Tool } from "@/lib/data";
 
 export default function UserPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,8 +23,12 @@ export default function UserPage() {
     if (!id) return;
     setPinned(getPinnedTools(id));
     setLoading(true);
-    fetchToolsByUser(id).then((t) => {
-      setMyTools(t);
+    Promise.all([
+      fetchToolsByUser(id),
+      fetchTools(),
+    ]).then(([userTools, all]) => {
+      setMyTools(userTools);
+      setAllTools(all);
       setLoading(false);
     }).catch(() => { setLoading(false); });
   }, [id]);
@@ -36,9 +40,9 @@ export default function UserPage() {
     toast.success(added ? "已添加到常用" : "已取消常用");
   }, [id, toast]);
 
-  // 从所有可用工具中查找置顶工具
+  // 从所有可用工具中查找置顶工具（不限用户自己发布的）
   const pinnedTools = pinned
-    .map((tid) => myTools.find((t) => t.id === tid))
+    .map((tid) => allTools.find((t) => t.id === tid))
     .filter(Boolean) as Tool[];
 
   return (

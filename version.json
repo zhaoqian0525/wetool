@@ -1,6 +1,6 @@
 {
-  "version": "1.2.1",
+  "version": "1.2.2",
   "buildDate": "2026-07-29",
-  "buildTimestamp": "2026-07-29T23:18:00+08:00",
-  "description": "修复 emoji 编码、MOCK_TOOLS 从 4 个恢复为 8 个、收藏错误提示、种子脚本"
+  "buildTimestamp": "2026-07-29T23:20:00+08:00",
+  "description": "修复 iframe 白屏（加 key 重挂载）、我的常用从全部工具查找、全屏 iframe 加 key"
 }

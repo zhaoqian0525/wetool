@@ -665,11 +665,13 @@ export default function ToolDetailPage() {
               <div className="flex-1 min-h-0 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200 relative">
                 {!iframeLoaded && <IframeSkeleton />}
                 <iframe
+                  key={tool?.id ?? "empty"}
                   {...(isWechat ? { src: previewBlobUrl } : { srcDoc: previewSrcDoc })}
                   title={tool.title}
                   className="absolute inset-0 w-full h-full border-0"
                   sandbox={blobSandbox}
                   onLoad={() => setIframeLoaded(true)}
+                  onError={() => setIframeError(true)}
                   style={{ opacity: iframeLoaded ? 1 : 0, transition: "opacity 0.3s" }}
                 />
               </div>
@@ -878,6 +880,7 @@ export default function ToolDetailPage() {
           退出全屏
         </button>
         <iframe
+          key={tool?.id ?? "fs-empty"}
           id="fullscreen-iframe"
           src={isWechat ? previewBlobUrl : undefined}
           srcDoc={isWechat ? undefined : previewSrcDoc}
