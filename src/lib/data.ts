@@ -2700,15 +2700,6 @@ function clearAll() {
 
 ];
 
-// Pre-seeded favorites for mock mode
-const MOCK_FAVORITES: Favorite[] = [
-  { toolId: "1", userId: "mock-user-1", createdAt: "2026-07-21T08:00:00Z" },
-  { toolId: "3", userId: "mock-user-1", createdAt: "2026-07-21T09:00:00Z" },
-  { toolId: "5", userId: "mock-user-1", createdAt: "2026-07-21T10:00:00Z" },
-  { toolId: "2", userId: "mock-user-2", createdAt: "2026-07-20T12:00:00Z" },
-  { toolId: "1", userId: "mock-user-2", createdAt: "2026-07-20T13:00:00Z" },
-];
-
 // Pre-seeded reviews for mock mode
 const MOCK_REVIEWS: Review[] = [
   { id: "r1", toolId: "1", userId: "mock-user-2", userName: "老王机械师", rating: 5, content: "旅行必备！算出来每人多少钱一目了然，再也不用手动算了。", createdAt: "2026-07-21T14:00:00Z" },
@@ -2726,37 +2717,10 @@ const MOCK_REVIEWS: Review[] = [
 ];
 
 // localStorage keys
-const FAV_KEY = "wewoo-mock-favorites";
 const REV_KEY = "wewoo-mock-reviews";
 
 // Lazy-loaded mock data backed by localStorage (survives page refresh)
-let _mockFavorites: Favorite[] | null = null;
 let _mockReviews: Review[] | null = null;
-
-function getMockFavorites(): Favorite[] {
-  if (_mockFavorites === null) {
-    if (typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem(FAV_KEY);
-        _mockFavorites = raw ? JSON.parse(raw) : structuredClone(MOCK_FAVORITES);
-      } catch {
-        _mockFavorites = structuredClone(MOCK_FAVORITES);
-      }
-    } else {
-      _mockFavorites = structuredClone(MOCK_FAVORITES);
-    }
-  }
-  return _mockFavorites!;
-}
-
-function setMockFavorites(favs: Favorite[]): void {
-  _mockFavorites = favs;
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem(FAV_KEY, JSON.stringify(favs));
-    } catch { /* full */ }
-  }
-}
 
 function getMockReviews(): Review[] {
   if (_mockReviews === null) {
@@ -2988,145 +2952,6 @@ export async function resolveSourceTool(tool: Tool): Promise<Tool> {
     tool.sourceTool = { id: source.id, title: source.title, author: source.author };
   }
   return tool;
-}
-
-// ---- Favorites ----
-
-export async function fetchFavoritedToolIds(userId: string): Promise<string[]> {
-  const supabase = await getSupabaseClient();
-  if (supabase) {
-    const result = await queryWithTimeout(
-      supabase.from("favorites").select("tool_id").eq("user_id", userId)
-    );
-    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
-      return ((result as { data: Record<string, unknown>[] }).data).map((row) => String(row.tool_id));
-    }
-  }
-  return getMockFavorites()
-    .filter((f) => f.userId === userId)
-    .map((f) => f.toolId);
-}
-
-export async function toggleFavorite(
-  userId: string,
-  toolId: string,
-  currentlyFavorited: boolean
-): Promise<boolean> {
-  const supabase = await getSupabaseClient();
-  if (supabase) {
-    if (currentlyFavorited) {
-      const result = await queryWithTimeout(
-        supabase.from("favorites").delete().eq("user_id", userId).eq("tool_id", toolId)
-      );
-      if (result && !(result as { error: unknown }).error) return false;
-    } else {
-      const result = await queryWithTimeout(
-        supabase.from("favorites").insert({
-          user_id: userId,
-          tool_id: toolId,
-          created_at: new Date().toISOString(),
-        })
-      );
-      if (result && !(result as { error: unknown }).error) return true;
-    }
-  }
-
-  // Mock mode
-  if (currentlyFavorited) {
-    setMockFavorites(
-      getMockFavorites().filter(
-        (f) => !(f.userId === userId && f.toolId === toolId)
-      )
-    );
-    return false;
-  } else {
-    setMockFavorites([
-      ...getMockFavorites(),
-      { toolId, userId, createdAt: new Date().toISOString() },
-    ]);
-    return true;
-  }
-}
-
-export async function fetchFavoriteCount(toolId: string): Promise<number> {
-  const supabase = await getSupabaseClient();
-  if (supabase) {
-    const result = await queryWithTimeout(
-      supabase.from("favorites").select("*", { count: "exact", head: true }).eq("tool_id", toolId)
-    );
-    if (result && !(result as { error: unknown }).error && (result as { count: number }).count !== null) {
-      return (result as { count: number }).count;
-    }
-  }
-  return getMockFavorites().filter((f) => f.toolId === toolId).length;
-}
-
-/** Batch: get favorite counts for multiple tool IDs */
-export async function fetchFavoriteCounts(
-  toolIds: string[]
-): Promise<Record<string, number>> {
-  if (toolIds.length === 0) return {};
-  const supabase = await getSupabaseClient();
-  const counts: Record<string, number> = {};
-  if (supabase) {
-    // 分批查询避免 URL 过长 + 空数组导致 PostgREST 400
-    const chunks = chunkArray(toolIds, 100);
-    for (const chunk of chunks) {
-      const result = await queryWithTimeout(
-        supabase.from("favorites").select("tool_id").in("tool_id", chunk)
-      );
-      if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
-        for (const row of (result as { data: { tool_id: string }[] }).data) {
-          counts[row.tool_id] = (counts[row.tool_id] || 0) + 1;
-        }
-      }
-    }
-    if (Object.keys(counts).length > 0) return counts;
-  }
-  for (const tid of toolIds) {
-    counts[tid] = getMockFavorites().filter((f) => f.toolId === tid).length;
-  }
-  return counts;
-}
-
-export async function fetchFavoritedToolsByUser(
-  userId: string
-): Promise<Tool[]> {
-  const supabase = await getSupabaseClient();
-  if (supabase) {
-    const favResult = await queryWithTimeout(
-      supabase.from("favorites").select("tool_id").eq("user_id", userId).order("created_at", { ascending: false })
-    );
-    if (favResult && !(favResult as { error: unknown }).error && (favResult as { data: unknown }).data) {
-      const favRows = (favResult as { data: Record<string, unknown>[] }).data;
-      if (favRows.length > 0) {
-        const toolIds = favRows.map((r) => String(r.tool_id));
-        // 分批查询避免 URL 过长导致 PostgREST 400
-        const chunks = chunkArray(toolIds, 100);
-        const toolMap = new Map<string, Tool>();
-        for (const chunk of chunks) {
-          const toolsResult = await queryWithTimeout(
-            supabase.from("tools").select("*").in("id", chunk)
-          );
-          if (toolsResult && !(toolsResult as { error: unknown }).error && (toolsResult as { data: unknown }).data) {
-            for (const row of ((toolsResult as { data: Record<string, unknown>[] }).data)) {
-              toolMap.set(String(row.id), mapRow(row));
-            }
-          }
-        }
-        if (toolMap.size > 0) {
-          return toolIds.map((id) => toolMap.get(id)).filter(Boolean) as Tool[];
-        }
-      }
-    }
-    return [];
-  }
-
-  // Mock mode
-  const favoritedToolIds = getMockFavorites()
-    .filter((f) => f.userId === userId)
-    .map((f) => f.toolId);
-  return MOCK_TOOLS.filter((t) => favoritedToolIds.includes(t.id)).map((t) => ({ ...t, coverUrl: t.coverUrl || `/covers/${t.id}.png` }));
 }
 
 // ---- Reviews ----

@@ -11,7 +11,7 @@ import { ToolPageErrorBoundary } from "@/components/ToolPageErrorBoundary";
 import { ToolHistoryDrawer } from "@/components/ToolHistoryDrawer";
 import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
-import { fetchToolById, resolveSourceTool, toggleFavorite, fetchFavoritedToolIds, fetchFavoriteCount, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, togglePinnedTool, isPinned, type Tool, type Review, type Visibility } from "@/lib/data";
+import { fetchToolById, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, togglePinnedTool, isPinned, type Tool, type Review, type Visibility } from "@/lib/data";
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
 
 export default function ToolDetailPage() {
@@ -37,11 +37,7 @@ export default function ToolDetailPage() {
       setIsJustPublished(params.get("new") === "1");
     }
   }, []);
-  const [favorited, setFavorited] = useState(false);
-  const [favoriting, setFavoriting] = useState(false);
-  const [heartAnim, setHeartAnim] = useState(false);
   const [pinned, setPinned] = useState(false);
-  const [favoriteCount, setFavoriteCount] = useState(0);
   const [viewCount, setViewCount] = useState(0);
 
   // Reviews state
@@ -113,17 +109,12 @@ export default function ToolDetailPage() {
 
     loadAll();
 
-    // 并行加载收藏状态
-    fetchFavoriteCount(id).then((c) => { if (!cancelled) setFavoriteCount(c); });
     // 加载浏览量并增加一次浏览
     fetchViewCounts([id]).then((c) => { if (!cancelled) setViewCount(c[id] ?? 0); });
     incrementToolView(id).then(() => {
       if (!cancelled) setViewCount((v) => v + 1);
     });
     if (user?.id) {
-      fetchFavoritedToolIds(user.id).then((ids) => {
-        if (!cancelled) setFavorited(ids.includes(id));
-      });
       setPinned(isPinned(user.id, id));
     }
 
@@ -154,25 +145,6 @@ export default function ToolDetailPage() {
       } catch { /* ignore */ }
     }
   }, [tool]);
-
-  const handleFavorite = useCallback(async () => {
-    if (!user || favoriting) return;
-    setFavoriting(true);
-    try {
-      const newState = await toggleFavorite(user.id, id, favorited);
-      setFavorited(newState);
-      setFavoriteCount((c) => (newState ? c + 1 : Math.max(0, c - 1)));
-      toast.success(newState ? "已收藏" : "已取消收藏");
-      // Trigger heart animation
-      setHeartAnim(true);
-      setTimeout(() => setHeartAnim(false), 500);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "操作失败";
-      toast.error(msg);
-    } finally {
-      setFavoriting(false);
-    }
-  }, [user, id, favorited, favoriting]);
 
   const handleSubmitReview = useCallback(async () => {
     if (!user || submitting) return;
@@ -527,12 +499,6 @@ export default function ToolDetailPage() {
                 <span className="text-blue-400">👁 {viewCount} 次浏览</span>
               </>
             )}
-            {favoriteCount > 0 && (
-              <>
-                <span>·</span>
-                <span className="text-red-400">♥ {favoriteCount} 收藏</span>
-              </>
-            )}
             {user && (
               <>
                 <span>·</span>
@@ -591,19 +557,23 @@ export default function ToolDetailPage() {
         <div className="flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
           {/* Action bar — compact row above iframe */}
           <div className="flex items-center gap-2 pb-3 flex-wrap">
-            {user ? (
+            {user && (
               <button
-                onClick={handleFavorite}
-                disabled={favoriting}
+                onClick={() => {
+                  const added = togglePinnedTool(user.id, id);
+                  setPinned(added);
+                  toast.success(added ? "已添加到常用" : "已取消常用");
+                }}
                 className={`inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border rounded-lg text-xs font-medium transition-colors ${
-                  favorited ? "bg-red-50 border-red-200 text-red-600" : "border-gray-200 text-gray-500 hover:bg-gray-50"
-                } ${favoriting ? "opacity-60" : ""}`}
+                  pinned ? "bg-indigo-50 border-indigo-200 text-indigo-600" : "border-gray-200 text-gray-400 hover:bg-gray-50"
+                }`}
               >
-                {favorited ? "❤️ 已收藏" : "🤍 收藏"}
+                📌 {pinned ? "已常用" : "添加到常用"}
               </button>
-            ) : (
+            )}
+            {!user && (
               <Link href="/auth" className="inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border border-gray-200 text-gray-400 rounded-lg text-xs font-medium hover:bg-gray-50">
-                登录后收藏
+                登录后使用
               </Link>
             )}
             {user && (

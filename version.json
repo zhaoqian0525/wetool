@@ -1,6 +1,6 @@
 {
-  "version": "1.2.2",
+  "version": "1.3.0",
   "buildDate": "2026-07-29",
-  "buildTimestamp": "2026-07-29T23:20:00+08:00",
-  "description": "修复 iframe 白屏（加 key 重挂载）、我的常用从全部工具查找、全屏 iframe 加 key"
+  "buildTimestamp": "2026-07-29T23:52:00+08:00",
+  "description": "移除收藏功能，统一用添加到常用；主页我的工具合并常用显示；恢复18个MOCK_TOOLS"
 }

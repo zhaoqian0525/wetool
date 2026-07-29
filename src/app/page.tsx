@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
-import { fetchTools, fetchFavoriteCounts, fetchViewCounts, fetchFavoritedToolIds, fetchToolsByUser, CATEGORIES, type Tool } from "@/lib/data";
+import { fetchTools, fetchViewCounts, fetchToolsByUser, getPinnedTools, CATEGORIES, type Tool } from "@/lib/data";
 import versionInfo from "../../version.json";
 
 // ---- Constants ----
@@ -28,14 +28,13 @@ export default function HomePage() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("全部");
   const [loading, setLoading] = useState(true);
-  const [favoriteCounts, setFavoriteCounts] = useState<Record<string, number>>({});
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"latest" | "popular">("latest");
   const [myTools, setMyTools] = useState<Tool[]>([]);
-  const [favoritedIds, setFavoritedIds] = useState<string[]>([]);
   const [recentTools, setRecentTools] = useState<Array<Record<string, unknown>>>([]);
   const [myToolsLoading, setMyToolsLoading] = useState(false);
+  const [pinnedToolIds, setPinnedToolIds] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,9 +42,6 @@ export default function HomePage() {
       if (cancelled) return;
       setTools(data);
       const ids = data.map((t) => t.id);
-      fetchFavoriteCounts(ids).then((counts) => {
-        if (!cancelled) setFavoriteCounts(counts);
-      });
       fetchViewCounts(ids).then((counts) => {
         if (!cancelled) setViewCounts(counts);
       });
@@ -67,16 +63,6 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  // 加载收藏的工具 ID（从 Supabase）
-  useEffect(() => {
-    if (!user) { setFavoritedIds([]); return; }
-    let cancelled = false;
-    fetchFavoritedToolIds(user.id).then((ids) => {
-      if (!cancelled) setFavoritedIds(ids);
-    }).catch(() => { if (!cancelled) setFavoritedIds([]); });
-    return () => { cancelled = true; };
-  }, [user?.id]);
-
   // 加载最近使用的工具
   useEffect(() => {
     if (!user) { setRecentTools([]); return; }
@@ -84,6 +70,12 @@ export default function HomePage() {
       .then((r) => r.json())
       .then((data) => setRecentTools(data.tools || []))
       .catch(() => setRecentTools([]));
+  }, [user]);
+
+  // 加载常用工具 ID
+  useEffect(() => {
+    if (!user) { setPinnedToolIds([]); return; }
+    setPinnedToolIds(getPinnedTools(user.id));
   }, [user]);
 
   const filtered = useMemo(() => {
@@ -98,19 +90,29 @@ export default function HomePage() {
       );
     }
     if (sortBy === "popular") {
-      list = [...list].sort((a, b) => (favoriteCounts[b.id] ?? 0) - (favoriteCounts[a.id] ?? 0));
+      list = [...list].sort((a, b) => (viewCounts[b.id] ?? 0) - (viewCounts[a.id] ?? 0));
     } else {
       list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     return list;
-  }, [tools, activeCategory, search, sortBy, favoriteCounts]);
+  }, [tools, activeCategory, search, sortBy, viewCounts]);
 
-  // 已收藏的工具（从 tools 中筛选）
-  const favoritedTools = useMemo(() => {
-    if (favoritedIds.length === 0) return [];
-    const idSet = new Set(favoritedIds);
+  // 常用工具（从所有工具中筛选 pinned 的 ID）
+  const pinnedTools = useMemo(() => {
+    if (pinnedToolIds.length === 0) return [];
+    const idSet = new Set(pinnedToolIds);
     return tools.filter((t) => idSet.has(t.id));
-  }, [tools, favoritedIds]);
+  }, [tools, pinnedToolIds]);
+
+  // 合并"我的工具"（自己发布的 + 常用的）
+  const combinedMyTools = useMemo(() => {
+    const myIds = new Set(myTools.map(t => t.id));
+    const combined = [...myTools];
+    for (const pt of pinnedTools) {
+      if (!myIds.has(pt.id)) combined.push(pt);
+    }
+    return combined;
+  }, [myTools, pinnedTools]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
@@ -269,7 +271,8 @@ export default function HomePage() {
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-4">
           <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <span>📦</span>我的工具
-            {!myToolsLoading && <span className="text-xs font-normal text-gray-400">({myTools.length} 个)</span>}
+            {!myToolsLoading && <span className="text-xs font-normal text-gray-400">({combinedMyTools.length} 个)</span>}
+            {pinnedTools.length > 0 && <span className="text-xs font-normal text-indigo-400">含 {pinnedTools.length} 个常用</span>}
           </h2>
           {myToolsLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -283,9 +286,9 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-          ) : myTools.length > 0 ? (
+          ) : combinedMyTools.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {myTools.map((t) => (
+              {combinedMyTools.map((t) => (
               <Link
                 key={t.id}
                 href={`/tool/${t.id}`}
@@ -300,6 +303,9 @@ export default function HomePage() {
                 <div className="p-3">
                   <h3 className="text-sm font-medium text-gray-900 truncate">{t.title}</h3>
                   <p className="text-xs text-gray-500 mt-0.5">@{t.author}</p>
+                  {pinnedToolIds.includes(t.id) && (
+                    <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600">📌 常用</span>
+                  )}
                   {t.visibility !== "public" && (
                     <span className={`inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full ${
                       t.visibility === "private" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
@@ -320,36 +326,6 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* 我的收藏（已登录且有收藏记录时显示） */}
-      {user && favoritedTools.length > 0 && (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-4">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <span>❤️</span>我的收藏
-            <span className="text-xs font-normal text-gray-400">({favoritedTools.length} 个)</span>
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-            {favoritedTools.map((t) => (
-              <Link
-                key={t.id}
-                href={`/tool/${t.id}`}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden card-hover-float group"
-              >
-                <div
-                  className="aspect-[4/3] flex items-center justify-center"
-                  style={{ background: t.thumbnailGradient || "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
-                >
-                  <span className="text-3xl">{getToolEmoji(t)}</span>
-                </div>
-                <div className="p-3">
-                  <h3 className="text-sm font-medium text-gray-900 truncate">{t.title}</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">@{t.author}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Tool Grid */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-20 lg:pb-16">
         {loading ? (
@@ -361,7 +337,7 @@ export default function HomePage() {
             <p className="text-xs text-gray-500 mb-3">{filtered.length} 个工具</p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {filtered.map((tool) => (
-                <ToolCard key={tool.id} tool={tool} favoriteCount={favoriteCounts[tool.id]} viewCount={viewCounts[tool.id]} />
+                <ToolCard key={tool.id} tool={tool} viewCount={viewCounts[tool.id]} />
               ))}
             </div>
           </>
@@ -384,7 +360,7 @@ export default function HomePage() {
 
 // ---- ToolCard — React.memo 防止不必要的重渲染 ----
 
-const ToolCard = memo(function ToolCard({ tool, favoriteCount, viewCount }: { tool: Tool; favoriteCount?: number; viewCount?: number }) {
+const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewCount?: number }) {
   const emoji = getToolEmoji(tool);
 
   return (
@@ -432,11 +408,6 @@ const ToolCard = memo(function ToolCard({ tool, favoriteCount, viewCount }: { to
           {viewCount !== undefined && viewCount > 0 && (
             <span className="flex items-center gap-0.5 bg-white/25 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded-full">
               👁 {viewCount > 999 ? (viewCount / 1000).toFixed(1) + "k" : viewCount}
-            </span>
-          )}
-          {favoriteCount !== undefined && favoriteCount > 0 && (
-            <span className="flex items-center gap-0.5 bg-white/25 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded-full">
-              ♥ {favoriteCount}
             </span>
           )}
         </div>
