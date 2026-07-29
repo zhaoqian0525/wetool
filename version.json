@@ -1,0 +1,6 @@
+{
+  "version": "1.2.0",
+  "buildDate": "2026-07-29",
+  "buildTimestamp": "2026-07-29T22:55:00+08:00",
+  "description": "第一阶段数据层重构：全量迁移到 Supabase，移除 localStorage 和 Mock 依赖"
+}
