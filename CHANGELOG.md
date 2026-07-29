@@ -19,6 +19,20 @@
 
 ---
 
+## [1.2.1] - 2026-07-29
+
+### Fixed
+- 分类图标显示问号（GBK转换破坏 emoji，改用 Unicode 转义）
+- 工具仅剩 4 个（MOCK_TOOLS 从 4 个恢复为 8 个）
+- 收藏提示"已取消收藏"（toggleFavorite 改为抛出异常 + 前端 catch 显示错误）
+- 番茄钟标题 emoji 损坏
+
+### Added
+- Supabase 播种脚本 `scripts/seed-tools.mjs`（需 service_role key 绕过 RLS）
+- 新增工具：BMI 计算器、单词卡片、倒计时器、八杯水提醒
+
+---
+
 ## [1.2.0] - 2026-07-29
 
 ### Changed

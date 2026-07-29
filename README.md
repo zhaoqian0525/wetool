@@ -2,7 +2,7 @@
 
 > AI 小工具分享社区 — 像发朋友圈一样分享你做的 AI 小工具
 
-[![Version](https://img.shields.io/badge/version-1.2.0-indigo)](version.json)
+[![Version](https://img.shields.io/badge/version-1.2.1-indigo)](version.json)
 [![Deploy](https://img.shields.io/badge/deploy-Vercel-black)](https://we-woo.net)
 
 **微坞 (WeWoo)** 是一个 AI 生成的小工具分享平台。任何人都可以在这里创建、发布和发现实用的网页小工具 — 旅行分账、工程计算、课堂互动、生活日常，应有尽有。

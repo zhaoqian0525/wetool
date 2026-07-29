@@ -166,6 +166,9 @@ export default function ToolDetailPage() {
       // Trigger heart animation
       setHeartAnim(true);
       setTimeout(() => setHeartAnim(false), 500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "操作失败";
+      toast.error(msg);
     } finally {
       setFavoriting(false);
     }
