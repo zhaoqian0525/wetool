@@ -3088,7 +3088,7 @@ export async function addReview(
 
 // ---- Likes (替代收藏，支持工具和评论点赞) ----
 
-export type LikeTargetType = "tool" | "review";
+export type LikeTargetType = "tool" | "review" | "save";
 
 export interface Like {
   id: string;
@@ -3172,27 +3172,42 @@ export async function fetchLikeCount(
   return 0;
 }
 
-/** 获取用户点赞过的工具列表 */
-export async function fetchUserLikedTools(userId: string): Promise<Tool[]> {
+/** 获取用户点赞过的工具列表（含 MOCK_TOOLS） */
+export async function fetchUserLikedTools(userId: string, targetType: LikeTargetType = "tool"): Promise<Tool[]> {
   const supabase = await getSupabaseClient();
+  const result: Tool[] = [];
+  
   if (supabase) {
     const { data: likeRows, error } = await supabase
       .from("likes")
       .select("target_id")
       .eq("user_id", userId)
-      .eq("target_type", "tool")
+      .eq("target_type", targetType)
       .order("created_at", { ascending: false });
 
     if (!error && likeRows && likeRows.length > 0) {
       const toolIds = likeRows.map((r: Record<string, unknown>) => String(r.target_id));
-      const { data: tools } = await supabase
+      // 先查 Supabase
+      const { data: dbTools } = await supabase
         .from("tools")
         .select("*")
         .in("id", toolIds);
-      if (tools) return tools.map(mapRow);
+      if (dbTools) result.push(...dbTools.map(mapRow));
+      
+      // 再查 MOCK_TOOLS 兜底
+      for (const tid of toolIds) {
+        if (!result.find(t => t.id === tid)) {
+          const mock = MOCK_TOOLS.find(t => t.id === tid);
+          if (mock) result.push({ ...mock, coverUrl: mock.coverUrl || `/covers/${mock.id}.png` });
+        }
+      }
+      
+      // 按点赞顺序排序
+      const idOrder = new Map(toolIds.map((id: string, i: number) => [id, i]));
+      result.sort((a, b) => (idOrder.get(a.id) ?? 99) - (idOrder.get(b.id) ?? 99));
     }
   }
-  return [];
+  return result;
 }
 
 // ---- View counts ----

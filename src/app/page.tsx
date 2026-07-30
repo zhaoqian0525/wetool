@@ -76,7 +76,7 @@ export default function HomePage() {
   // 加载收藏的工具
   useEffect(() => {
     if (!user) { setLikedTools([]); return; }
-    fetchUserLikedTools(user.id).then(tools => setLikedTools(tools));
+    fetchUserLikedTools(user.id, "save").then(tools => setLikedTools(tools));
   }, [user]);
 
   const filtered = useMemo(() => {
@@ -273,7 +273,7 @@ export default function HomePage() {
           <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <span>📦</span>我的工具
             {!myToolsLoading && <span className="text-xs font-normal text-gray-400">({combinedMyTools.length} 个)</span>}
-            {likedTools.length > 0 && <span className="text-xs font-normal text-red-400">含 {likedTools.length} 个收藏</span>}
+            {likedTools.length > 0 && <span className="text-xs font-normal text-amber-400">含 {likedTools.length} 个收藏</span>}
           </h2>
           {myToolsLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">

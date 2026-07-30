@@ -41,6 +41,8 @@ export default function ToolDetailPage() {
   const [likeCount, setLikeCount] = useState(0);
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [reviewLikes, setReviewLikes] = useState<Set<string>>(new Set());
 
   // Reviews state
@@ -127,6 +129,7 @@ export default function ToolDetailPage() {
       // 加载点赞状态
       fetchLikeCount("tool", id).then(c => { if (!cancelled) setLikeCount(c); });
       fetchUserLikes(user.id, "tool", [id]).then(s => { if (!cancelled) setLiked(s.has(id)); });
+      fetchUserLikes(user.id, "save", [id]).then(s => { if (!cancelled) setSaved(s.has(id)); });
     }
 
     return () => { cancelled = true; };
@@ -594,7 +597,26 @@ export default function ToolDetailPage() {
                     liked ? "bg-red-50 border-red-200 text-red-600" : "border-gray-200 text-gray-500 hover:bg-gray-50"
                   } ${liking ? "opacity-60" : ""}`}
                 >
-                  {liked ? "❤️ 已收藏" : "🤍 收藏"}{likeCount > 0 ? ` ${likeCount}` : ""}
+                  {liked ? "❤️ 已点赞" : "🤍 点赞"}{likeCount > 0 ? ` ${likeCount}` : ""}
+                </button>
+                <button
+                  onClick={async () => {
+                    if (saving) return;
+                    setSaving(true);
+                    try {
+                      const newSaved = await toggleLike(user.id, "save", id, saved);
+                      setSaved(newSaved);
+                      toast.success(newSaved ? "已收藏" : "已取消收藏");
+                    } catch (e: unknown) {
+                      toast.error(e instanceof Error ? e.message : "操作失败");
+                    } finally { setSaving(false); }
+                  }}
+                  disabled={saving}
+                  className={`inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border rounded-lg text-xs font-medium transition-colors ${
+                    saved ? "bg-amber-50 border-amber-200 text-amber-600" : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                  } ${saving ? "opacity-60" : ""}`}
+                >
+                  {saved ? "⭐ 已收藏" : "☆ 收藏"}
                 </button>
               </>
             ) : (

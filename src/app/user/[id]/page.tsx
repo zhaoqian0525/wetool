@@ -27,7 +27,7 @@ export default function UserPage() {
     Promise.all([
       fetchToolsByUser(id),
       fetchTools(),
-      fetchUserLikedTools(id),
+      fetchUserLikedTools(id, "save"),
     ]).then(([userTools, all, liked]) => {
       setMyTools(userTools);
       setAllTools(all);
@@ -131,11 +131,11 @@ export default function UserPage() {
           </section>
         )}
 
-        {/* 赞过的工具 */}
+        {/* 收藏的工具 */}
         {likedTools.length > 0 && (
           <section className="mb-8">
             <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-              <span>❤️</span>{isSelf ? "我赞过的工具" : "赞过的工具"}
+              <span>⭐</span>{isSelf ? "我收藏的工具" : "收藏的工具"}
               <span className="text-xs font-normal text-gray-400">({likedTools.length} 个)</span>
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
