@@ -41,9 +41,9 @@ function mapAuthError(msg: string): string {
     return "注册功能暂时关闭";
   }
 
-  // 频率限制
+  // 频率限制 — 显示原始消息让用户知道真实等待时间
   if (lower.includes("rate limit") || lower.includes("for security purposes")) {
-    return "操作太频繁，请等待 1 分钟后再试";
+    return "请求太频繁：" + msg;
   }
 
   // 配置错误
@@ -66,6 +66,17 @@ function AuthForm() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState(""); // 成功提示（如"请验证邮箱"）
   const [submitting, setSubmitting] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  // 冷却倒计时
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => setCooldown(c => {
+      if (c <= 1) return 0;
+      return c - 1;
+    }), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   // 从 URL 参数读取错误（来自 /auth/callback 重定向）
   useEffect(() => {
@@ -111,7 +122,14 @@ function AuthForm() {
 
       // ---- 有错误 ----
       if (result.error) {
+        const msg = result.error.message.toLowerCase();
         setError(mapAuthError(result.error.message));
+        // 频率限制：触发 60 秒冷却
+        if (msg.includes("rate limit") || msg.includes("for security")) {
+          setCooldown(60);
+        } else {
+          setCooldown(0);
+        }
         return;
       }
 
@@ -307,10 +325,12 @@ function AuthForm() {
 
             <button
               type="submit"
-              disabled={submitting || !configured}
+              disabled={submitting || !configured || cooldown > 0}
               className="w-full min-h-[52px] py-3.5 bg-indigo-600 text-white rounded-xl text-base font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-[0.98]"
             >
-              {submitting ? (
+              {cooldown > 0 ? (
+                `请等待 ${cooldown} 秒`
+              ) : submitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   处理中...
