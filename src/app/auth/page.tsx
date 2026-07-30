@@ -41,9 +41,12 @@ function mapAuthError(msg: string): string {
     return "注册功能暂时关闭";
   }
 
-  // 频率限制 — 显示原始消息让用户知道真实等待时间
+  // 频率限制 — 邮箱额度耗尽
   if (lower.includes("rate limit") || lower.includes("for security purposes")) {
-    return "请求太频繁：" + msg;
+    if (lower.includes("email")) {
+      return "邮箱验证额度已耗尽，请稍后再试。或联系管理员在 Supabase 中关闭邮箱验证。";
+    }
+    return "请求太频繁：" + msg + "（等待 60 秒后重试）";
   }
 
   // 配置错误
