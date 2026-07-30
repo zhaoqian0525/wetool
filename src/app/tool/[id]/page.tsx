@@ -610,20 +610,6 @@ export default function ToolDetailPage() {
                 登录后使用
               </Link>
             )}
-            {user && (
-              <button
-                onClick={() => {
-                  const added = togglePinnedTool(user.id, id);
-                  setPinned(added);
-                  toast.success(added ? "已添加到常用" : "已取消常用");
-                }}
-                className={`inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border rounded-lg text-xs font-medium transition-colors ${
-                  pinned ? "bg-indigo-50 border-indigo-200 text-indigo-600" : "border-gray-200 text-gray-400 hover:bg-gray-50"
-                }`}
-              >
-                📌 {pinned ? "已常用" : "常用"}
-              </button>
-            )}
             <button
               onClick={handleShare}
               className="inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border border-gray-200 text-gray-500 rounded-lg text-xs font-medium hover:bg-gray-50"
