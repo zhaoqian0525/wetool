@@ -211,7 +211,43 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
           {mobileActions}
         </div>
       </header>
-    ) : null;
+    ) : (
+      /* ======== Mobile Top Bar (all other pages) ======== */
+      <header className="lg:hidden flex items-center justify-between h-12 px-4 bg-white border-b border-gray-200 flex-shrink-0">
+        <Link href="/" className="text-base font-bold text-indigo-600">
+          微坞
+        </Link>
+        <div className="flex items-center gap-2">
+          {loading ? (
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+          ) : user ? (
+            <div className="flex items-center gap-2">
+              <Link href={`/user/${user.id}`} className="flex items-center gap-1.5 min-h-[32px]">
+                <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                  {(user.email?.[0] ?? "U").toUpperCase()}
+                </div>
+                <span className="text-xs text-gray-600 max-w-[80px] truncate">
+                  {user.email?.split("@")[0]}
+                </span>
+              </Link>
+              <button
+                onClick={() => signOut()}
+                className="text-xs text-gray-400 hover:text-red-500 min-w-[44px] min-h-[32px] flex items-center justify-center"
+              >
+                退出
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/auth"
+              className="text-xs text-indigo-600 border border-indigo-200 px-3 py-1 rounded-lg hover:bg-indigo-50"
+            >
+              登录
+            </Link>
+          )}
+        </div>
+      </header>
+    );
 
   return (
     <>
