@@ -8,18 +8,32 @@
 
 ## [Unreleased]
 
+---
+
+## [1.4.0] - 2026-07-30
+
 ### Added
-- 暂无
+- ❤️ 点赞功能：支持工具和评论点赞，Supabase likes 表，跨设备同步
+- ⭐ 收藏功能：独立于点赞，收藏的工具出现在首页"我的工具"和个人主页
+- 手机端顶部导航栏：显示用户头像、用户名、退出登录按钮
+- /cleanup 页面：清理旧 localStorage 残留数据
+- `supabase_fix_rls.sql`：完整的 RLS 策略修复脚本
 
 ### Fixed
-- 暂无
+- 工具发布 `source_tool_id` 列缺失
+- tools/favorites/reviews 表 RLS 阻止写入
+- 工具详情页重复常用按钮
+- 收藏/点赞的工具查不到 MOCK_TOOLS 中的数据
+- history API 改为 Supabase 实现（原为 localStorage 存根）
+- 常用工具从 localStorage 迁移到 Supabase user_pinned_tools
 
 ### Changed
-- 暂无
+- 移除旧收藏功能（favorites 表），统一用点赞+收藏双功能
+- getPinnedTools/togglePinnedTool/isPinned 改为 async Supabase 实现
 
 ---
 
-## [1.2.1] - 2026-07-29
+## [1.3.0] - 2026-07-29
 
 ### Fixed
 - 分类图标显示问号（GBK转换破坏 emoji，改用 Unicode 转义）
