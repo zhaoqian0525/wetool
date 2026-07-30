@@ -125,7 +125,7 @@ export default function ToolDetailPage() {
       if (!cancelled) setViewCount((v) => v + 1);
     });
     if (user?.id) {
-      setPinned(isPinned(user.id, id));
+      isPinned(user.id, id).then((val) => { if (!cancelled) setPinned(val); });
       // 加载点赞状态
       fetchLikeCount("tool", id).then(c => { if (!cancelled) setLikeCount(c); });
       fetchUserLikes(user.id, "tool", [id]).then(s => { if (!cancelled) setLiked(s.has(id)); });
@@ -134,13 +134,19 @@ export default function ToolDetailPage() {
     return () => { cancelled = true; };
   }, [id, user?.id]);
 
-  // 🔥 记录最近使用
+  // 🔥 记录最近使用 + 使用历史
   useEffect(() => {
     if (!user?.id || !id) return;
     fetch(`/api/tools/${id}/state`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.id, state: { _opened: new Date().toISOString() } }),
+    }).catch(() => {});
+    // 同时记录使用历史
+    fetch(`/api/tools/${id}/history?userId=${encodeURIComponent(user.id)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "opened", detail: {} }),
     }).catch(() => {});
   }, [id, user?.id]);
 
@@ -593,8 +599,8 @@ export default function ToolDetailPage() {
                   {liked ? "❤️ " : "🤍 "}{likeCount > 0 ? likeCount : ""}
                 </button>
                 <button
-                  onClick={() => {
-                    const added = togglePinnedTool(user.id, id);
+                  onClick={async () => {
+                    const added = await togglePinnedTool(user.id, id);
                     setPinned(added);
                     toast.success(added ? "已添加到常用" : "已取消常用");
                   }}

@@ -75,7 +75,7 @@ export default function HomePage() {
   // 加载常用工具 ID
   useEffect(() => {
     if (!user) { setPinnedToolIds([]); return; }
-    setPinnedToolIds(getPinnedTools(user.id));
+    getPinnedTools(user.id).then(ids => setPinnedToolIds(ids));
   }, [user]);
 
   const filtered = useMemo(() => {

@@ -2850,32 +2850,70 @@ function saveJson(key: string, val: unknown) {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* quota */ }
 }
 
-// ---- 常用工具置顶（localStorage 为主，Supabase 可扩展） ----
+// ---- 常用工具置顶（Supabase 云端同步） ----
 
-export function getPinnedTools(userId: string): string[] {
-  try {
-    return loadJson("wewoo-pinned-" + userId, []) as string[];
-  } catch { return []; }
-}
-
-export function togglePinnedTool(userId: string, toolId: string): boolean {
-  const key = "wewoo-pinned-" + userId;
-  const pinned: string[] = loadJson(key, []) as string[];
-  const idx = pinned.indexOf(toolId);
-  if (idx >= 0) {
-    pinned.splice(idx, 1);
-    saveJson(key, pinned);
-    return false; // 已取消
-  } else {
-    if (pinned.length >= 8) pinned.pop(); // 最多8个
-    pinned.unshift(toolId);
-    saveJson(key, pinned);
-    return true; // 已添加
+export async function getPinnedTools(userId: string): Promise<string[]> {
+  const supabase = await getSupabaseClient();
+  if (supabase) {
+    const result = await queryWithTimeout(
+      supabase.from("user_pinned_tools")
+        .select("tool_id")
+        .eq("user_id", userId)
+        .order("pinned_at", { ascending: false })
+    );
+    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+      return ((result as { data: Record<string, unknown>[] }).data).map(r => String(r.tool_id));
+    }
   }
+  // 兜底：localStorage 旧数据
+  try { return JSON.parse(localStorage.getItem("wewoo-pinned-" + userId) || "[]") as string[]; } catch { return []; }
 }
 
-export function isPinned(userId: string, toolId: string): boolean {
-  return getPinnedTools(userId).includes(toolId);
+export async function togglePinnedTool(userId: string, toolId: string): Promise<boolean> {
+  const supabase = await getSupabaseClient();
+  if (supabase) {
+    // 检查是否已存在
+    const { data: existing } = await supabase
+      .from("user_pinned_tools")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("tool_id", toolId)
+      .maybeSingle();
+
+    if (existing) {
+      // 取消置顶
+      await supabase.from("user_pinned_tools").delete().eq("id", existing.id);
+      return false;
+    } else {
+      // 添加置顶（最多 8 个）
+      const { count } = await supabase.from("user_pinned_tools")
+        .select("*", { count: "exact", head: true }).eq("user_id", userId);
+      if ((count ?? 0) >= 8) {
+        // 删除最旧的
+        const { data: oldest } = await supabase.from("user_pinned_tools")
+          .select("id").eq("user_id", userId).order("pinned_at", { ascending: true }).limit(1);
+        if (oldest?.[0]) {
+          await supabase.from("user_pinned_tools").delete().eq("id", oldest[0].id);
+        }
+      }
+      await supabase.from("user_pinned_tools").insert({
+        user_id: userId, tool_id: toolId,
+        pinned_at: new Date().toISOString(),
+      });
+      return true;
+    }
+  }
+  throw new Error("数据库未连接");
+}
+
+export async function isPinned(userId: string, toolId: string): Promise<boolean> {
+  const supabase = await getSupabaseClient();
+  if (supabase) {
+    const { data } = await supabase.from("user_pinned_tools")
+      .select("id").eq("user_id", userId).eq("tool_id", toolId).maybeSingle();
+    return !!data;
+  }
+  return false;
 }
 
 export async function fetchTools(): Promise<Tool[]> {

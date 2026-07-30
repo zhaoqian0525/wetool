@@ -22,7 +22,7 @@ export default function UserPage() {
 
   useEffect(() => {
     if (!id) return;
-    setPinned(getPinnedTools(id));
+    getPinnedTools(id).then(setPinned);
     setLoading(true);
     Promise.all([
       fetchToolsByUser(id),
@@ -36,10 +36,11 @@ export default function UserPage() {
     }).catch(() => { setLoading(false); });
   }, [id]);
 
-  const handleTogglePin = useCallback((toolId: string) => {
+  const handleTogglePin = useCallback(async (toolId: string) => {
     if (!id) return;
-    const added = togglePinnedTool(id, toolId);
-    setPinned(getPinnedTools(id));
+    const added = await togglePinnedTool(id, toolId);
+    const updated = await getPinnedTools(id);
+    setPinned(updated);
     toast.success(added ? "已添加到常用" : "已取消常用");
   }, [id, toast]);
 
