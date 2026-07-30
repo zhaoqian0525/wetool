@@ -11,7 +11,7 @@ import { ToolPageErrorBoundary } from "@/components/ToolPageErrorBoundary";
 import { ToolHistoryDrawer } from "@/components/ToolHistoryDrawer";
 import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
-import { fetchToolById, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, togglePinnedTool, isPinned, toggleLike, fetchUserLikes, fetchLikeCount, type Tool, type Review, type LikeTargetType, type Visibility } from "@/lib/data";
+import { fetchToolById, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, type Tool, type Review, type LikeTargetType, type Visibility } from "@/lib/data";
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
 
 export default function ToolDetailPage() {
@@ -37,7 +37,6 @@ export default function ToolDetailPage() {
       setIsJustPublished(params.get("new") === "1");
     }
   }, []);
-  const [pinned, setPinned] = useState(false);
   const [viewCount, setViewCount] = useState(0);
   const [likeCount, setLikeCount] = useState(0);
   const [liked, setLiked] = useState(false);
@@ -125,7 +124,6 @@ export default function ToolDetailPage() {
       if (!cancelled) setViewCount((v) => v + 1);
     });
     if (user?.id) {
-      isPinned(user.id, id).then((val) => { if (!cancelled) setPinned(val); });
       // 加载点赞状态
       fetchLikeCount("tool", id).then(c => { if (!cancelled) setLikeCount(c); });
       fetchUserLikes(user.id, "tool", [id]).then(s => { if (!cancelled) setLiked(s.has(id)); });
@@ -596,19 +594,7 @@ export default function ToolDetailPage() {
                     liked ? "bg-red-50 border-red-200 text-red-600" : "border-gray-200 text-gray-500 hover:bg-gray-50"
                   } ${liking ? "opacity-60" : ""}`}
                 >
-                  {liked ? "❤️ " : "🤍 "}{likeCount > 0 ? likeCount : ""}
-                </button>
-                <button
-                  onClick={async () => {
-                    const added = await togglePinnedTool(user.id, id);
-                    setPinned(added);
-                    toast.success(added ? "已添加到常用" : "已取消常用");
-                  }}
-                  className={`inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border rounded-lg text-xs font-medium transition-colors ${
-                    pinned ? "bg-indigo-50 border-indigo-200 text-indigo-600" : "border-gray-200 text-gray-400 hover:bg-gray-50"
-                  }`}
-                >
-                  📌 {pinned ? "已常用" : "常用"}
+                  {liked ? "❤️ 已收藏" : "🤍 收藏"}{likeCount > 0 ? ` ${likeCount}` : ""}
                 </button>
               </>
             ) : (

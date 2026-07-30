@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
-import { fetchTools, fetchViewCounts, fetchToolsByUser, getPinnedTools, CATEGORIES, type Tool } from "@/lib/data";
+import { fetchTools, fetchViewCounts, fetchToolsByUser, fetchUserLikedTools, CATEGORIES, type Tool } from "@/lib/data";
 import versionInfo from "../../version.json";
 
 // ---- Constants ----
@@ -35,6 +35,7 @@ export default function HomePage() {
   const [recentTools, setRecentTools] = useState<Array<Record<string, unknown>>>([]);
   const [myToolsLoading, setMyToolsLoading] = useState(false);
   const [pinnedToolIds, setPinnedToolIds] = useState<string[]>([]);
+  const [likedTools, setLikedTools] = useState<Tool[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,10 +73,10 @@ export default function HomePage() {
       .catch(() => setRecentTools([]));
   }, [user]);
 
-  // 加载常用工具 ID
+  // 加载收藏的工具
   useEffect(() => {
-    if (!user) { setPinnedToolIds([]); return; }
-    getPinnedTools(user.id).then(ids => setPinnedToolIds(ids));
+    if (!user) { setLikedTools([]); return; }
+    fetchUserLikedTools(user.id).then(tools => setLikedTools(tools));
   }, [user]);
 
   const filtered = useMemo(() => {
@@ -104,15 +105,15 @@ export default function HomePage() {
     return tools.filter((t) => idSet.has(t.id));
   }, [tools, pinnedToolIds]);
 
-  // 合并"我的工具"（自己发布的 + 常用的）
+  // 合并"我的工具"（自己发布的 + 收藏的）
   const combinedMyTools = useMemo(() => {
     const myIds = new Set(myTools.map(t => t.id));
     const combined = [...myTools];
-    for (const pt of pinnedTools) {
-      if (!myIds.has(pt.id)) combined.push(pt);
+    for (const lt of likedTools) {
+      if (!myIds.has(lt.id)) combined.push(lt);
     }
     return combined;
-  }, [myTools, pinnedTools]);
+  }, [myTools, likedTools]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
@@ -272,7 +273,7 @@ export default function HomePage() {
           <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <span>📦</span>我的工具
             {!myToolsLoading && <span className="text-xs font-normal text-gray-400">({combinedMyTools.length} 个)</span>}
-            {pinnedTools.length > 0 && <span className="text-xs font-normal text-indigo-400">含 {pinnedTools.length} 个常用</span>}
+            {likedTools.length > 0 && <span className="text-xs font-normal text-red-400">含 {likedTools.length} 个收藏</span>}
           </h2>
           {myToolsLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -303,9 +304,6 @@ export default function HomePage() {
                 <div className="p-3">
                   <h3 className="text-sm font-medium text-gray-900 truncate">{t.title}</h3>
                   <p className="text-xs text-gray-500 mt-0.5">@{t.author}</p>
-                  {pinnedToolIds.includes(t.id) && (
-                    <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600">📌 常用</span>
-                  )}
                   {t.visibility !== "public" && (
                     <span className={`inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full ${
                       t.visibility === "private" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
