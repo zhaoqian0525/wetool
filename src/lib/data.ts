@@ -3203,7 +3203,7 @@ export async function fetchUserLikedTools(userId: string, targetType: LikeTarget
       }
       
       // 按点赞顺序排序
-      const idOrder = new Map(toolIds.map((id: string, i: number) => [id, i]));
+      const idOrder = new Map<string, number>(toolIds.map((id: string, i: number) => [id, i]));
       result.sort((a, b) => (idOrder.get(a.id) ?? 99) - (idOrder.get(b.id) ?? 99));
     }
   }
