@@ -270,25 +270,23 @@ export default function HomePage() {
       {/* 我的工具 — 紧凑横向滚动 */}
       {user && combinedMyTools.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-3">
-          <h2 className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-2">
-            <span>📦</span>我的工具 · {combinedMyTools.length} 个
-          </h2>
+          <h2 className="text-xs font-semibold text-gray-500 mb-2">📦 我的工具 · {combinedMyTools.length} 个</h2>
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1"
                style={{scrollbarWidth:"none", msOverflowStyle:"none"}}>
             {combinedMyTools.map((t) => (
               <Link
                 key={t.id}
                 href={`/tool/${t.id}`}
-                className="flex-shrink-0 w-20 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+                className="flex-shrink-0 w-24 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div
-                  className="h-12 flex items-center justify-center"
+                  className="h-16 flex items-center justify-center"
                   style={{ background: t.thumbnailGradient || "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
                 >
-                  <span className="text-lg">{getToolEmoji(t)}</span>
+                  <span className="text-xl">{getToolEmoji(t)}</span>
                 </div>
-                <div className="px-1.5 py-1">
-                  <p className="text-[10px] font-medium text-gray-800 truncate leading-tight">{t.title}</p>
+                <div className="px-2 py-1.5">
+                  <p className="text-xs font-medium text-gray-800 truncate leading-tight">{t.title}</p>
                 </div>
               </Link>
             ))}
