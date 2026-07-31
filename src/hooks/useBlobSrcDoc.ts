@@ -33,17 +33,13 @@ export function useBlobSrcDoc(rawCode: string): {
 
     if (!rawCode) {
       blobUrlRef.current = null;
-      setSrcDoc("");
-      setBlobUrl("");
+      // 不复位 srcDoc/blobUrl，保持上一次的值防止空白闪烁
       return;
     }
 
     const html = wrapSecureSrcDoc(rawCode);
-
-    // srcDoc — 所有标准浏览器使用（包括 Safari）
     setSrcDoc(html);
 
-    // blobUrl — 备用（微信/QQ/X5 内核需要）
     const blob = new Blob([html], { type: "text/html; charset=utf-8" });
     const url = URL.createObjectURL(blob);
     blobUrlRef.current = url;
