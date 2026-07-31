@@ -10,6 +10,28 @@
 
 ---
 
+## [1.4.1] - 2026-07-31
+
+### Added
+- 封面截图脚本 `scripts/screenshot-tool-html.mjs`（直接渲染 HTML，无需网站部署）
+
+### Fixed
+- SW 缓存导致页面不刷新 → 改为页面不缓存、静态资源缓存
+- 封面系统全线挂掉 → 修复 uploadCover、创建 storage bucket、已补所有工具封面
+- 工具页需两次返回 → 修复 useBlobSrcDoc 先清空再赋值
+- Supabase 工具标签页标题显示"工具未找到" → generateMetadata 加 Supabase 查询
+- 工具删除不生效 → 改用 service_role key
+- 创作页默认代码 → 改为空白编辑器
+
+### Changed
+- 收藏功能简化：点赞和收藏分离，收藏 → 首页"我的工具"+ 个人主页
+- 工具页操作栏重设计：紧凑图标按钮，全屏按钮移至顶部
+- 主页"我的工具"改为横向滚动小卡片
+- 广场卡片标签对比度增强
+- 个人主页移除旧"我的常用"section
+
+---
+
 ## [1.4.0] - 2026-07-30
 
 ### Added

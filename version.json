@@ -1,6 +1,6 @@
 {
-  "version": "1.4.0",
-  "buildDate": "2026-07-30",
-  "buildTimestamp": "2026-07-30T22:35:00+08:00",
-  "description": "点赞+收藏双功能、手机端顶部导航栏、RLS修复、历史记录同步、发布功能正常"
+  "version": "1.4.1",
+  "buildDate": "2026-07-31",
+  "buildTimestamp": "2026-07-31T21:08:00+08:00",
+  "description": "UI优化、SW缓存修复、封面系统、双重返回修复、标签页标题修复"
 }
