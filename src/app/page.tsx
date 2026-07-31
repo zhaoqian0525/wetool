@@ -362,19 +362,19 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
           </>
         )}
         {/* Category badge */}
-        <span className="absolute top-2 right-2 z-10 bg-white/25 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full">
+        <span className="absolute top-2 right-2 z-10 bg-black/40 text-white text-[11px] px-2.5 py-0.5 rounded-full font-medium">
           {tool.category}
         </span>
         {/* 下载型标签 */}
         {tool.isDownloadable && (
-          <span className="absolute top-2 left-2 z-10 bg-white/25 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full">
+          <span className="absolute top-2 left-2 z-10 bg-black/40 text-white text-[11px] px-2.5 py-0.5 rounded-full">
             💻 下载型
           </span>
         )}
         {/* Stats badges */}
         <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1">
           {viewCount !== undefined && viewCount > 0 && (
-            <span className="flex items-center gap-0.5 bg-white/25 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded-full">
+            <span className="flex items-center gap-0.5 bg-black/40 text-white text-[11px] px-2 py-0.5 rounded-full">
               👁 {viewCount > 999 ? (viewCount / 1000).toFixed(1) + "k" : viewCount}
             </span>
           )}
