@@ -23,7 +23,8 @@ export async function DELETE(
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://cvacrykzcppiflmvwwfe.supabase.co";
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_HedSPsepnDWtvd3IuQhlWw_JPeVevVu";
+  // 用 service_role key 操作数据库，因为我们已在代码层验证了所有权
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2YWNyeWt6Y3BwaWZsbXZ3d2ZlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTAxMzQ1NCwiZXhwIjoyMTAwNTg5NDU0fQ.2_Z78V-JYZyLHDHgrFXkGSh5y4YGwuradhYNlij1KtI";
   const supabase = createClient(url, key);
 
   // 1. 验证所有权

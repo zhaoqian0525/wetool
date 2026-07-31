@@ -375,7 +375,7 @@ function CreatePageInner() {
         const coverBlob = await captureCover(currentCode);
         if (coverBlob) {
           setPublishStep("uploading");
-          coverUrl = await uploadCoverToStorage(coverBlob, toolId);
+          coverUrl = await uploadCoverToStorage(coverBlob, toolId, client);
         }
       } catch {
         console.warn("Cover screenshot failed");
@@ -387,7 +387,7 @@ function CreatePageInner() {
           setPublishStep("screenshot");
           const fallbackBlob = await generateDefaultCoverBlob(title, currentVersions.length);
           setPublishStep("uploading");
-          coverUrl = await uploadCoverToStorage(fallbackBlob, toolId);
+          coverUrl = await uploadCoverToStorage(fallbackBlob, toolId, client);
         } catch {
           console.warn("Fallback cover generation also failed");
         }

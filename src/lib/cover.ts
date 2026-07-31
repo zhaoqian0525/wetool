@@ -155,13 +155,14 @@ export async function generateDefaultCoverBlob(
 /** 上传封面到 Supabase Storage，返回公开 URL。失败返回 null */
 export async function uploadCoverToStorage(
   blob: Blob,
-  toolId: string
+  toolId: string,
+  customClient?: ReturnType<typeof getSupabase>
 ): Promise<string | null> {
-  const supabase = getSupabase();
+  const supabase = customClient || getSupabase();
   if (!supabase) return null;
 
   try {
-    // 确保 bucket 存在（失败则跳过，可能无权限）
+    // 确保 bucket 存在
     await ensureBucket(supabase);
 
     const filePath = `public/${toolId}.png`;
