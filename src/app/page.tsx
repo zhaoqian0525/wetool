@@ -267,60 +267,32 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* 我的工具（已登录时显示，加载中/无数据时有对应状态） */}
-      {user && (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-4">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <span>📦</span>我的工具
-            {!myToolsLoading && <span className="text-xs font-normal text-gray-400">({combinedMyTools.length} 个)</span>}
-            {likedTools.length > 0 && <span className="text-xs font-normal text-amber-400">含 {likedTools.length} 个收藏</span>}
+      {/* 我的工具 — 紧凑横向滚动 */}
+      {user && combinedMyTools.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-3">
+          <h2 className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-2">
+            <span>📦</span>我的工具 · {combinedMyTools.length} 个
           </h2>
-          {myToolsLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {[1,2,3,4].map((i) => (
-                <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
-                  <div className="aspect-[4/3] bg-gray-200" />
-                  <div className="p-3 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4" />
-                    <div className="h-3 bg-gray-100 rounded w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : combinedMyTools.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {combinedMyTools.map((t) => (
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1"
+               style={{scrollbarWidth:"none", msOverflowStyle:"none"}}>
+            {combinedMyTools.map((t) => (
               <Link
                 key={t.id}
                 href={`/tool/${t.id}`}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden card-hover-float group"
+                className="flex-shrink-0 w-20 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div
-                  className="aspect-[4/3] flex items-center justify-center"
+                  className="h-12 flex items-center justify-center"
                   style={{ background: t.thumbnailGradient || "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
                 >
-                  <span className="text-3xl">{getToolEmoji(t)}</span>
+                  <span className="text-lg">{getToolEmoji(t)}</span>
                 </div>
-                <div className="p-3">
-                  <h3 className="text-sm font-medium text-gray-900 truncate">{t.title}</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">@{t.author}</p>
-                  {t.visibility !== "public" && (
-                    <span className={`inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded-full ${
-                      t.visibility === "private" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
-                    }`}>{t.visibility === "private" ? "私密" : "未列出"}</span>
-                  )}
+                <div className="px-1.5 py-1">
+                  <p className="text-[10px] font-medium text-gray-800 truncate leading-tight">{t.title}</p>
                 </div>
               </Link>
             ))}
-            </div>
-          ) : (
-            <div className="bg-white border border-dashed border-gray-200 rounded-xl p-6 text-center">
-              <p className="text-sm text-gray-400 mb-3">还没有发布工具</p>
-              <Link href="/create" className="inline-flex items-center gap-1 text-xs text-indigo-600 font-medium hover:text-indigo-700">
-                ✨ 创建第一个工具
-              </Link>
-            </div>
-          )}
+          </div>
         </section>
       )}
 
