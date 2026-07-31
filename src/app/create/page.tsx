@@ -18,7 +18,9 @@ import { captureCover, generateDefaultCoverBlob, uploadCoverToStorage } from "@/
 
 // --- Constants ---
 
-const DEFAULT_CODE = `<!DOCTYPE html>
+const DEFAULT_CODE = "";
+
+const TEMPLATE_CODE = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -480,7 +482,7 @@ function CreatePageInner() {
   const mobileActions = (
     <>
       <button
-        onClick={() => { setCode(DEFAULT_CODE); toast.info("已填入示例工具"); }}
+        onClick={() => { setCode(TEMPLATE_CODE); toast.info("已填入示例工具"); }}
         className="min-w-[44px] min-h-[44px] flex items-center justify-center px-2 py-1 text-xs rounded-lg transition-all font-medium bg-indigo-500 text-white hover:bg-indigo-600"
       >
         示例
@@ -508,7 +510,7 @@ function CreatePageInner() {
         重置
       </button>
       <button
-        onClick={() => { setCode(DEFAULT_CODE); toast.info("已填入示例工具"); }}
+        onClick={() => { setCode(TEMPLATE_CODE); toast.info("已填入示例工具"); }}
         className="min-w-[44px] min-h-[44px] flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
