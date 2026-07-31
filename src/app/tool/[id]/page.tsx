@@ -652,19 +652,6 @@ export default function ToolDetailPage() {
             >
               ✨ 改编
             </Link>
-            {user && (
-              <button
-                onClick={() => {
-                  if (confirm("确定要清空此工具的所有使用记录吗？")) {
-                    handleClearState();
-                  }
-                }}
-                disabled={clearingState}
-                className="inline-flex items-center gap-1 h-8 px-2.5 text-xs text-gray-400 hover:text-gray-600 rounded-lg transition-colors disabled:opacity-40"
-              >
-                🗑️
-              </button>
-            )}
             {isAuthor && (
               <button
                 onClick={() => setDeleteOpen(true)}
