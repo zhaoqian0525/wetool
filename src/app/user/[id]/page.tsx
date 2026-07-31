@@ -8,6 +8,15 @@ import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
 import { fetchToolsByUser, fetchTools, fetchUserLikedTools, type Tool } from "@/lib/data";
 
+const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
+function getToolEmoji(tool: Tool): string {
+  const code = typeof tool.code === "string" ? tool.code : "";
+  const m = code.match(EMOJI_RE);
+  if (m) return m[0];
+  const cat: Record<string, string> = { "旅行": "✈️", "工程计算": "🔧", "生活": "🏡", "教育": "📚" };
+  return cat[tool.category] || "🛠️";
+}
+
 export default function UserPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -73,7 +82,7 @@ export default function UserPage() {
                     className="aspect-[4/3] flex items-center justify-center"
                     style={{ background: t.thumbnailGradient || "linear-gradient(135deg,#4f46e5,#7c3aed)" }}
                   >
-                    <span className="text-2xl">{t.title?.charAt(0) || "🛠"}</span>
+                    <span className="text-2xl">{getToolEmoji(t)}</span>
                   </div>
                   <div className="p-2.5">
                     <p className="text-xs font-medium text-gray-800 truncate">{t.title}</p>
@@ -121,7 +130,7 @@ export default function UserPage() {
                       className="aspect-[4/3] flex items-center justify-center"
                       style={{ background: t.thumbnailGradient || "linear-gradient(135deg,#4f46e5,#7c3aed)" }}
                     >
-                      <span className="text-2xl">{t.title?.charAt(0) || "🛠"}</span>
+                      <span className="text-2xl">{getToolEmoji(t)}</span>
                     </div>
                     <div className="p-2.5">
                       <p className="text-xs font-medium text-gray-800 truncate">{t.title}</p>

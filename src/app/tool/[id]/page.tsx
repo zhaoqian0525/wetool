@@ -14,6 +14,15 @@ import { useToolStorage } from "@/hooks/useToolStorage";
 import { fetchToolById, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, type Tool, type Review, type LikeTargetType, type Visibility } from "@/lib/data";
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
 
+const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
+function getToolEmoji(tool: Tool): string {
+  const code = typeof tool.code === "string" ? tool.code : "";
+  const m = code.match(EMOJI_RE);
+  if (m) return m[0];
+  const cat: Record<string, string> = { "旅行": "✈️", "工程计算": "🔧", "生活": "🏡", "教育": "📚" };
+  return cat[tool.category] || "🛠️";
+}
+
 export default function ToolDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -710,7 +719,7 @@ export default function ToolDetailPage() {
                   className="group card-hover-float block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
                 >
                   <div className="relative aspect-[4/3] flex items-center justify-center overflow-hidden" style={{ background: rt.thumbnailGradient }}>
-                    <span className="text-white font-bold text-xs text-center drop-shadow-md line-clamp-2 px-2">{rt.title}</span>
+                    <span className="text-3xl drop-shadow-lg">{getToolEmoji(rt)}</span>
                   </div>
                   <div className="p-2">
                     <p className="text-xs font-medium text-gray-700 group-hover:text-indigo-600 truncate">{rt.title}</p>
