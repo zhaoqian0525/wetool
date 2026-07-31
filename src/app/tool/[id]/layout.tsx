@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { MOCK_TOOLS } from "@/lib/data";
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = "https://cvacrykzcppiflmvwwfe.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_HedSPsepnDWtvd3IuQhlWw_JPeVevVu";
 
 export async function generateStaticParams() {
   return MOCK_TOOLS.map((tool) => ({ id: tool.id }));
@@ -11,7 +15,20 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const tool = MOCK_TOOLS.find((t) => t.id === id);
+  let tool = MOCK_TOOLS.find((t) => t.id === id);
+
+  // MOCK_TOOLS 中没找到 → 查 Supabase
+  if (!tool && id.length > 5) {
+    try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data } = await supabase.from("tools").select("title,description,author").eq("id", id).single();
+      if (data) {
+        tool = { id, title: data.title, description: data.description ?? "", author: data.author ?? "" };
+      }
+    } catch {
+      // 查询失败时保持 tool 为空
+    }
+  }
 
   if (!tool) {
     return {
