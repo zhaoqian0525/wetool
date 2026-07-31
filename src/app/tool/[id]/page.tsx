@@ -584,8 +584,8 @@ export default function ToolDetailPage() {
           </div>
         ) : (
         <div className="flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
-          {/* Action bar — compact row above iframe */}
-          <div className="flex items-center gap-2 pb-3 flex-wrap">
+          {/* Action bar — compact toolbar above iframe */}
+          <div className="flex items-center gap-1.5 pb-3 flex-wrap">
             {user ? (
               <>
                 <button
@@ -602,11 +602,11 @@ export default function ToolDetailPage() {
                     } finally { setLiking(false); }
                   }}
                   disabled={liking}
-                  className={`inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border rounded-lg text-xs font-medium transition-colors ${
-                    liked ? "bg-red-50 border-red-200 text-red-600" : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                  className={`inline-flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${
+                    liked ? "bg-red-50 text-red-600 ring-1 ring-red-200" : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
                   } ${liking ? "opacity-60" : ""}`}
                 >
-                  {liked ? "❤️ 已点赞" : "🤍 点赞"}{likeCount > 0 ? ` ${likeCount}` : ""}
+                  {liked ? "❤️" : "🤍"}{likeCount > 0 ? ` ${likeCount}` : ""}
                 </button>
                 <button
                   onClick={async () => {
@@ -621,47 +621,54 @@ export default function ToolDetailPage() {
                     } finally { setSaving(false); }
                   }}
                   disabled={saving}
-                  className={`inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border rounded-lg text-xs font-medium transition-colors ${
-                    saved ? "bg-amber-50 border-amber-200 text-amber-600" : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                  className={`inline-flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${
+                    saved ? "bg-amber-50 text-amber-600 ring-1 ring-amber-200" : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
                   } ${saving ? "opacity-60" : ""}`}
                 >
-                  {saved ? "⭐ 已收藏" : "☆ 收藏"}
+                  {saved ? "⭐" : "☆"}
                 </button>
               </>
             ) : (
-              <Link href="/auth" className="inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border border-gray-200 text-gray-400 rounded-lg text-xs font-medium hover:bg-gray-50">
-                登录后使用
+              <Link href="/auth" className="inline-flex items-center gap-1 h-8 px-2.5 bg-white text-gray-400 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50">
+                登录
               </Link>
             )}
+            <span className="w-px h-5 bg-gray-200 mx-0.5" />
             <button
               onClick={handleShare}
-              className="inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border border-gray-200 text-gray-500 rounded-lg text-xs font-medium hover:bg-gray-50"
+              className="inline-flex items-center gap-1 h-8 px-2.5 bg-white text-gray-500 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 active:scale-95 transition-all"
             >
-              {shareCopied ? "✓ 已复制" : "🔗 分享"}
+              {shareCopied ? "✓ 已复制" : "🔗"}
+            </button>
+            <button
+              onClick={() => setFullscreen(true)}
+              className="inline-flex items-center gap-1 h-8 px-2.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 active:scale-95 transition-all"
+            >
+              ⛶ 全屏
             </button>
             <Link
               href={`/create?source_tool_id=${tool.id}`}
-              className="inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 border border-indigo-200 text-indigo-600 rounded-lg text-xs font-medium hover:bg-indigo-50"
+              className="inline-flex items-center gap-1 h-8 px-2.5 bg-white text-indigo-600 border border-indigo-200 rounded-lg text-xs font-medium hover:bg-indigo-50 active:scale-95 transition-all"
             >
               ✨ 改编
             </Link>
             {user && (
               <button
                 onClick={() => {
-                  if (confirm("确定要清空此工具的所有使用记录吗？所有已保存的输入内容将被清除，此操作不可恢复。")) {
+                  if (confirm("确定要清空此工具的所有使用记录吗？")) {
                     handleClearState();
                   }
                 }}
                 disabled={clearingState}
-                className="inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-40"
+                className="inline-flex items-center gap-1 h-8 px-2.5 text-xs text-gray-400 hover:text-gray-600 rounded-lg transition-colors disabled:opacity-40"
               >
-                🗑️ {clearingState ? "清空中..." : "清空记录"}
+                🗑️
               </button>
             )}
             {isAuthor && (
               <button
                 onClick={() => setDeleteOpen(true)}
-                className="inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1 h-8 px-2.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 删除
               </button>
@@ -673,7 +680,6 @@ export default function ToolDetailPage() {
             iframeError ? (
               <IframeErrorFallback />
             ) : (
-            <>
             <WechatGuide toolUrl={`https://we-woo.net/tool/${id}`}>
               <div className="flex-1 min-h-0 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200 relative">
                 {!iframeLoaded && <IframeSkeleton />}
@@ -689,14 +695,6 @@ export default function ToolDetailPage() {
                 />
               </div>
             </WechatGuide>
-            {/* 🖥️ 全屏按钮 — 所有设备 */}
-            <button
-              onClick={() => setFullscreen(true)}
-              className="inline-flex items-center gap-1 mt-4 px-4 py-2.5 text-xs sm:text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 active:bg-gray-100"
-            >
-              ⛶ 全屏使用
-            </button>
-            </>
             )
           ) : (
             <div className="flex-1 rounded-xl flex flex-col items-center justify-center p-8" style={{ background: tool.thumbnailGradient }}>
