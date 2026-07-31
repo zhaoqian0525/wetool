@@ -1,5 +1,5 @@
 // WeWoo Service Worker - Basic offline support
-const CACHE_NAME = "wewoo-v1";
+const CACHE_NAME = "wewoo-v2";
 const STATIC_ASSETS = ["/", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
