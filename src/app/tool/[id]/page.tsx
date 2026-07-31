@@ -898,11 +898,8 @@ export default function ToolDetailPage() {
       <div className="fixed inset-0 z-50 bg-black">
         <button
           onClick={() => setFullscreen(false)}
-          className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-4 py-2 bg-gray-800/90 text-white text-sm font-medium rounded-full hover:bg-gray-700 active:scale-95 transition-all shadow-lg border border-white/20"
+          className="absolute top-3 right-3 z-10 flex items-center gap-1 px-3 py-1.5 bg-gray-800/80 text-white text-xs rounded-full hover:bg-gray-700 active:scale-95 transition-all shadow border border-white/10"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
           退出全屏
         </button>
         <iframe
