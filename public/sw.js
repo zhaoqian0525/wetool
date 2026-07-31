@@ -1,55 +1,38 @@
-// WeWoo Service Worker - Basic offline support
-const CACHE_NAME = "wewoo-v2";
-const STATIC_ASSETS = ["/", "/manifest.webmanifest"];
+// WeWoo Service Worker - 只缓存静态资源，页面始终走网络
+const CACHE_NAME = "wewoo-static-v1";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)).catch(() => {})
-  );
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((names) =>
-      Promise.all(
-        names.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
-      )
+      Promise.all(names.map((name) => caches.delete(name)))
     )
   );
   self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  // Only handle GET requests
   if (event.request.method !== "GET") return;
-
-  // Skip cross-origin requests (Supabase API, etc.)
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Network-first for navigation, cache-first for static assets
+  // 页面请求：始终走网络（不缓存）
   if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => caches.match(event.request).then((r) => r || caches.match("/")))
-    );
-  } else {
-    event.respondWith(
-      caches.match(event.request).then(
-        (cached) =>
-          cached ||
-          fetch(event.request).then((response) => {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-            return response;
-          })
-      )
-    );
+    event.respondWith(fetch(event.request).catch(() => caches.match("/")));
+    return;
   }
+
+  // 静态资源：stale-while-revalidate
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      const fetched = fetch(event.request).then((response) => {
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
+        return response;
+      }).catch(() => cached);
+      return cached || fetched;
+    })
+  );
 });
