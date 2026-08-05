@@ -671,7 +671,7 @@ export default function ToolDetailPage() {
               <div className="flex-1 min-h-0 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200 relative">
                 {!iframeLoaded && <IframeSkeleton />}
                 <iframe
-                  key={tool?.id ?? "empty"}
+                  key={`${tool?.id ?? "empty"}:${isWechat ? previewBlobUrl : previewSrcDoc}`}
                   {...(isWechat ? { src: previewBlobUrl } : { srcDoc: previewSrcDoc })}
                   title={tool.title}
                   className="absolute inset-0 w-full h-full border-0"
@@ -903,7 +903,7 @@ export default function ToolDetailPage() {
           退出全屏
         </button>
         <iframe
-          key={tool?.id ?? "fs-empty"}
+          key={`${tool?.id ?? "fs-empty"}:${isWechat ? previewBlobUrl : previewSrcDoc}`}
           id="fullscreen-iframe"
           src={isWechat ? previewBlobUrl : undefined}
           srcDoc={isWechat ? undefined : previewSrcDoc}

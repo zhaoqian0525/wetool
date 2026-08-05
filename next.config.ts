@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // 生产环境强制压缩
   compress: true,
+  // 允许局域网设备（手机等）访问 dev server，避免 Next.js 拦截跨源 dev 资源导致页面 JS 不生效
+  allowedDevOrigins: ["192.168.71.10", "192.*.*.*"],
   // 图片优化安全：只允许已知域名
   images: {
     remotePatterns: [

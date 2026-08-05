@@ -163,6 +163,9 @@ function CreatePageInner() {
   // Fullscreen preview
   const [fullscreenPreview, setFullscreenPreview] = useState(false);
 
+  // Mobile editor/preview tab（移动端切换用）
+  const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor");
+
   // AI prompt helper
   const [promptExpanded, setPromptExpanded] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
@@ -542,6 +545,15 @@ function CreatePageInner() {
   const isWechatPreview = useIsWechat();
   const { srcDoc: previewSrcDoc, blobUrl: previewBlobUrl, sandbox: previewSandbox } = useBlobSrcDoc(debouncedCode);
 
+  // 普通浏览器用 srcDoc；微信/QQ 才用 blob URL（sandbox iframe 的 null origin 无法加载父页面 blob）
+  const previewIframeProps = isWechatPreview
+    ? previewBlobUrl
+      ? { src: previewBlobUrl }
+      : {}
+    : previewSrcDoc
+    ? { srcDoc: previewSrcDoc }
+    : {};
+
   // 工具数据持久化（预览用）
   useToolStorage("preview", user?.id);
 
@@ -566,8 +578,40 @@ function CreatePageInner() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 pb-14 lg:pb-0">
+        {/* 移动端：编辑/预览切换 */}
+        <div className="lg:hidden flex-shrink-0 flex items-center justify-center px-3 py-2 bg-gray-200 border-b border-gray-300">
+          <div className="flex bg-gray-900/5 rounded-xl p-1 w-full max-w-[260px]">
+            <button
+              onClick={() => setMobileTab("editor")}
+              className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${
+                mobileTab === "editor"
+                  ? "bg-white text-indigo-600 shadow-sm"
+                  : "text-gray-500"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              编辑
+            </button>
+            <button
+              onClick={() => { setMobileTab("preview"); setFullscreenPreview(true); }}
+              className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${
+                mobileTab === "preview"
+                  ? "bg-white text-indigo-600 shadow-sm"
+                  : "text-gray-500"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              预览
+            </button>
+          </div>
+        </div>
         {/* === Editor Panel === */}
-        <div className="flex-1 flex flex-col min-h-0 bg-gray-900 lg:w-1/2">
+        <div className={`flex-1 flex flex-col min-h-0 bg-gray-900 lg:w-1/2 ${mobileTab === "preview" ? "hidden lg:flex" : ""}`}>
           <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-800 border-b border-gray-700">
             <div className="flex items-center gap-2">
               <div className="flex gap-1.5">
@@ -731,7 +775,7 @@ function CreatePageInner() {
         </div>
 
         {/* === Preview Panel === */}
-        <div className="flex-1 flex flex-col items-center justify-center bg-gray-200 p-3 lg:p-4 min-h-0 lg:w-1/2">
+        <div className={`flex-1 flex flex-col items-center justify-center bg-gray-200 p-3 lg:p-4 min-h-0 lg:w-1/2 ${mobileTab === "editor" ? "hidden lg:flex" : ""}`}>
           <div className="relative flex flex-col items-center flex-1 w-full justify-center">
             <div className="hidden lg:flex flex-col items-center">
               <WechatGuide>
@@ -747,7 +791,8 @@ function CreatePageInner() {
                   <div className="w-full h-full overflow-hidden rounded-[24px] bg-white relative flex flex-col">
                     <div className="h-5 flex-shrink-0" />
                     <iframe
-                      {...(isWechatPreview ? { src: previewBlobUrl } : { srcDoc: previewSrcDoc })}
+                      key={`desktop:${isWechatPreview ? previewBlobUrl : previewSrcDoc}`}
+                      {...previewIframeProps}
                       title="工具预览"
                       className="flex-1 w-full border-0"
                       sandbox={previewSandbox}
@@ -758,25 +803,17 @@ function CreatePageInner() {
               <p className="mt-4 text-xs text-gray-400 text-center">手机预览 · 375 × 667</p>
             </div>
 
-            <div className="lg:hidden flex flex-col w-full flex-1 min-h-0">
-              <WechatGuide>
-                <div className="flex-1 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200 min-h-0">
-                  <iframe
-                    src={previewBlobUrl}
-                    title="工具预览"
-                    className="w-full h-full border-0"
-                    sandbox={previewSandbox}
-                  />
-                </div>
-              </WechatGuide>
+                        <div className="lg:hidden flex flex-col items-center justify-center w-full flex-1 min-h-0 gap-3 text-gray-500">
+              <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <p className="text-sm">预览已切换为全屏模式</p>
               <button
                 onClick={() => setFullscreenPreview(true)}
-                className="mt-2 flex-shrink-0 w-full min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+                className="mt-1 min-h-[44px] flex items-center justify-center gap-1.5 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
-                全屏预览
+                重新打开全屏预览
               </button>
             </div>
           </div>
@@ -786,27 +823,24 @@ function CreatePageInner() {
       {/* Fullscreen preview overlay */}
       {fullscreenPreview && (
         <div className="fixed inset-0 z-50 bg-black">
-          {/* 顶部控制栏，3秒后自动隐藏 */}
+          {/* 顶部控制栏，常显 */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-2 bg-black/60 backdrop-blur-sm z-10 transition-opacity duration-500" id="previewBar">
             <span className="text-sm text-white/80">预览工具效果</span>
             <button
-              onClick={() => setFullscreenPreview(false)}
+              onClick={() => { setFullscreenPreview(false); setMobileTab("editor"); }}
               className="min-h-[36px] px-4 text-sm text-white bg-white/20 rounded-lg hover:bg-white/30"
             >
               退出预览
             </button>
           </div>
           <iframe
-            src={previewBlobUrl}
+            key={`fullscreen:${isWechatPreview ? previewBlobUrl : previewSrcDoc}`}
+            {...previewIframeProps}
             title="全屏预览"
             className="absolute inset-0 w-full h-full border-0"
             sandbox={previewSandbox}
           />
         </div>
-      )}
-      {/* auto-hide bar */}
-      {fullscreenPreview && (
-        <script dangerouslySetInnerHTML={{ __html: "setTimeout(()=>{const b=document.getElementById('previewBar');if(b)b.style.opacity='0';setTimeout(()=>{if(b)b.style.display='none'},500)},3000);" }} />
       )}
 
       {/* Publish Modal */}
