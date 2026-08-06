@@ -1,6 +1,6 @@
 {
-  "version": "1.4.1",
-  "buildDate": "2026-07-31",
-  "buildTimestamp": "2026-07-31T21:08:00+08:00",
-  "description": "UI优化、SW缓存修复、封面系统、双重返回修复、标签页标题修复"
+  "version": "1.4.2",
+  "buildDate": "2026-08-06",
+  "buildTimestamp": "2026-08-06T19:44:18+08:00",
+  "description": "主页加载优化、小游戏分类、移动端预览优化、双重返回修复"
 }

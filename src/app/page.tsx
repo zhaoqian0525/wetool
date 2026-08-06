@@ -16,7 +16,7 @@ function getToolEmoji(tool: Tool | Record<string, unknown>): string {
   const code = typeof tool.code === "string" ? tool.code : "";
   const m = code.match(EMOJI_RE);
   if (m) return m[0];
-  const cat: Record<string, string> = { "旅行": "✈️", "工程计算": "🔧", "生活": "🏡", "教育": "📚" };
+  const cat: Record<string, string> = { "旅行": "✈️", "工程计算": "🔧", "生活": "🏡", "教育": "📚", "小游戏": "🎮" };
   const category = typeof tool.category === "string" ? tool.category : "";
   return cat[category] || "🛠️";
 }

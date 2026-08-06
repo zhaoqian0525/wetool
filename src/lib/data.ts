@@ -1,6 +1,6 @@
 // ---- Types ----
 
-export type ToolCategory = "旅行" | "工程计算" | "生活" | "教育";
+export type ToolCategory = "旅行" | "工程计算" | "生活" | "教育" | "小游戏";
 
 export type Visibility = "public" | "unlisted" | "private";
 
@@ -44,6 +44,7 @@ export const CATEGORIES: { key: string; label: string; icon: string }[] = [
   { key: "工程计算", label: "工程计算", icon: "🔧" },
   { key: "生活", label: "生活日常", icon: "🏡" },
   { key: "教育", label: "课堂互动", icon: "📚" },
+  { key: "小游戏", label: "小游戏", icon: "🎮" },
 ];
 
 // ---- Mock data ----
@@ -2916,17 +2917,39 @@ export async function isPinned(userId: string, toolId: string): Promise<boolean>
   return false;
 }
 
+// 首页工具缓存：Supabase 慢/不可用时兜底展示最近一次成功数据
+const TOOLS_CACHE_KEY = "wewoo-tools-cache";
+
+function loadCachedTools(): Tool[] {
+  if (typeof localStorage === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(TOOLS_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as Tool[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchTools(): Promise<Tool[]> {
   const supabase = await getSupabaseClient();
   let dbTools: Tool[] = [];
   if (supabase) {
-    const result = await queryWithTimeout(
-      supabase.from("tools").select("*").order("created_at", { ascending: false })
-    );
-    if (result && !(result as { error: unknown }).error) {
-      const rows = (result as { data: Record<string, unknown>[] }).data;
-      if (rows && rows.length > 0) dbTools = rows.map(mapRow);
+    // 网络慢时给足时间（6s），超时/失败重试一次；仍失败则用本地缓存兜底
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await queryWithTimeout(
+        supabase.from("tools").select("*").order("created_at", { ascending: false }),
+        6000
+      );
+      if (result && !(result as { error: unknown }).error) {
+        const rows = (result as { data: Record<string, unknown>[] }).data;
+        if (rows && rows.length > 0) {
+          dbTools = rows.map(mapRow);
+          try { localStorage.setItem(TOOLS_CACHE_KEY, JSON.stringify(dbTools)); } catch { /* full */ }
+          break;
+        }
+      }
     }
+    if (dbTools.length === 0) dbTools = loadCachedTools();
   }
   // 合并本地发布的公开工具
   const localPublic = loadLocalTools().filter((t) => t.visibility === "public");
