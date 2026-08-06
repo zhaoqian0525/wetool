@@ -80,6 +80,9 @@ export default function HomePage() {
     fetchUserLikedTools(user.id, "save").then(tools => setLikedTools(tools));
   }, [user]);
 
+  // 搜索时隐藏"最近使用/我的工具"等区块，让搜索结果紧跟在搜索框下方（移动端更顺手）
+  const isSearching = search.trim().length > 0;
+
   const filtered = useMemo(() => {
     let list = activeCategory === "全部" ? tools : tools.filter((t) => t.category === activeCategory);
     if (search.trim()) {
@@ -217,10 +220,10 @@ export default function HomePage() {
       </section>
 
       {/* Newbie guide banner */}
-      <GuideBanner />
+      {!isSearching && <GuideBanner />}
 
-      {/* 最近使用（已登录且有记录时显示，无记录不显示） */}
-      {user ? (
+      {/* 最近使用（已登录且有记录时显示，无记录不显示；搜索时隐藏） */}
+      {!isSearching && (user ? (
         recentTools.length > 0 && (
           <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-4">
             <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -266,10 +269,10 @@ export default function HomePage() {
             </Link>
           </div>
         </section>
-      )}
+      ))}
 
-      {/* 我的工具 — 紧凑横向滚动 */}
-      {user && combinedMyTools.length > 0 && (
+      {/* 我的工具 — 紧凑横向滚动（搜索时隐藏） */}
+      {!isSearching && user && combinedMyTools.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-3">
           <h2 className="text-xs font-semibold text-gray-500 mb-2">📦 我的工具 · {combinedMyTools.length} 个</h2>
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1"
