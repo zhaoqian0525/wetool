@@ -17,7 +17,10 @@ import { wrapSecureSrcDoc } from "@/lib/sandbox";
  * - 非微信环境：iframe 用 srcDoc，blobUrl 为空
  * - 微信环境：iframe 用 blobUrl（src），srcDoc 包含但不设置
  */
-export function useBlobSrcDoc(rawCode: string): {
+export function useBlobSrcDoc(
+  rawCode: string,
+  lsSeed?: Record<string, string> | null
+): {
   srcDoc: string;
   blobUrl: string;
   sandbox: string;
@@ -37,7 +40,7 @@ export function useBlobSrcDoc(rawCode: string): {
       return;
     }
 
-    const html = wrapSecureSrcDoc(rawCode);
+    const html = wrapSecureSrcDoc(rawCode, lsSeed);
     setSrcDoc(html);
 
     const blob = new Blob([html], { type: "text/html; charset=utf-8" });
@@ -51,7 +54,7 @@ export function useBlobSrcDoc(rawCode: string): {
         blobUrlRef.current = null;
       }
     };
-  }, [rawCode]);
+  }, [rawCode, lsSeed]);
 
   return { srcDoc, blobUrl, sandbox: "allow-scripts" };
 }

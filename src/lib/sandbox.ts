@@ -197,22 +197,69 @@ const SECURITY_SHIM = `<script>
     window.WebSocket.prototype = _OrigWS.prototype;
   } catch(_) {}
 
-  // ===== 内存级 Storage mock — 拦截 null-origin 下的 SecurityError =====
-  function createMemoryStorage() {
+  // ===== 持久化 Storage mock — 拦截 null-origin 下的 SecurityError，并自动同步到父页面 =====
+  // localStorage 数据会防抖同步给父页面保存（登录用户上云 / 游客本地墓碑），
+  // 刷新或全屏后由父页面注入快照恢复，实现『墓碑机制』。
+  function createMemoryStorage(syncToParent) {
     var data = {};
-    return {
-      getItem: function(k) { _showBanner(); return k in data ? data[k] : null; },
-      setItem: function(k, v) { _showBanner(); data[k] = String(v); },
-      removeItem: function(k) { _showBanner(); delete data[k]; },
-      clear: function() { _showBanner(); data = {}; },
+    // 预置快照：父页面在 srcdoc 中同步注入的 __wewooLsSeed__（墓碑/云端记忆）
+    if (syncToParent && window.__wewooLsSeed__ && typeof window.__wewooLsSeed__ === 'object') {
+      var _seed = window.__wewooLsSeed__;
+      for (var _sk in _seed) {
+        if (Object.prototype.hasOwnProperty.call(_seed, _sk)) data[_sk] = String(_seed[_sk]);
+      }
+    }
+    var _timer = null;
+    function _schedule() {
+      if (!syncToParent) return;
+      if (_timer) clearTimeout(_timer);
+      _timer = setTimeout(function() {
+        _timer = null;
+        try { window.parent.postMessage({ type: 'WEWOO_LS_SYNC', data: JSON.stringify(data) }, '*'); } catch(_) {}
+      }, 800);
+    }
+    var api = {
+      getItem: function(k) { return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
+      setItem: function(k, v) { data[k] = String(v); _schedule(); },
+      removeItem: function(k) { delete data[k]; _schedule(); },
+      clear: function() { data = {}; _schedule(); },
       key: function(i) { return Object.keys(data)[i] || null; },
       get length() { return Object.keys(data).length; }
     };
+    // 供父页面注入快照
+    api._applySnapshot = function(snap) {
+      if (!snap || typeof snap !== 'object') return;
+      var k;
+      for (k in snap) { if (Object.prototype.hasOwnProperty.call(snap, k)) data[k] = String(snap[k]); }
+    };
+    // 页面卸载前立即同步，避免防抖窗口内的写入丢失
+    try {
+      window.addEventListener('pagehide', function() {
+        if (_timer) { clearTimeout(_timer); _timer = null; }
+        if (syncToParent) { try { window.parent.postMessage({ type: 'WEWOO_LS_SYNC', data: JSON.stringify(data) }, '*'); } catch(_) {} }
+      });
+    } catch(_) {}
+    return api;
   }
   try { if (!window.localStorage) throw 1; var _t = window.localStorage.getItem('_test'); }
-  catch(e) { try { Object.defineProperty(window, 'localStorage', { value: createMemoryStorage(), writable: false, configurable: false }); } catch(_){} }
+  catch(e) { try { Object.defineProperty(window, 'localStorage', { value: createMemoryStorage(true), writable: false, configurable: false }); } catch(_){} }
   try { if (!window.sessionStorage) throw 1; var _t2 = window.sessionStorage.getItem('_test'); }
-  catch(e) { try { Object.defineProperty(window, 'sessionStorage', { value: createMemoryStorage(), writable: false, configurable: false }); } catch(_){} }
+  catch(e) { try { Object.defineProperty(window, 'sessionStorage', { value: createMemoryStorage(false), writable: false, configurable: false }); } catch(_){} }
+  // 暴露快照注入入口（STORAGE_API / 父页面使用）
+  try {
+    window.__wewooLsApply__ = function(snap) {
+      try { if (window.localStorage && window.localStorage._applySnapshot) window.localStorage._applySnapshot(snap); } catch(_) {}
+    };
+  } catch(_) {}
+  // 父页面注入的快照：到达后立即应用到 localStorage 内存（早于用户脚本读取）
+  try {
+    window.addEventListener('message', function(e) {
+      if (!e.data || e.data.type !== 'WEWOO_STATE_INJECT') return;
+      if (e.data.state && e.data.state._ls) {
+        try { window.__wewooLsApply__ && window.__wewooLsApply__(e.data.state._ls); } catch(_) {}
+      }
+    });
+  } catch(_) {}
   // cookie — 返回空字符串，设置时静默忽略，也会触发横幅
   try { Object.defineProperty(document, 'cookie', { get: function(){ _showBanner(); return ''; }, set: function(){ _showBanner(); }, configurable: true }); } catch(_){}
   // indexedDB — 返回 undefined
@@ -236,10 +283,13 @@ const STORAGE_API = `<script>
     try { window.parent.postMessage(msg, '*'); } catch(_) {}
   }
   window.addEventListener('message', function(e) {
-    if (!e.data || e.data._id === undefined) return;
-    var cb = _callbacks[e.data._id];
-    if (cb) { delete _callbacks[e.data._id]; cb(e.data.error, e.data.value); }
-    // 处理状态注入
+    if (!e.data) return;
+    // 回调匹配（父页面响应，带 _id；loadState 的 WEWOO_STATE_INJECT 回复也带 _id）
+    if (e.data._id !== undefined) {
+      var cb = _callbacks[e.data._id];
+      if (cb) { delete _callbacks[e.data._id]; cb(e.data.error, e.data.value); }
+    }
+    // 状态注入：回填已保存的表单数据（父页面 READY 注入无 _id，loadState 回复带 _id）
     if (e.data.type === 'WEWOO_STATE_INJECT' && e.data.state) {
       var state = e.data.state;
       if (state._draft) {
@@ -466,7 +516,7 @@ const ERROR_FALLBACK = `<div id="wewoo-err-msg" style="display:none;position:fix
  * 2. 安全 shim 脚本 — Storage / cookie 静默降级
  * 3. 错误检测 fallback — 5 秒白屏检测 + onerror 兜底
  */
-export function wrapSecureSrcDoc(rawCode: string): string {
+export function wrapSecureSrcDoc(rawCode: string, lsSeed?: Record<string, string> | null): string {
   const cspMeta =
     '<meta http-equiv="Content-Security-Policy" content="' +
     "default-src 'none'; " +
@@ -482,6 +532,12 @@ export function wrapSecureSrcDoc(rawCode: string): string {
     "form-action 'none'" +
     '">';
 
+  // 同步注入的 localStorage 快照：必须在用户脚本执行前被 SECURITY_SHIM 读取，
+  // 使工具启动时就能读到上次保存的数据（墓碑/云端记忆）。
+  const seedScript =
+    lsSeed && Object.keys(lsSeed).length > 0
+      ? '<script>window.__wewooLsSeed__=' + JSON.stringify(lsSeed).replace(/</g, '\\u003c') + ';<\/script>'
+      : '';
   const viewportMeta = '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">';
   const resetCSS = '<style>*,*::before,*::after{box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:16px}</style>';
 
@@ -493,14 +549,14 @@ export function wrapSecureSrcDoc(rawCode: string): string {
     if (!/<meta\s+name=["']viewport["']/i.test(result)) {
       result = result.replace(/(<head[\s>][^]*?>)/i, `$1\n  ${viewportMeta}`);
     }
-    result = result.replace(/(<head[\s>][^]*?>)/i, `$1\n  ${resetCSS}\n  ${cspMeta}\n  ${SECURITY_SHIM}
+    result = result.replace(/(<head[\s>][^]*?>)/i, `$1\n  ${resetCSS}\n  ${cspMeta}\n  ${seedScript}${SECURITY_SHIM}
   ${STORAGE_API}`);
   }
   // 路径 2：有 <html> 但没有独立 <head>
   else if (/<html[\s>]/i.test(rawCode)) {
     result = rawCode.replace(
       /(<html[\s>][^]*?>)/i,
-      `$1\n<head>\n  <meta charset="UTF-8">\n  ${viewportMeta}\n  ${resetCSS}\n  ${cspMeta}\n  ${SECURITY_SHIM}
+      `$1\n<head>\n  <meta charset="UTF-8">\n  ${viewportMeta}\n  ${resetCSS}\n  ${cspMeta}\n  ${seedScript}${SECURITY_SHIM}
   ${STORAGE_API}\n</head>`
     );
   }
@@ -515,7 +571,7 @@ export function wrapSecureSrcDoc(rawCode: string): string {
   ${resetCSS}
 </head>
 <body>
-  ${SECURITY_SHIM}
+  ${seedScript}${SECURITY_SHIM}
   ${STORAGE_API}
 ${rawCode}
 </body>

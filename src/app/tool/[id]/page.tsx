@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -14,6 +14,7 @@ import { useToolStorage } from "@/hooks/useToolStorage";
 import { fetchToolById, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, type Tool, type Review, type LikeTargetType, type Visibility } from "@/lib/data";
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
 import { authedFetch } from "@/lib/api-client";
+import { getLsSnapshot, setLsSnapshot } from "@/lib/toolStateBridge";
 
 const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
 function getToolEmoji(tool: Tool): string {
@@ -77,6 +78,9 @@ export default function ToolDetailPage() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  // 全屏 iframe 用“打开瞬间”的最新快照重建 srcdoc，保证全屏启动即恢复
+  const [fsSrcDoc, setFsSrcDoc] = useState("");
+  const [fsBlobUrl, setFsBlobUrl] = useState("");
   // 当 tool 变化时重置 iframe 加载状态
   useEffect(() => {
     setIframeLoaded(false);
@@ -146,14 +150,11 @@ export default function ToolDetailPage() {
   }, [id, user?.id]);
 
   // 🔥 记录最近使用 + 使用历史
+  // 注意：不在此处直接 POST state（会把云端记忆数据整体覆盖），
+  // “最近使用”标记在状态加载完成后合并写入（见下方状态加载 effect）
   useEffect(() => {
     if (!user?.id || !id) return;
-    authedFetch(`/api/tools/${id}/state`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state: { _opened: new Date().toISOString() } }),
-    }).catch(() => {});
-    // 同时记录使用历史
+    // 记录使用历史
     authedFetch(`/api/tools/${id}/history`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -206,23 +207,99 @@ export default function ToolDetailPage() {
   // 🔥 使用 Blob URL 替代 srcdoc（兼容微信/QQ 等内嵌浏览器）
   // srcDoc 用于标准浏览器（Safari/Chrome/Firefox），blobUrl 仅用于微信/QQ/X5
   const isWechat = useIsWechat();
-  const { srcDoc: previewSrcDoc, blobUrl: previewBlobUrl, sandbox: blobSandbox } = useBlobSrcDoc(tool?.code ?? "");
-
   // 🔥 iframe 状态持久化 — 接收 postMessage 并写 Supabase
   const [savedState, setSavedState] = useState<Record<string, unknown> | null>(null);
   const [stateLoaded, setStateLoaded] = useState(false);
+  // 同步读取游客本地墓碑，作为 iframe 初始快照（登录用户以云端为准，见 lsSeed）
+  const [guestLsSeed, setGuestLsSeed] = useState<Record<string, string> | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined" || !tool?.id) return;
+    try {
+      const raw = localStorage.getItem("wewoo-ls-" + tool.id);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
+          setGuestLsSeed(parsed as Record<string, string>);
+        }
+      }
+    } catch { /* ignore */ }
+  }, [tool?.id]);
+
+  // iframe 启动快照：状态加载完成后冻结一次，避免后续保存触发 iframe 重建
+  const lsSeedRef = useRef<Record<string, string> | null | undefined>(undefined);
+  const lsSeed = useMemo<Record<string, string> | null>(() => {
+    const s = (savedState?._ls && typeof savedState._ls === "object" ? savedState._ls : guestLsSeed) as Record<string, string> | null;
+    // 工具与状态都就绪后才冻结，避免 tool 尚未加载时过早冻结为 null
+    if (stateLoaded && tool?.id) {
+      if (lsSeedRef.current === undefined) lsSeedRef.current = s;
+      return lsSeedRef.current;
+    }
+    return s;
+  }, [savedState, guestLsSeed, stateLoaded, tool?.id]);
+  const { srcDoc: previewSrcDoc, blobUrl: previewBlobUrl, sandbox: blobSandbox } = useBlobSrcDoc(tool?.code ?? "", lsSeed);
+  const openFullscreen = useCallback(() => {
+    if (!tool) return;
+    const liveSeed = getLsSnapshot(tool.id) ?? lsSeed;
+    const doc = wrapSecureSrcDoc(tool.code, liveSeed);
+    setFsSrcDoc(doc);
+    if (isWechat) {
+      try {
+        if (fsBlobUrl) URL.revokeObjectURL(fsBlobUrl);
+        const blob = new Blob([doc], { type: "text/html; charset=utf-8" });
+        setFsBlobUrl(URL.createObjectURL(blob));
+      } catch { /* ignore */ }
+    }
+    setFullscreen(true);
+  }, [tool, lsSeed, isWechat, fsBlobUrl]);
 
   // 加载已保存的状态
   useEffect(() => {
-    if (!tool?.id || !user?.id) { setStateLoaded(true); return; }
+    if (!tool?.id) return; // 等待工具数据加载完成
+    if (!user?.id) { setStateLoaded(true); return; }
     authedFetch(`/api/tools/${tool.id}/state`)
       .then((r) => r.json())
       .then((data) => {
-        setSavedState(data.state);
+        const cloud = (data.state && typeof data.state === "object" ? data.state : null) as Record<string, unknown> | null;
+        // 游客墓碑合并：本机曾以游客身份使用过且云端还没有 _ls → 合并上云
+        let merged = cloud;
+        const guestLs = (() => {
+          try { return JSON.parse(localStorage.getItem("wewoo-ls-" + tool.id) || "null"); } catch { return null; }
+        })() as Record<string, string> | null;
+        if (!cloud?._ls && guestLs && typeof guestLs === "object" && Object.keys(guestLs).length > 0) {
+          merged = { ...(cloud || {}), _ls: guestLs };
+          setLsSnapshot(tool.id, guestLs);
+        } else if (cloud?._ls && typeof cloud._ls === "object") {
+          setLsSnapshot(tool.id, cloud._ls as Record<string, string>);
+        }
+        // 合并写入“最近使用”标记，避免把云端记忆数据整体覆盖
+        const openedState = { ...(merged || {}), _opened: new Date().toISOString() };
+        authedFetch(`/api/tools/${tool.id}/state`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state: openedState }),
+        }).catch(() => {});
+        setSavedState(openedState);
         setStateLoaded(true);
       })
       .catch(() => setStateLoaded(true));
   }, [tool?.id, user?.id]);
+
+  // 状态加载完成后兜底注入一次（覆盖 READY 早于云端状态返回的情况）
+  const stateInjectedForRef = useRef<string | null>(null);
+  useEffect(() => {
+    const tid = tool?.id ?? "";
+    if (!stateLoaded || stateInjectedForRef.current === tid) return;
+    const ls = getLsSnapshot(tid);
+    if (!savedState && !ls) return;
+    stateInjectedForRef.current = tid;
+    const state = { ...(savedState || {}), ...(ls ? { _ls: ls } : {}) };
+    ["tool-iframe", "fullscreen-iframe"]
+      .map((sel) => document.getElementById(sel))
+      .filter((el): el is HTMLIFrameElement => el instanceof HTMLIFrameElement)
+      .forEach((f) => {
+        try { f.contentWindow?.postMessage({ type: "WEWOO_STATE_INJECT", state }, "*"); } catch { /* ignore */ }
+      });
+  }, [stateLoaded, savedState, tool?.id]);
 
   // 🔥 iframe 错误降级 + 消息处理
   useEffect(() => {
@@ -231,15 +308,17 @@ export default function ToolDetailPage() {
     let errorTimer: ReturnType<typeof setTimeout>;
     let readyConfirmed = false;
 
-    // 保存状态到 Supabase
+    // 保存状态到 Supabase（合并 _ls 快照，避免 localStorage 数据被覆盖）
     const saveState = (state: Record<string, unknown>) => {
       if (!user?.id || !tool?.id) return;
+      const ls = getLsSnapshot(tool?.id ?? "");
+      const merged = ls ? { ...state, _ls: ls } : state;
       authedFetch(`/api/tools/${tool.id}/state`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state }),
+        body: JSON.stringify({ state: merged }),
       }).catch(() => {});
-      setSavedState(state);
+      setSavedState(merged);
     };
 
     function onMessage(e: MessageEvent) {
@@ -253,9 +332,12 @@ export default function ToolDetailPage() {
       switch (type) {
         case "WEWOO_READY":
           readyConfirmed = true;
-          // 注入已保存的状态
-          if (savedState) {
-            reply({ type: "WEWOO_STATE_INJECT", state: savedState });
+          // 注入已保存的状态（含 localStorage 快照，刷新/全屏后恢复）
+          {
+            const ls = getLsSnapshot(tool?.id ?? "");
+            if (savedState || ls) {
+              reply({ type: "WEWOO_STATE_INJECT", state: { ...(savedState || {}), ...(ls ? { _ls: ls } : {}) } });
+            }
           }
           break;
         case "WEWOO_SAVE":
@@ -303,9 +385,12 @@ export default function ToolDetailPage() {
           }
           break;
         case "WEWOO_STATE_LOAD":
-          // 返回已保存的完整状态
-          if (savedState) {
-            reply({ type: "WEWOO_STATE_INJECT", _id, state: savedState });
+          // 返回已保存的完整状态（含 localStorage 快照）
+          {
+            const ls = getLsSnapshot(tool?.id ?? "");
+            if (savedState || ls) {
+              reply({ type: "WEWOO_STATE_INJECT", _id, state: { ...(savedState || {}), ...(ls ? { _ls: ls } : {}) } });
+            }
           }
           break;
       }
@@ -627,7 +712,7 @@ export default function ToolDetailPage() {
               {shareCopied ? "✓ 已复制" : "🔗"}
             </button>
             <button
-              onClick={() => setFullscreen(true)}
+              onClick={openFullscreen}
               className="inline-flex items-center gap-1 h-8 px-2.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 active:scale-95 transition-all"
             >
               ⛶ 全屏
@@ -648,8 +733,8 @@ export default function ToolDetailPage() {
             )}
           </div>
 
-          {/* Full-height iframe */}
-          {tool.code ? (
+          {/* Full-height iframe（等待状态加载完成后再挂载，确保启动快照已就绪） */}
+          {stateLoaded && tool.code ? (
             iframeError ? (
               <IframeErrorFallback />
             ) : (
@@ -657,6 +742,7 @@ export default function ToolDetailPage() {
               <div className="flex-1 min-h-0 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200 relative">
                 {!iframeLoaded && <IframeSkeleton />}
                 <iframe
+                  id="tool-iframe"
                   key={`${tool?.id ?? "empty"}:${isWechat ? previewBlobUrl : previewSrcDoc}`}
                   {...(isWechat ? { src: previewBlobUrl } : { srcDoc: previewSrcDoc })}
                   title={tool.title}
@@ -889,10 +975,10 @@ export default function ToolDetailPage() {
           退出全屏
         </button>
         <iframe
-          key={`${tool?.id ?? "fs-empty"}:${isWechat ? previewBlobUrl : previewSrcDoc}`}
+          key={`${tool?.id ?? "fs-empty"}:${isWechat ? fsBlobUrl : fsSrcDoc}`}
           id="fullscreen-iframe"
-          src={isWechat ? previewBlobUrl : undefined}
-          srcDoc={isWechat ? undefined : previewSrcDoc}
+          src={isWechat ? fsBlobUrl : undefined}
+          srcDoc={isWechat ? undefined : fsSrcDoc}
           title={`${tool.title} - 全屏`}
           className="absolute inset-0 w-full h-full border-0"
           sandbox={blobSandbox}

@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback } from "react";
 import { authedFetch } from "@/lib/api-client";
+import { getLsSnapshot, setLsSnapshot, getDraftSnapshot, setDraftSnapshot } from "@/lib/toolStateBridge";
 
 /**
  * useToolStorage
@@ -15,11 +16,17 @@ import { authedFetch } from "@/lib/api-client";
  * 工具内使用：
  *   __wewoo.save("drinkCount", 5);
  *   __wewoo.load("drinkCount", (err, val) => { count = val; });
+ *
+ * v1.6.0 记忆机制：
+ * - 工具内 localStorage 写入（WEWOO_LS_SYNC）→ 本地墓碑 + 登录用户防抖上云
+ * - 游客（未登录）刷新/全屏后由父页面注入快照恢复
+ * - 登录后首次使用自动把游客墓碑合并上云
  */
 
 const STORAGE_PREFIX = "wewoo-db-";
 const DRAFT_PREFIX = "wewoo-draft-";
 const HISTORY_PREFIX = "wewoo-hist-";
+const LS_PREFIX = "wewoo-ls-";
 
 function getNsKey(toolId: string, userId?: string): string {
   return STORAGE_PREFIX + toolId + (userId ? "-" + userId : "");
@@ -30,12 +37,43 @@ function getDraftKey(toolId: string, userId?: string): string {
 function getHistoryKey(toolId: string, userId?: string): string {
   return HISTORY_PREFIX + toolId + (userId ? "-" + userId : "");
 }
+/** localStorage 快照墓碑：游客用无后缀 key，登录用户按 userId 隔离 */
+function getLsKey(toolId: string, userId?: string): string {
+  return LS_PREFIX + toolId + (userId ? "-" + userId : "");
+}
 
 function loadJson(key: string, fallback: unknown) {
   try { return JSON.parse(localStorage.getItem(key) || ""); } catch { return fallback; }
 }
 function saveJson(key: string, val: unknown) {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* quota */ }
+}
+
+// ---- 云端防抖写（localStorage 快照），key = toolId ----
+const lsCloudTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+/** 把 _ls 快照合并当前 _draft 后写入云端（避免两种写入互相覆盖） */
+function writeLsCloud(toolId: string, snap: Record<string, string>) {
+  const draft = getDraftSnapshot(toolId);
+  const state: Record<string, unknown> = { _ls: snap };
+  if (draft) state._draft = draft;
+  authedFetch(`/api/tools/${toolId}/state`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ state }),
+  }).catch(() => {});
+}
+
+/** 把 _draft 快照合并当前 _ls 后写入云端 */
+function writeDraftCloud(toolId: string, draft: Record<string, unknown>) {
+  const ls = getLsSnapshot(toolId);
+  const state: Record<string, unknown> = { _draft: draft };
+  if (ls) state._ls = ls;
+  authedFetch(`/api/tools/${toolId}/state`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ state }),
+  }).catch(() => {});
 }
 
 export function useToolStorage(toolId?: string, userId?: string) {
@@ -67,7 +105,17 @@ export function useToolStorage(toolId?: string, userId?: string) {
 
       switch (msg.type) {
         case "WEWOO_READY": {
-          // 工具加载完成，不需要特殊处理
+          // 游客：注入本地墓碑快照（刷新/全屏后恢复 localStorage）
+          if (!userId) {
+            const ls = loadJson(getLsKey(toolId), null) as Record<string, string> | null;
+            if (ls && typeof ls === "object" && Object.keys(ls).length > 0) {
+              setLsSnapshot(toolId, ls);
+              source.postMessage(
+                { type: "WEWOO_STATE_INJECT", state: { _ls: ls } },
+                { targetOrigin: "*" }
+              );
+            }
+          }
           break;
         }
         case "WEWOO_SAVE": {
@@ -106,7 +154,10 @@ export function useToolStorage(toolId?: string, userId?: string) {
         // --- 草稿保存 ---
         case "WEWOO_DRAFT_SAVE": {
           const dk = getDraftKey(toolId, userId);
-          saveJson(dk, msg.data ? JSON.parse(msg.data) : {});
+          let parsed: Record<string, unknown> = {};
+          try { parsed = msg.data ? JSON.parse(msg.data) : {}; } catch { parsed = {}; }
+          setDraftSnapshot(toolId, parsed);
+          saveJson(dk, parsed);
           respond(null);
           break;
         }
@@ -115,6 +166,35 @@ export function useToolStorage(toolId?: string, userId?: string) {
           const dk = getDraftKey(toolId, userId);
           const draft = loadJson(dk, null);
           respond(null, draft ? JSON.stringify(draft) : null);
+          break;
+        }
+        // --- localStorage 快照同步（v1.6 墓碑机制） ---
+        case "WEWOO_LS_SYNC": {
+          let snap: Record<string, string>;
+          try { snap = msg.data ? JSON.parse(msg.data) : {}; } catch { break; }
+          if (!snap || typeof snap !== "object") break;
+          // 过滤非法值，确保都是字符串
+          const clean: Record<string, string> = {};
+          for (const k of Object.keys(snap)) {
+            const v = snap[k];
+            if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") clean[k] = String(v);
+          }
+          if (Object.keys(clean).length === 0 && msg.data) break; // 全空时不覆盖已有墓碑
+          setLsSnapshot(toolId, clean);
+          // 本地墓碑：游客恢复 + 登录用户快速恢复
+          saveJson(getLsKey(toolId, userId), clean);
+          // 登录用户：防抖同步云端（创作页预览不写云端）
+          if (userId && toolId !== "preview") {
+            const timerKey = toolId;
+            if (lsCloudTimers.has(timerKey)) clearTimeout(lsCloudTimers.get(timerKey)!);
+            lsCloudTimers.set(
+              timerKey,
+              setTimeout(() => {
+                lsCloudTimers.delete(timerKey);
+                writeLsCloud(toolId, clean);
+              }, 800)
+            );
+          }
           break;
         }
         // --- 动作记录 ---
@@ -140,19 +220,16 @@ export function useToolStorage(toolId?: string, userId?: string) {
           respond(null, JSON.stringify(hist));
           break;
         }
-        // --- 工具状态保存（持久化到 Supabase） ---
+        // --- 工具状态保存（表单草稿 → 本地 + 云端） ---
         case "WEWOO_STATE_SAVE": {
           const stateData = msg.data ? (() => { try { return JSON.parse(msg.data); } catch { return {}; } })() : {};
+          setDraftSnapshot(toolId, stateData);
           // 同时保存到 localStorage 作本地缓存
           const dk = getDraftKey(toolId, userId);
           saveJson(dk, stateData);
-          // 已登录时异步同步到 API（身份由 token 识别）
-          if (userId) {
-            authedFetch(`/api/tools/${toolId}/state`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ state: stateData }),
-            }).catch(() => {});
+          // 已登录时异步同步到 API（身份由 token 识别），合并 _ls 防止覆盖；创作页预览跳过
+          if (userId && toolId !== "preview") {
+            writeDraftCloud(toolId, stateData);
           }
           respond(null);
           break;
@@ -169,8 +246,12 @@ export function useToolStorage(toolId?: string, userId?: string) {
             .then((r) => r.json())
             .then((res) => {
               // 优先使用 Supabase 数据，fallback 到 localStorage
-              if (res.state && Object.keys(res.state).length > 0) {
-                respond(null, JSON.stringify(res.state));
+              const cloud = (res.state && typeof res.state === "object" ? res.state : null) as Record<string, unknown> | null;
+              if (cloud && Object.keys(cloud).length > 0) {
+                if (cloud._draft && typeof cloud._draft === "object") setDraftSnapshot(toolId, cloud._draft as Record<string, unknown>);
+                if (cloud._ls && typeof cloud._ls === "object") setLsSnapshot(toolId, cloud._ls as Record<string, string>);
+                // 只回填表单草稿（_ls 由 READY 注入负责）
+                respond(null, cloud._draft ? JSON.stringify(cloud._draft) : null);
               } else {
                 const local = loadJson(dk, null);
                 respond(null, local ? JSON.stringify(local) : null);
@@ -189,7 +270,22 @@ export function useToolStorage(toolId?: string, userId?: string) {
 
   useEffect(() => {
     if (!toolId) return;
+    // 页面卸载/隐藏时立即冲刷待同步的云端写入，避免防抖窗口内丢失
+    const flush = () => {
+      for (const [key, timer] of lsCloudTimers) {
+        clearTimeout(timer);
+        const snap = getLsSnapshot(key);
+        if (snap) writeLsCloud(key, snap);
+      }
+      lsCloudTimers.clear();
+    };
     window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+    };
   }, [toolId, handleMessage]);
 }
