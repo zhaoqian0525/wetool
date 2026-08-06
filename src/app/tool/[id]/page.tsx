@@ -78,9 +78,6 @@ export default function ToolDetailPage() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  // 全屏 iframe 用“打开瞬间”的最新快照重建 srcdoc，保证全屏启动即恢复
-  const [fsSrcDoc, setFsSrcDoc] = useState("");
-  const [fsBlobUrl, setFsBlobUrl] = useState("");
   // 当 tool 变化时重置 iframe 加载状态
   useEffect(() => {
     setIframeLoaded(false);
@@ -237,21 +234,8 @@ export default function ToolDetailPage() {
     return s;
   }, [savedState, guestLsSeed, stateLoaded, tool?.id]);
   const { srcDoc: previewSrcDoc, blobUrl: previewBlobUrl, sandbox: blobSandbox } = useBlobSrcDoc(tool?.code ?? "", lsSeed);
-  const openFullscreen = useCallback(() => {
-    if (!tool) return;
-    const liveSeed = getLsSnapshot(tool.id) ?? lsSeed;
-    const doc = wrapSecureSrcDoc(tool.code, liveSeed);
-    setFsSrcDoc(doc);
-    if (isWechat) {
-      try {
-        if (fsBlobUrl) URL.revokeObjectURL(fsBlobUrl);
-        const blob = new Blob([doc], { type: "text/html; charset=utf-8" });
-        setFsBlobUrl(URL.createObjectURL(blob));
-      } catch { /* ignore */ }
-    }
-    setFullscreen(true);
-  }, [tool, lsSeed, isWechat, fsBlobUrl]);
-
+  // srcDoc 就绪后才挂载 iframe，避免先以空文档挂载再重建（导致空白闪烁/二次加载）
+  const docReady = !!previewSrcDoc;
   // 加载已保存的状态
   useEffect(() => {
     if (!tool?.id) return; // 等待工具数据加载完成
@@ -293,7 +277,7 @@ export default function ToolDetailPage() {
     if (!savedState && !ls) return;
     stateInjectedForRef.current = tid;
     const state = { ...(savedState || {}), ...(ls ? { _ls: ls } : {}) };
-    ["tool-iframe", "fullscreen-iframe"]
+    ["tool-iframe"]
       .map((sel) => document.getElementById(sel))
       .filter((el): el is HTMLIFrameElement => el instanceof HTMLIFrameElement)
       .forEach((f) => {
@@ -712,7 +696,7 @@ export default function ToolDetailPage() {
               {shareCopied ? "✓ 已复制" : "🔗"}
             </button>
             <button
-              onClick={openFullscreen}
+              onClick={() => setFullscreen(true)}
               className="inline-flex items-center gap-1 h-8 px-2.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 active:scale-95 transition-all"
             >
               ⛶ 全屏
@@ -739,19 +723,32 @@ export default function ToolDetailPage() {
               <IframeErrorFallback />
             ) : (
             <WechatGuide toolUrl={`https://we-woo.net/tool/${id}`}>
-              <div className="flex-1 min-h-0 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200 relative">
-                {!iframeLoaded && <IframeSkeleton />}
-                <iframe
-                  id="tool-iframe"
-                  key={`${tool?.id ?? "empty"}:${isWechat ? previewBlobUrl : previewSrcDoc}`}
-                  {...(isWechat ? { src: previewBlobUrl } : { srcDoc: previewSrcDoc })}
-                  title={tool.title}
-                  className="absolute inset-0 w-full h-full border-0"
-                  sandbox={blobSandbox}
-                  onLoad={() => setIframeLoaded(true)}
-                  onError={() => setIframeError(true)}
-                  style={{ opacity: iframeLoaded ? 1 : 0, transition: "opacity 0.3s" }}
-                />
+              <div
+                className={`${fullscreen ? "fixed inset-0 z-50 bg-black" : "relative flex-1 min-h-0 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200"}`}
+              >
+                {!docReady && <IframeSkeleton />}
+                {fullscreen && (
+                  <button
+                    onClick={() => setFullscreen(false)}
+                    style={{ touchAction: "manipulation" }}
+                    className="absolute top-3 right-3 z-30 flex items-center gap-1 px-3 py-1.5 bg-gray-800/80 text-white text-xs rounded-full hover:bg-gray-700 active:scale-95 transition-all shadow border border-white/10"
+                  >
+                    退出全屏
+                  </button>
+                )}
+                {docReady && (
+                  <iframe
+                    id="tool-iframe"
+                    key={`${tool?.id ?? "empty"}:${isWechat ? previewBlobUrl : previewSrcDoc}`}
+                    {...(isWechat ? { src: previewBlobUrl } : { srcDoc: previewSrcDoc })}
+                    title={tool.title}
+                    className="absolute inset-0 w-full h-full border-0"
+                    sandbox={blobSandbox}
+                    onLoad={() => setIframeLoaded(true)}
+                    onError={() => setIframeError(true)}
+                    style={{ opacity: 1 }}
+                  />
+                )}
               </div>
             </WechatGuide>
             )
@@ -965,26 +962,6 @@ export default function ToolDetailPage() {
       </div>
     )}
 
-    {/* 🖥️ 全屏使用模式 */}
-    {fullscreen && (
-      <div className="fixed inset-0 z-50 bg-black">
-        <button
-          onClick={() => setFullscreen(false)}
-          className="absolute top-3 right-3 z-10 flex items-center gap-1 px-3 py-1.5 bg-gray-800/80 text-white text-xs rounded-full hover:bg-gray-700 active:scale-95 transition-all shadow border border-white/10"
-        >
-          退出全屏
-        </button>
-        <iframe
-          key={`${tool?.id ?? "fs-empty"}:${isWechat ? fsBlobUrl : fsSrcDoc}`}
-          id="fullscreen-iframe"
-          src={isWechat ? fsBlobUrl : undefined}
-          srcDoc={isWechat ? undefined : fsSrcDoc}
-          title={`${tool.title} - 全屏`}
-          className="absolute inset-0 w-full h-full border-0"
-          sandbox={blobSandbox}
-        />
-      </div>
-    )}
     </ToolPageErrorBoundary>
   );
 }
