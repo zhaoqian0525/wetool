@@ -51,13 +51,15 @@ export default function UserPage() {
         {/* User header */}
         <div className="mb-8 text-center sm:text-left">
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-2xl mx-auto sm:mx-0 mb-3">
-            {user?.email?.[0]?.toUpperCase() || "?"}
+            {(isSelf ? user?.email?.[0] : myTools[0]?.author?.[0])?.toUpperCase() || "?"}
           </div>
           {isSelf ? (
-            <h1 className="text-xl font-bold text-gray-900">我的主页</h1>
+            <h1 className="text-xl font-bold text-gray-900">
+              {user?.email?.split("@")[0] || "我的主页"}
+            </h1>
           ) : (
             <h1 className="text-xl font-bold text-gray-900">
-              @{id?.substring(0, 8)} 的主页
+              @{myTools[0]?.author || "微坞用户"} 的主页
             </h1>
           )}
           <p className="text-sm text-gray-500 mt-1">

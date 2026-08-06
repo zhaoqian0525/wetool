@@ -2937,7 +2937,7 @@ export async function fetchTools(): Promise<Tool[]> {
     // 网络慢时给足时间（6s），超时/失败重试一次；仍失败则用本地缓存兜底
     for (let attempt = 0; attempt < 2; attempt++) {
       const result = await queryWithTimeout(
-        supabase.from("tools").select("*").order("created_at", { ascending: false }),
+        supabase.from("tools").select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count").order("created_at", { ascending: false }),
         6000
       );
       if (result && !(result as { error: unknown }).error) {
@@ -2993,7 +2993,7 @@ export async function fetchToolsByUser(userId: string): Promise<Tool[]> {
   const supabase = await getSupabaseClient();
   if (supabase) {
     const result = await queryWithTimeout(
-      supabase.from("tools").select("*").eq("author_id", userId).order("created_at", { ascending: false })
+      supabase.from("tools").select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count").eq("author_id", userId).order("created_at", { ascending: false })
     );
     if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
       return ((result as { data: Record<string, unknown>[] }).data).map(mapRow);
@@ -3213,7 +3213,7 @@ export async function fetchUserLikedTools(userId: string, targetType: LikeTarget
       // 先查 Supabase
       const { data: dbTools } = await supabase
         .from("tools")
-        .select("*")
+        .select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count")
         .in("id", toolIds);
       if (dbTools) result.push(...dbTools.map(mapRow));
       

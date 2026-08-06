@@ -13,6 +13,7 @@ import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
 import { fetchToolById, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, type Tool, type Review, type LikeTargetType, type Visibility } from "@/lib/data";
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
+import { authedFetch } from "@/lib/api-client";
 
 const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
 function getToolEmoji(tool: Tool): string {
@@ -147,13 +148,13 @@ export default function ToolDetailPage() {
   // 🔥 记录最近使用 + 使用历史
   useEffect(() => {
     if (!user?.id || !id) return;
-    fetch(`/api/tools/${id}/state`, {
+    authedFetch(`/api/tools/${id}/state`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id, state: { _opened: new Date().toISOString() } }),
+      body: JSON.stringify({ state: { _opened: new Date().toISOString() } }),
     }).catch(() => {});
     // 同时记录使用历史
-    fetch(`/api/tools/${id}/history?userId=${encodeURIComponent(user.id)}`, {
+    authedFetch(`/api/tools/${id}/history`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "opened", detail: {} }),
@@ -214,7 +215,7 @@ export default function ToolDetailPage() {
   // 加载已保存的状态
   useEffect(() => {
     if (!tool?.id || !user?.id) { setStateLoaded(true); return; }
-    fetch(`/api/tools/${tool.id}/state?userId=${encodeURIComponent(user.id)}`)
+    authedFetch(`/api/tools/${tool.id}/state`)
       .then((r) => r.json())
       .then((data) => {
         setSavedState(data.state);
@@ -229,15 +230,14 @@ export default function ToolDetailPage() {
     setIframeError(false);
     let errorTimer: ReturnType<typeof setTimeout>;
     let readyConfirmed = false;
-    let iframeRef: HTMLIFrameElement | null = null;
 
     // 保存状态到 Supabase
     const saveState = (state: Record<string, unknown>) => {
       if (!user?.id || !tool?.id) return;
-      fetch(`/api/tools/${tool.id}/state`, {
+      authedFetch(`/api/tools/${tool.id}/state`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, state }),
+        body: JSON.stringify({ state }),
       }).catch(() => {});
       setSavedState(state);
     };
@@ -245,18 +245,17 @@ export default function ToolDetailPage() {
     function onMessage(e: MessageEvent) {
       if (!e.data || !e.data.type) return;
       const { type, key, value, data, _id } = e.data;
+      // 始终回复给消息来源 iframe（内嵌/全屏各自独立），避免错发到另一个 iframe
+      const reply = (payload: Record<string, unknown>) => {
+        try { (e.source as Window | null)?.postMessage(payload, "*"); } catch { /* ignore */ }
+      };
 
       switch (type) {
         case "WEWOO_READY":
           readyConfirmed = true;
           // 注入已保存的状态
           if (savedState) {
-            if (iframeRef?.contentWindow) {
-              iframeRef.contentWindow.postMessage({
-                type: "WEWOO_STATE_INJECT",
-                state: savedState,
-              }, "*");
-            }
+            reply({ type: "WEWOO_STATE_INJECT", state: savedState });
           }
           break;
         case "WEWOO_SAVE":
@@ -264,26 +263,19 @@ export default function ToolDetailPage() {
             const newState = { ...(savedState || {}), [key]: value };
             saveState(newState);
             // 回复确认
-            if (iframeRef?.contentWindow) {
-              iframeRef.contentWindow.postMessage({ type: "WEWOO_SAVED", _id, key, ok: true }, "*");
-            }
+            reply({ type: "WEWOO_SAVED", _id, key, ok: true });
           }
           break;
         case "WEWOO_LOAD":
           // 从已保存状态中读取
-          const val = savedState?.[key] ?? null;
-          if (iframeRef?.contentWindow) {
-            iframeRef.contentWindow.postMessage({ type: "WEWOO_LOADED", _id, key, value: val }, "*");
-          }
+          reply({ type: "WEWOO_LOADED", _id, key, value: savedState?.[key] ?? null });
           break;
         case "WEWOO_DRAFT_SAVE":
           if (user && tool) {
             let parsed: Record<string, unknown>;
             try { parsed = JSON.parse(data); } catch { break; }
             saveState({ ...(savedState || {}), _draft: parsed });
-            if (iframeRef?.contentWindow) {
-              iframeRef.contentWindow.postMessage({ type: "WEWOO_DRAFT_SAVED", _id, ok: true }, "*");
-            }
+            reply({ type: "WEWOO_DRAFT_SAVED", _id, ok: true });
           }
           break;
         case "WEWOO_REMOVE":
@@ -297,10 +289,11 @@ export default function ToolDetailPage() {
           if (user && tool) saveState({});
           break;
         case "WEWOO_LIST":
-          const keys = savedState ? Object.keys(savedState).filter((k) => k !== "_draft") : [];
-          if (iframeRef?.contentWindow) {
-            iframeRef.contentWindow.postMessage({ type: "WEWOO_LISTED", _id, keys }, "*");
-          }
+          reply({
+            type: "WEWOO_LISTED",
+            _id,
+            keys: savedState ? Object.keys(savedState).filter((k) => k !== "_draft") : [],
+          });
           break;
         case "WEWOO_STATE_SAVE":
           if (user && tool) {
@@ -311,10 +304,8 @@ export default function ToolDetailPage() {
           break;
         case "WEWOO_STATE_LOAD":
           // 返回已保存的完整状态
-          if (iframeRef?.contentWindow && savedState) {
-            iframeRef.contentWindow.postMessage({
-              type: "WEWOO_STATE_INJECT", _id, state: savedState,
-            }, "*");
+          if (savedState) {
+            reply({ type: "WEWOO_STATE_INJECT", _id, state: savedState });
           }
           break;
       }
@@ -324,12 +315,6 @@ export default function ToolDetailPage() {
     errorTimer = setTimeout(() => {
       if (!readyConfirmed) setIframeError(true);
     }, 12000);
-
-    // 追踪 iframe 引用
-    setTimeout(() => {
-      const iframes = document.querySelectorAll("iframe");
-      if (iframes.length > 0) iframeRef = iframes[0] as HTMLIFrameElement;
-    }, 100);
 
     return () => {
       window.removeEventListener("message", onMessage);
@@ -342,7 +327,8 @@ export default function ToolDetailPage() {
     if (!user?.id || !id || clearingState) return;
     setClearingState(true);
     try {
-      await fetch(`/api/tools/${id}/state?userId=${encodeURIComponent(user.id)}`, { method: "DELETE" });
+      await authedFetch(`/api/tools/${id}/state`, { method: "DELETE" });
+      setSavedState(null);
       toast.success("记录已清空");
       // 刷新 iframe 显示不带状态的原始工具
       setIframeLoaded(false);
@@ -375,7 +361,7 @@ export default function ToolDetailPage() {
     if (!tool || !user || deleting) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/tools/${id}?userId=${encodeURIComponent(user.id)}`, { method: "DELETE" });
+      const res = await authedFetch(`/api/tools/${id}`, { method: "DELETE" });
       const body = await res.json();
       if (!body.ok) throw new Error(body.error || "删除失败");
       // 从置顶中移除

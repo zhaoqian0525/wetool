@@ -1,12 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
-}
+import { getAuthedSupabase, unauthorizedResponse } from "@/lib/api-auth";
 
 export interface RecentTool {
   id: string;
@@ -18,25 +11,18 @@ export interface RecentTool {
 }
 
 /**
- * GET /api/user/recent-tools?userId=xxx
- * 返回用户最近使用过的工具列表（最多 6 个），按 last_used_at 倒序
+ * GET /api/user/recent-tools
+ * 返回当前登录用户最近使用过的工具列表（最多 6 个），身份来自 Authorization header
  */
 export async function GET(request: NextRequest) {
-  const userId = request.nextUrl.searchParams.get("userId");
-  if (!userId) {
-    return NextResponse.json({ error: "userId required" }, { status: 400 });
-  }
-
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ tools: [] });
-  }
+  const ctx = await getAuthedSupabase(request);
+  if (!ctx) return unauthorizedResponse();
 
   // 1. 查询 tool_state，按 last_used_at 倒序取前 6
-  const { data: states, error: stateError } = await supabase
+  const { data: states, error: stateError } = await ctx.supabase
     .from("tool_state")
     .select("tool_id, last_used_at")
-    .eq("user_id", userId)
+    .eq("user_id", ctx.userId)
     .order("last_used_at", { ascending: false })
     .limit(6);
 
@@ -46,7 +32,7 @@ export async function GET(request: NextRequest) {
 
   // 2. 批量获取工具详情
   const toolIds = states.map((s: { tool_id: string }) => s.tool_id);
-  const { data: tools, error: toolsError } = await supabase
+  const { data: tools, error: toolsError } = await ctx.supabase
     .from("tools")
     .select("id, title, thumbnail_gradient, author, category")
     .in("id", toolIds);

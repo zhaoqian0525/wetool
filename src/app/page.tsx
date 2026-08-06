@@ -6,6 +6,7 @@ import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
 import { fetchTools, fetchViewCounts, fetchToolsByUser, fetchUserLikedTools, CATEGORIES, type Tool } from "@/lib/data";
+import { authedFetch } from "@/lib/api-client";
 import versionInfo from "../../version.json";
 
 // ---- Constants ----
@@ -67,7 +68,7 @@ export default function HomePage() {
   // 加载最近使用的工具
   useEffect(() => {
     if (!user) { setRecentTools([]); return; }
-    fetch(`/api/user/recent-tools?userId=${encodeURIComponent(user.id)}`)
+    authedFetch(`/api/user/recent-tools`)
       .then((r) => r.json())
       .then((data) => setRecentTools(data.tools || []))
       .catch(() => setRecentTools([]));

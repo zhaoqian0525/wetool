@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getAuthUserId, unauthorizedResponse } from "@/lib/api-auth";
 
 /**
- * DELETE /api/tools/[id]?userId=xxx
+ * DELETE /api/tools/[id]
  *
- * 删除工具及关联数据。
- * 验证 author_id === userId 后执行级联删除。
+ * 删除工具及关联数据（身份来自 Authorization header，服务端校验所有权）。
  */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const userId = request.nextUrl.searchParams.get("userId");
-
-  if (!userId) {
-    return NextResponse.json({ error: "userId required" }, { status: 400 });
-  }
+  const userId = await getAuthUserId(request);
+  if (!userId) return unauthorizedResponse();
 
   if (!id) {
     return NextResponse.json({ error: "id required" }, { status: 400 });

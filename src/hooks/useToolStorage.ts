@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
+import { authedFetch } from "@/lib/api-client";
 
 /**
  * useToolStorage
@@ -142,35 +143,40 @@ export function useToolStorage(toolId?: string, userId?: string) {
         // --- 工具状态保存（持久化到 Supabase） ---
         case "WEWOO_STATE_SAVE": {
           const stateData = msg.data ? (() => { try { return JSON.parse(msg.data); } catch { return {}; } })() : {};
-          // 异步保存到 API
-          fetch(`/api/tools/${toolId}/state`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: userId || "", state: stateData }),
-          }).catch(() => {});
           // 同时保存到 localStorage 作本地缓存
           const dk = getDraftKey(toolId, userId);
           saveJson(dk, stateData);
+          // 已登录时异步同步到 API（身份由 token 识别）
+          if (userId) {
+            authedFetch(`/api/tools/${toolId}/state`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ state: stateData }),
+            }).catch(() => {});
+          }
           respond(null);
           break;
         }
         // --- 恢复工具状态 ---
         case "WEWOO_STATE_LOAD": {
-          if (!userId) { respond(null, null); break; }
-          fetch(`/api/tools/${toolId}/state?userId=${encodeURIComponent(userId)}`)
+          const dk = getDraftKey(toolId, userId);
+          if (!userId) {
+            const local = loadJson(dk, null);
+            respond(null, local ? JSON.stringify(local) : null);
+            break;
+          }
+          authedFetch(`/api/tools/${toolId}/state`)
             .then((r) => r.json())
             .then((res) => {
               // 优先使用 Supabase 数据，fallback 到 localStorage
               if (res.state && Object.keys(res.state).length > 0) {
                 respond(null, JSON.stringify(res.state));
               } else {
-                const dk = getDraftKey(toolId, userId);
                 const local = loadJson(dk, null);
                 respond(null, local ? JSON.stringify(local) : null);
               }
             })
             .catch(() => {
-              const dk = getDraftKey(toolId, userId);
               const local = loadJson(dk, null);
               respond(null, local ? JSON.stringify(local) : null);
             });

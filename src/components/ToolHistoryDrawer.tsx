@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { authedFetch } from "@/lib/api-client";
 
 interface HistoryEntry {
+  /** DB 记录 id（云端记录才有） */
+  id?: string;
   action: string;
   data: Record<string, unknown>;
   time: string;
@@ -19,6 +22,22 @@ function getHistoryKey(toolId: string, userId: string) {
   return "wewoo-hist-" + toolId + "-" + userId;
 }
 
+/** 读取本地缓存的使用记录（工具内动作记录） */
+function loadLocalHistory(toolId: string, userId: string): HistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(getHistoryKey(toolId, userId));
+    return raw ? (JSON.parse(raw) as HistoryEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalHistory(toolId: string, userId: string, items: HistoryEntry[]) {
+  try {
+    localStorage.setItem(getHistoryKey(toolId, userId), JSON.stringify(items));
+  } catch { /* quota */ }
+}
+
 export function ToolHistoryDrawer({
   toolId,
   userId,
@@ -31,13 +50,35 @@ export function ToolHistoryDrawer({
   const [clearing, setClearing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const loadHistory = useCallback(() => {
-    if (!toolId || !userId) return;
+  // 加载记录：本地记录先展示，登录用户再合并云端记录（跨设备同步）
+  const loadHistory = useCallback(async () => {
+    if (!toolId || !userId) { setHistory([]); return; }
+    const local = loadLocalHistory(toolId, userId);
+    setHistory(local);
+
     try {
-      const raw = localStorage.getItem(getHistoryKey(toolId, userId));
-      setHistory(raw ? JSON.parse(raw) : []);
+      const res = await authedFetch(`/api/tools/${toolId}/history`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const cloud: HistoryEntry[] = (data.history || []).map((h: Record<string, unknown>) => ({
+        id: String(h.id),
+        action: String(h.action || "操作"),
+        data: (h.input_data && typeof h.input_data === "object" ? h.input_data : {}) as Record<string, unknown>,
+        time: String(h.created_at || ""),
+      }));
+      // 合并去重：以 (action,time) 去重，云端优先
+      const seen = new Set<string>();
+      const merged: HistoryEntry[] = [];
+      for (const e of [...cloud, ...local]) {
+        const key = e.action + "|" + e.time;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push(e);
+      }
+      merged.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      setHistory(merged);
     } catch {
-      setHistory([]);
+      // 云端拉取失败 → 保留本地记录
     }
   }, [toolId, userId]);
 
@@ -45,33 +86,43 @@ export function ToolHistoryDrawer({
     if (open) loadHistory();
   }, [open, loadHistory]);
 
-  const saveHistory = (items: HistoryEntry[]) => {
-    if (!toolId || !userId) return;
-    localStorage.setItem(getHistoryKey(toolId, userId), JSON.stringify(items));
-    setHistory(items);
-  };
-
-  const handleDelete = (idx: number) => {
-    if (deletingIdx !== null) return;
+  const handleDelete = async (idx: number) => {
+    if (deletingIdx !== null || !toolId || !userId) return;
     setDeletingIdx(idx);
-    // 模拟一点延迟展示 loading
-    setTimeout(() => {
+    const entry = history[idx];
+    try {
+      if (entry?.id) {
+        // 云端记录 → 删除云端
+        await authedFetch(`/api/tools/${toolId}/history?historyId=${encodeURIComponent(entry.id)}`, { method: "DELETE" });
+      }
       const next = history.filter((_, i) => i !== idx);
-      saveHistory(next);
-      setDeletingIdx(null);
+      // 本地缓存只保存工具内动作记录（无 id 的条目），避免把云端记录写回本地
+      const localNext = next.filter((e) => !e.id);
+      saveLocalHistory(toolId, userId, localNext);
+      setHistory(next);
       if (expandedIdx === idx) setExpandedIdx(null);
-    }, 200);
+    } catch {
+      // ignore
+    } finally {
+      setDeletingIdx(null);
+    }
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (!toolId || !userId) return;
     setClearing(true);
-    setTimeout(() => {
-      localStorage.removeItem(getHistoryKey(toolId, userId));
+    try {
+      // 清云端
+      await authedFetch(`/api/tools/${toolId}/history?all=true`, { method: "DELETE" });
+    } catch {
+      // ignore
+    } finally {
+      // 清本地
+      saveLocalHistory(toolId, userId, []);
       setHistory([]);
       setClearing(false);
       setShowConfirm(false);
-    }, 200);
+    }
   };
 
   if (!open) return null;
