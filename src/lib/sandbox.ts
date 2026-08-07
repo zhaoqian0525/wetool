@@ -21,7 +21,7 @@ interface DangerousPattern {
   /** 正则表达式 */
   regex: RegExp;
   /** 危险等级 */
-  level: "high" | "medium";
+  level: "high" | "medium" | "info";
   /** 中文说明 */
   label: string;
 }
@@ -49,13 +49,13 @@ const DANGEROUS_PATTERNS: DangerousPattern[] = [
   },
   {
     regex: /\blocalStorage\b/g,
-    level: "medium",
-    label: "localStorage 本地存储",
+    level: "info",
+    label: "localStorage 数据持久化（记忆功能）",
   },
   {
     regex: /\bsessionStorage\b/g,
-    level: "medium",
-    label: "sessionStorage 本地存储",
+    level: "info",
+    label: "sessionStorage 临时存储（刷新后不保留）",
   },
   {
     regex: /\bdocument\.cookie\b/g,
@@ -100,7 +100,7 @@ const DANGEROUS_PATTERNS: DangerousPattern[] = [
 ];
 
 export interface SanitizeResult {
-  warnings: { level: "high" | "medium"; label: string; count: number }[];
+  warnings: { level: "high" | "medium" | "info"; label: string; count: number }[];
 }
 
 /**

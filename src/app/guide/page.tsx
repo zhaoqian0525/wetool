@@ -42,7 +42,7 @@ const steps = [
     icon: "👁️",
     color: "from-pink-400 to-rose-500",
     desc: "右边的手机框里会实时显示你的工具效果。你可以试试点击、输入，看看好不好用。",
-    tip: "手机上点「全屏预览」可以看到完整效果",
+    tip: "手机上点「全屏预览」可以看到完整效果；工具用 localStorage 保存的数据，刷新页面也会保留",
   },
   {
     num: 6,
@@ -81,11 +81,15 @@ const aiPrompts = [
   },
   {
     label: "随机点名器",
-    prompt: "帮我写一个随机点名器，可以输入一串名字（用逗号分隔），点开始按钮后名字快速滚动，再点一下就随机停在一个名字上。要有动画效果。全部代码放在一个 HTML 文件里。",
+    prompt: "帮我写一个随机点名器，可以输入一串名字（用逗号分隔），点开始按钮后名字快速滚动，再点一下就随机停在一个名字上。要有动画效果。把名单用 localStorage 保存，下次打开还在。全部代码放在一个 HTML 文件里。",
   },
   {
     label: "颜色选择器",
     prompt: "帮我写一个颜色选择器，点击可以选颜色，显示颜色的 HEX 值和 RGB 值，还可以复制。界面要简洁好看。全部代码放在一个 HTML 文件里。",
+  },
+  {
+    label: "喝水打卡（带记忆）",
+    prompt: "帮我写一个喝水打卡记录器，每喝一杯水点一下按钮，显示今天喝了多少杯和连续打卡天数。用 localStorage 保存数据，刷新页面不丢失。界面可爱一点，适配手机。全部代码放在一个 HTML 文件里。",
   },
 ];
 
@@ -158,7 +162,7 @@ export default function GuidePage() {
               {step.code && (
                 <div className="border-t border-gray-100 bg-gray-50 p-5 lg:p-6">
                   <p className="text-sm font-medium text-gray-700 mb-3">
-                    下面这些话可以直接发给 AI（长按可以复制）：
+                    下面这些话可以直接发给 AI（长按可以复制）。想让工具记住用户的数据（打卡、进度、账目），在需求里加上「数据用 localStorage 保存，刷新不丢失」即可：
                   </p>
                   <div className="space-y-3">
                     {aiPrompts.map((p) => (
@@ -294,6 +298,15 @@ export default function GuidePage() {
               </summary>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
                 发布后工具会出现在首页广场，所有人都能看到。你也可以把生成的链接或二维码分享给朋友，他们在手机上直接打开就能用，不需要安装任何东西。
+              </p>
+            </details>
+            <details className="bg-white rounded-xl border border-gray-200 p-5 group">
+              <summary className="font-medium text-gray-800 cursor-pointer flex items-center justify-between">
+                <span>工具能记住用户的数据吗？比如打卡记录、游戏进度</span>
+                <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                可以！微坞有「记忆功能」：只要工具代码里用 localStorage 保存数据，刷新页面、切换全屏、回到主页再进来，数据都能自动恢复。做工具时告诉 AI「数据用 localStorage 保存」就行。未登录用户的数据保存在本机；登录后还会同步到云端，换设备也不丢。
               </p>
             </details>
           </div>

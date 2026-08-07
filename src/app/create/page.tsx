@@ -25,29 +25,55 @@ const TEMPLATE_CODE = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我的工具</title>
+  <title>记忆计数器</title>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:#f5f5f5}
-    /* 在这里写你的CSS */
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(135deg,#667eea,#764ba2)}
+    .card{width:100%;max-width:320px;background:#fff;border-radius:24px;padding:36px 28px;text-align:center;box-shadow:0 16px 40px rgba(0,0,0,.25)}
+    .emoji{font-size:40px}
+    .num{font-size:64px;font-weight:800;color:#4f46e5;margin:8px 0}
+    .hint{font-size:12px;color:#9ca3af;margin-bottom:24px}
+    .btn{display:block;width:100%;min-height:48px;border:0;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:12px}
+    .btn-primary{background:#4f46e5;color:#fff}
+    .btn-ghost{background:#f3f4f6;color:#6b7280}
   </style>
 </head>
 <body>
-  <!-- 在这里写你的HTML -->
+  <div class="card">
+    <div class="emoji">🧮</div>
+    <div class="num" id="num">0</div>
+    <p class="hint">数据会自动保存，刷新页面也不丢</p>
+    <button class="btn btn-primary" id="add">+1</button>
+    <button class="btn btn-ghost" id="reset">重置</button>
+  </div>
   <script>
-    // 在这里写你的JavaScript
+    // 记忆功能示例：用 localStorage 保存数据
+    // 微坞会自动持久化 localStorage，刷新页面、切换全屏、重新进入都能恢复
+    var KEY = 'wewoo-demo-count';
+    var num = parseInt(localStorage.getItem(KEY) || '0', 10);
+    var el = document.getElementById('num');
+    el.textContent = num;
+    document.getElementById('add').addEventListener('click', function() {
+      num++;
+      localStorage.setItem(KEY, String(num));
+      el.textContent = num;
+    });
+    document.getElementById('reset').addEventListener('click', function() {
+      num = 0;
+      localStorage.setItem(KEY, '0');
+      el.textContent = num;
+    });
   </script>
 </body>
-</html>
-`;
+</html>`;
 
 const LOCAL_STORAGE_KEY = "wewoo-versions";
 
 const AI_PROMPT_TEMPLATE = `请帮我写一个完整、独立的单文件 HTML 应用，用于[工具功能]。要求：
 1. 移动端优先，适配 375px 宽度，所有按钮和输入框至少 44px。
 2. 自带 CSS 样式，设计简洁现代，颜色柔和。
-3. 完全自包含，不引用外部 CDN 或图片，不使用网络请求（fetch/XHR）、localStorage、cookie。
-4. 无弹窗、跳转、外部链接。
+3. 完全自包含，不引用外部 CDN 或图片，不使用网络请求（fetch/XHR）、cookie、弹窗、跳转、外部链接。
+4. 需要记住用户数据时（如打卡记录、游戏进度、表单内容），用 localStorage 保存和读取。微坞会自动持久化这些数据：刷新页面、切换全屏、下次进入都能恢复。
 5. 用户输入无效数据时给出友好提示。
 6. 将完整代码放在 \`\`\`html 块中。`;
 
@@ -950,25 +976,41 @@ function CreatePageInner() {
                   </div>
                 )}
 
-                {codeWarnings.length > 0 && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
-                    <p className="font-medium text-amber-800 mb-2">⚠️ 代码安全提示</p>
-                    <p className="text-amber-700 text-xs mb-2">
-                      检测到以下可能不安全的 API 调用。微坞会在运行时自动拦截这些操作，但建议你移除或替换它们以确保工具在所有环境下正常运行：
-                    </p>
-                    <ul className="space-y-1">
-                      {codeWarnings.map((w, i) => (
-                        <li key={i} className="text-xs text-amber-700 flex items-center gap-1.5">
-                          <span className={w.level === "high" ? "text-red-500" : "text-amber-500"}>
-                            {w.level === "high" ? "🔴" : "🟡"}
-                          </span>
-                          <span className="font-medium">{w.label}</span>
-                          <span className="text-amber-500">（{w.count} 处）</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {(() => {
+                  const safety = codeWarnings.filter((w) => w.level !== "info");
+                  const memoryNotes = codeWarnings.filter((w) => w.level === "info");
+                  return (
+                    <>
+                      {safety.length > 0 && (
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+                          <p className="font-medium text-amber-800 mb-2">⚠️ 代码安全提示</p>
+                          <p className="text-amber-700 text-xs mb-2">
+                            检测到以下可能不安全的 API 调用。微坞会在运行时自动拦截这些操作，但建议你移除或替换它们以确保工具在所有环境下正常运行：
+                          </p>
+                          <ul className="space-y-1">
+                            {safety.map((w, i) => (
+                              <li key={i} className="text-xs text-amber-700 flex items-center gap-1.5">
+                                <span className={w.level === "high" ? "text-red-500" : "text-amber-500"}>
+                                  {w.level === "high" ? "🔴" : "🟡"}
+                                </span>
+                                <span className="font-medium">{w.label}</span>
+                                <span className="text-amber-500">（{w.count} 处）</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {memoryNotes.length > 0 && (
+                        <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-sm">
+                          <p className="font-medium text-indigo-800 mb-1">🧠 记忆功能已启用</p>
+                          <p className="text-indigo-700 text-xs leading-relaxed">
+                            检测到工具使用 localStorage 保存数据。微坞会自动持久化这些数据——刷新页面、切换全屏、重新进入都能恢复上次的状态；登录用户的数据还会同步到云端，换设备也不丢。
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {!isSupabaseConfigured() && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-600">
