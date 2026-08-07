@@ -254,7 +254,17 @@ const SECURITY_SHIM = `<script>
   // 父页面注入的快照：到达后立即应用到 localStorage 内存（早于用户脚本读取）
   try {
     window.addEventListener('message', function(e) {
-      if (!e.data || e.data.type !== 'WEWOO_STATE_INJECT') return;
+      if (!e.data) return;
+      // 全屏模式滚动位置保持：进入全屏前读取 / 退出全屏后恢复
+      if (e.data.type === 'WEWOO_GET_SCROLL') {
+        try { e.source.postMessage({ type: 'WEWOO_SCROLL', y: (window.pageYOffset || document.documentElement.scrollTop || 0) }, '*'); } catch(_) {}
+        return;
+      }
+      if (e.data.type === 'WEWOO_SET_SCROLL') {
+        try { window.scrollTo(0, Math.max(0, Number(e.data.y) || 0)); } catch(_) {}
+        return;
+      }
+      if (e.data.type !== 'WEWOO_STATE_INJECT') return;
       if (e.data.state && e.data.state._ls) {
         try { window.__wewooLsApply__ && window.__wewooLsApply__(e.data.state._ls); } catch(_) {}
       }

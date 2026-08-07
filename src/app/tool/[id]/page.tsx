@@ -78,6 +78,50 @@ export default function ToolDetailPage() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  // 全屏滚动保持：进入前记录预览滚动位置，退出后恢复，避免全屏滑动影响预览界面
+  const fullscreenScrollRef = useRef<number | null>(null);
+  const enterFullscreen = useCallback(async () => {
+    const y = await new Promise<number | null>((resolve) => {
+      const iframe = document.getElementById("tool-iframe") as HTMLIFrameElement | null;
+      if (!iframe?.contentWindow) { resolve(null); return; }
+      let done = false;
+      const timer = setTimeout(() => { if (!done) { done = true; cleanup(); resolve(null); } }, 300);
+      const onMsg = (e: MessageEvent) => {
+        if (!e.data || e.data.type !== "WEWOO_SCROLL") return;
+        if (!done) { done = true; cleanup(); resolve(typeof e.data.y === "number" ? e.data.y : null); }
+      };
+      const cleanup = () => { window.removeEventListener("message", onMsg); clearTimeout(timer); };
+      window.addEventListener("message", onMsg);
+      try { iframe.contentWindow.postMessage({ type: "WEWOO_GET_SCROLL" }, "*"); } catch { cleanup(); resolve(null); }
+    });
+    fullscreenScrollRef.current = y ?? 0;
+    setFullscreen(true);
+  }, []);
+  const exitFullscreen = useCallback(() => {
+    setFullscreen(false);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const iframe = document.getElementById("tool-iframe") as HTMLIFrameElement | null;
+        if (iframe?.contentWindow) {
+          try {
+            iframe.contentWindow.postMessage({ type: "WEWOO_SET_SCROLL", y: fullscreenScrollRef.current ?? 0 }, "*");
+          } catch { /* ignore */ }
+        }
+      });
+    });
+  }, []);
+  // 全屏时锁定页面滚动，避免滑动穿透到预览页背景
+  useEffect(() => {
+    if (!fullscreen) return;
+    const bodyPrev = document.body.style.overflow;
+    const htmlPrev = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = bodyPrev;
+      document.documentElement.style.overflow = htmlPrev;
+    };
+  }, [fullscreen]);
   // 当 tool 变化时重置 iframe 加载状态
   useEffect(() => {
     setIframeLoaded(false);
@@ -698,7 +742,7 @@ export default function ToolDetailPage() {
               {shareCopied ? "✓ 已复制" : "🔗"}
             </button>
             <button
-              onClick={() => setFullscreen(true)}
+              onClick={enterFullscreen}
               className="inline-flex items-center gap-1 h-8 px-2.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 active:scale-95 transition-all"
             >
               ⛶ 全屏
@@ -731,7 +775,7 @@ export default function ToolDetailPage() {
                 {!docReady && <IframeSkeleton />}
                 {fullscreen && (
                   <button
-                    onClick={() => setFullscreen(false)}
+                    onClick={exitFullscreen}
                     style={{ touchAction: "manipulation" }}
                     className="absolute top-3 right-3 z-30 flex items-center gap-1 px-3 py-1.5 bg-gray-800/80 text-white text-xs rounded-full hover:bg-gray-700 active:scale-95 transition-all shadow border border-white/10"
                   >
