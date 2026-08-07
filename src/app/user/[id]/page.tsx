@@ -7,15 +7,7 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
 import { fetchToolsByUser, fetchTools, fetchUserLikedTools, type Tool } from "@/lib/data";
-
-const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
-function getToolEmoji(tool: Tool): string {
-  const code = typeof tool.code === "string" ? tool.code : "";
-  const m = code.match(EMOJI_RE);
-  if (m) return m[0];
-  const cat: Record<string, string> = { "旅行": "✈️", "工程计算": "🔧", "生活": "🏡", "教育": "📚", "小游戏": "🎮" };
-  return cat[tool.category] || "🛠️";
-}
+import { getToolEmoji } from "@/lib/constants";
 
 export default function UserPage() {
   const { id } = useParams<{ id: string }>();

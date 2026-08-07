@@ -14,7 +14,8 @@ import { scanDangerousCode } from "@/lib/sandbox";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
-import { captureCover, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
+import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } from "@/components/CoverPicker";
+import { captureCover, generateCustomCoverBlob, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
 import { AI_PROMPT_TEMPLATE, aiPrompts } from "@/lib/aiPrompts";
 import { getLsSnapshot } from "@/lib/toolStateBridge";
 
@@ -272,6 +273,7 @@ function CreatePageInner() {
   const [codeWarnings, setCodeWarnings] = useState<{ level: string; label: string; count: number }[]>([]);
   const [publishStep, setPublishStep] = useState<"" | "screenshot" | "uploading" | "done">("");
   const [publishedToolUrl, setPublishedToolUrl] = useState("");
+  const [coverChoice, setCoverChoice] = useState<CoverChoice>(DEFAULT_COVER_CHOICE);
 
   // Share card state
   const [shareCardOpen, setShareCardOpen] = useState(false);
@@ -287,7 +289,6 @@ function CreatePageInner() {
   // AI prompt helper
   const [promptExpanded, setPromptExpanded] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
-  const promptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const debouncedCode = useDebounce(code, 500);
   const debouncedCodeRef = useRef(debouncedCode);
@@ -331,16 +332,6 @@ function CreatePageInner() {
     saveVersions(versions);
   }, [versions]);
 
-  // 停留超过30秒且编辑器为空 → 自动展开 AI 提示词区域
-  useEffect(() => {
-    if (code.trim() !== "") return;
-    promptTimerRef.current = setTimeout(() => {
-      setPromptExpanded(true);
-    }, 30_000);
-    return () => {
-      if (promptTimerRef.current) clearTimeout(promptTimerRef.current);
-    };
-  }, [code]);
 
   // Save snapshot
   const saveSnapshot = useCallback(() => {
@@ -490,18 +481,27 @@ function CreatePageInner() {
       }
       toolId = String((data as { id: string | number }).id);
 
-      // Step 2: Generate & upload cover image
+      // Step 2: Generate & upload cover image（自动截图 / 上传图片 / 渐变+表情）
       setPublishStep("screenshot");
       let coverUrl: string | null = null;
 
       try {
-        const coverBlob = await captureCover(currentCode);
+        let coverBlob: Blob | null = null;
+        if (coverChoice.mode === "upload" && coverChoice.uploadDataUrl) {
+          const res = await fetch(coverChoice.uploadDataUrl);
+          coverBlob = await res.blob();
+        } else if (coverChoice.mode === "gradient") {
+          const gradientCss = COVER_GRADIENTS[coverChoice.gradientIndex % COVER_GRADIENTS.length];
+          coverBlob = await generateCustomCoverBlob(title, currentVersions.length, coverChoice.emoji, gradientCss);
+        } else {
+          coverBlob = await captureCover(currentCode);
+        }
         if (coverBlob) {
           setPublishStep("uploading");
           coverUrl = await uploadCoverToStorage(coverBlob, toolId, client);
         }
       } catch {
-        console.warn("Cover screenshot failed");
+        console.warn("Cover generation failed");
       }
 
       // Fallback: default gradient cover
@@ -555,6 +555,7 @@ function CreatePageInner() {
     setPublishOpen(true);
     setPublishError("");
     setPublishStep("");
+    setCoverChoice(DEFAULT_COVER_CHOICE);
     const result = scanDangerousCode(codeRef.current);
     setCodeWarnings(result.warnings);
   };
@@ -1106,6 +1107,8 @@ function CreatePageInner() {
                     此工具将不会在网页端在线运行，用户需下载到电脑后使用。
                   </div>
                 )}
+
+                <CoverPicker value={coverChoice} onChange={setCoverChoice} disabled={publishing} />
 
                 {publishError && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">

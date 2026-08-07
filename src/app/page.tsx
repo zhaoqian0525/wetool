@@ -5,22 +5,14 @@ import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
-import { fetchTools, fetchViewCounts, fetchToolsByUser, fetchUserLikedTools, CATEGORIES, type Tool } from "@/lib/data";
+import { fetchTools, loadToolsCacheSync, fetchViewCounts, fetchToolsByUser, fetchUserLikedTools, CATEGORIES, type Tool } from "@/lib/data";
 import { authedFetch } from "@/lib/api-client";
 import versionInfo from "../../version.json";
+import { getToolEmoji } from "@/lib/constants";
 
 // ---- Constants ----
 
-// Extract first emoji from tool's HTML code for card icon
-const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
-function getToolEmoji(tool: Tool | Record<string, unknown>): string {
-  const code = typeof tool.code === "string" ? tool.code : "";
-  const m = code.match(EMOJI_RE);
-  if (m) return m[0];
-  const cat: Record<string, string> = { "旅行": "✈️", "工程计算": "🔧", "生活": "🏡", "教育": "📚", "小游戏": "🎮" };
-  const category = typeof tool.category === "string" ? tool.category : "";
-  return cat[category] || "🛠️";
-}
+
 
 // ---- Component ----
 
@@ -37,18 +29,39 @@ export default function HomePage() {
   const [myToolsLoading, setMyToolsLoading] = useState(false);
   const [pinnedToolIds, setPinnedToolIds] = useState<string[]>([]);
   const [likedTools, setLikedTools] = useState<Tool[]>([]);
+  const [serverResults, setServerResults] = useState<Tool[] | null>(null);
 
+  // 缓存优先：先同步渲染上次数据（弱网/慢接口时首屏秒开），再后台刷新替换
+  useEffect(() => {
+    const cached = loadToolsCacheSync();
+    if (cached.tools.length > 0) {
+      setTools(cached.tools);
+      setLoading(false);
+    }
+  }, []);
+
+  // 加载工具列表 + 浏览量：并行发起，互不阻塞；列表刷新后补充新工具浏览量
   useEffect(() => {
     let cancelled = false;
-    fetchTools().then((data) => {
+    (async () => {
+      const cached = loadToolsCacheSync();
+      const [data, cachedCounts] = await Promise.all([
+        fetchTools(),
+        cached.tools.length > 0
+          ? fetchViewCounts(cached.tools.map((t) => t.id))
+          : Promise.resolve({} as Record<string, number>),
+      ]);
       if (cancelled) return;
       setTools(data);
-      const ids = data.map((t) => t.id);
-      fetchViewCounts(ids).then((counts) => {
-        if (!cancelled) setViewCounts(counts);
-      });
+      setViewCounts((prev) => ({ ...cachedCounts, ...prev }));
       setLoading(false);
-    });
+      const freshIds = data.map((t) => t.id).filter((id) => !(id in cachedCounts));
+      if (freshIds.length > 0) {
+        fetchViewCounts(freshIds).then((extra) => {
+          if (!cancelled) setViewCounts((prev) => ({ ...prev, ...extra }));
+        });
+      }
+    })();
     return () => { cancelled = true; };
   }, []);
 
@@ -80,6 +93,22 @@ export default function HomePage() {
     fetchUserLikedTools(user.id, "save").then(tools => setLikedTools(tools));
   }, [user]);
 
+  // 服务端搜索：输入防抖 300ms；结果与本地内置工具合并展示（见 filtered）
+  useEffect(() => {
+    const q = search.trim();
+    if (!q) { setServerResults(null); return; }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      authedFetch("/api/tools/search?q=" + encodeURIComponent(q))
+        .then((r) => r.json())
+        .then((data) => {
+          if (!cancelled) setServerResults((data.tools || []) as Tool[]);
+        })
+        .catch(() => { if (!cancelled) setServerResults(null); });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [search]);
+
   // 搜索时隐藏"最近使用/我的工具"等区块，让搜索结果紧跟在搜索框下方（移动端更顺手）
   const isSearching = search.trim().length > 0;
 
@@ -87,12 +116,19 @@ export default function HomePage() {
     let list = activeCategory === "全部" ? tools : tools.filter((t) => t.category === activeCategory);
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      list = list.filter(
+      // 本地（含内置工具）过滤，保证离线/慢网络时仍可用
+      const localMatch = list.filter(
         (t) =>
           t.title.toLowerCase().includes(q) ||
           t.author.toLowerCase().includes(q) ||
           (t.description ?? "").toLowerCase().includes(q)
       );
+      // 服务端搜索结果补充：不在本地列表中的才加入（去重）
+      const knownIds = new Set(list.map((t) => t.id));
+      const serverExtra = (serverResults ?? [])
+        .filter((t) => !knownIds.has(t.id))
+        .filter((t) => activeCategory === "全部" || t.category === activeCategory);
+      list = [...serverExtra, ...localMatch];
     }
     if (sortBy === "popular") {
       list = [...list].sort((a, b) => (viewCounts[b.id] ?? 0) - (viewCounts[a.id] ?? 0));
@@ -100,7 +136,7 @@ export default function HomePage() {
       list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     return list;
-  }, [tools, activeCategory, search, sortBy, viewCounts]);
+  }, [tools, activeCategory, search, sortBy, viewCounts, serverResults]);
 
   // 常用工具（从所有工具中筛选 pinned 的 ID）
   const pinnedTools = useMemo(() => {

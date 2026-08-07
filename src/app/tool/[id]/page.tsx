@@ -15,6 +15,9 @@ import { fetchToolById, resolveSourceTool, fetchReviews, fetchAverageRating, add
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
 import { authedFetch } from "@/lib/api-client";
 import { getLsSnapshot, setLsSnapshot } from "@/lib/toolStateBridge";
+import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } from "@/components/CoverPicker";
+import { captureCover, generateCustomCoverBlob, uploadCoverToStorage } from "@/lib/cover";
+import { getSupabase } from "@/lib/supabase";
 
 const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
 function getToolEmoji(tool: Tool): string {
@@ -67,6 +70,9 @@ export default function ToolDetailPage() {
   // Share + history + delete + clear state
   const [historyOpen, setHistoryOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [coverEditOpen, setCoverEditOpen] = useState(false);
+  const [coverSaving, setCoverSaving] = useState(false);
+  const [coverChoice, setCoverChoice] = useState<CoverChoice>(DEFAULT_COVER_CHOICE);
   const [deleting, setDeleting] = useState(false);
   const [clearingState, setClearingState] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -492,6 +498,38 @@ export default function ToolDetailPage() {
     }
   }, [tool, user, id, deleting, toast, router]);
 
+  // 更换封面（仅作者）：自动截图 / 上传图片 / 渐变+表情
+  const handleSaveCover = useCallback(async () => {
+    if (!tool || !user || coverSaving) return;
+    setCoverSaving(true);
+    try {
+      const client = getSupabase();
+      if (!client) throw new Error("数据库未连接，无法保存封面");
+      let blob: Blob | null = null;
+      if (coverChoice.mode === "upload" && coverChoice.uploadDataUrl) {
+        const res = await fetch(coverChoice.uploadDataUrl);
+        blob = await res.blob();
+      } else if (coverChoice.mode === "gradient") {
+        const gradientCss = COVER_GRADIENTS[coverChoice.gradientIndex % COVER_GRADIENTS.length];
+        blob = await generateCustomCoverBlob(tool.title, 0, coverChoice.emoji, gradientCss);
+      } else {
+        blob = await captureCover(tool.code);
+      }
+      if (!blob) throw new Error("封面生成失败，请换一种方式");
+      const url = await uploadCoverToStorage(blob, tool.id, client);
+      if (!url) throw new Error("封面上传失败，请稍后重试");
+      const { error } = await client.from("tools").update({ cover_url: url }).eq("id", tool.id);
+      if (error) throw new Error(error.message || "保存失败");
+      setTool({ ...tool, coverUrl: url });
+      setCoverEditOpen(false);
+      toast.success("封面已更新");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "保存失败，请重试");
+    } finally {
+      setCoverSaving(false);
+    }
+  }, [tool, user, coverChoice, coverSaving, toast]);
+
   // 作者权限检查
   const isAuthor = user && tool && tool.authorId === user.id;
   const handleChangeVisibility = (v: string) => {
@@ -754,12 +792,20 @@ export default function ToolDetailPage() {
               ✨ 改编
             </Link>
             {isAuthor && (
+              <>
+              <button
+                onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }}
+                className="inline-flex items-center gap-1 h-8 px-2.5 text-xs text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+              >
+                🖼️ 换封面
+              </button>
               <button
                 onClick={() => setDeleteOpen(true)}
                 className="inline-flex items-center gap-1 h-8 px-2.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 删除
               </button>
+              </>
             )}
           </div>
 
@@ -972,6 +1018,39 @@ export default function ToolDetailPage() {
       open={historyOpen}
       onClose={() => setHistoryOpen(false)}
     />
+    {/* 更换封面对话框（仅作者） */}
+    {coverEditOpen && (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto">
+          <h3 className="text-base font-semibold text-gray-900 mb-1">更换封面</h3>
+          <p className="text-xs text-gray-500 mb-4">封面会显示在首页广场、分享卡片和最近使用里</p>
+          <CoverPicker value={coverChoice} onChange={setCoverChoice} disabled={coverSaving} />
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => setCoverEditOpen(false)}
+              disabled={coverSaving}
+              className="flex-1 min-h-[44px] py-2.5 text-sm text-gray-500 hover:bg-gray-50 rounded-xl transition-colors disabled:opacity-40"
+            >
+              取消
+            </button>
+            <button
+              onClick={handleSaveCover}
+              disabled={coverSaving}
+              className="flex-1 min-h-[44px] py-2.5 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              {coverSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  保存中
+                </>
+              ) : (
+                "保存封面"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     {/* 删除确认对话框 */}
     {deleteOpen && (
       <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">

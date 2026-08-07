@@ -150,6 +150,67 @@ export async function generateDefaultCoverBlob(
   });
 }
 
+/** 从渐变 CSS 中解析两个十六进制颜色，供 Canvas 绘制使用 */
+function parseGradientCss(css: string): [string, string] {
+  const m = css.match(/#[0-9a-fA-F]{6}/g);
+  if (m && m.length >= 2) return [m[0], m[1]];
+  return GRADIENT_PAIRS[0];
+}
+
+/** 生成自定义封面 Blob：渐变 + 大表情 + 标题（发布/更换封面共用） */
+export async function generateCustomCoverBlob(
+  title: string,
+  seed: number,
+  emoji: string,
+  gradientCss?: string
+): Promise<Blob> {
+  const [c1, c2] = gradientCss
+    ? parseGradientCss(gradientCss)
+    : GRADIENT_PAIRS[seed % GRADIENT_PAIRS.length];
+
+  const canvas = document.createElement("canvas");
+  canvas.width = COVER_WIDTH;
+  canvas.height = COVER_HEIGHT;
+  const ctx = canvas.getContext("2d")!;
+
+  // 渐变背景
+  const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  grad.addColorStop(0, c1);
+  grad.addColorStop(1, c2);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 大表情
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "76px -apple-system, BlinkMacSystemFont, sans-serif";
+  ctx.fillText(emoji || "🛠️", canvas.width / 2, 280);
+
+  // 标题
+  ctx.fillStyle = "rgba(255,255,255,0.95)";
+  ctx.font = "bold 20px -apple-system, BlinkMacSystemFont, sans-serif";
+  const lines = wrapText(ctx, title, 280);
+  const startY = 470 - lines.length * 14;
+  lines.forEach((line, i) => {
+    ctx.fillText(line, canvas.width / 2, startY + i * 28);
+  });
+
+  // 品牌角标
+  ctx.fillStyle = "rgba(255,255,255,0.6)";
+  ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
+  ctx.fillText("微坞 WeWoo", canvas.width / 2, canvas.height - 30);
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (b) => {
+        if (b) resolve(b);
+        else reject(new Error("Failed to create custom cover"));
+      },
+      "image/png"
+    );
+  });
+}
+
 // ---- Upload ----
 
 /** 上传封面到 Supabase Storage，返回公开 URL。失败返回 null */
