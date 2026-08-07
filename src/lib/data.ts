@@ -57,72 +57,123 @@ export const MOCK_TOOLS: Tool[] = [
     authorId: "user-001",
     category: "旅行",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#f5f3ff;padding:16px;color:#333}
-h2{text-align:center;color:#5b21b6;font-size:18px;margin-bottom:4px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:16px}
-.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.card h3{font-size:14px;color:#5b21b6;margin-bottom:10px}
-.row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.row label{font-size:13px;color:#666;flex-shrink:0}
-.row input,.row select{flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-.btn{padding:8px 16px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer}
-.btn-sm{padding:4px 10px;font-size:12px}
-.btn-danger{background:#ef4444;padding:4px 10px;font-size:12px;color:#fff;border:none;border-radius:6px;cursor:pointer}
-.member{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f3f3;font-size:13px}
-.member span{color:#555}
-.total{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-radius:12px;padding:16px;text-align:center;margin-top:12px}
-.total .big{font-size:28px;font-weight:bold}
-.total .unit{font-size:13px;opacity:.8}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>旅行分账计算器</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#eef2ff,#f5f3ff);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#4c1d95;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px rgba(76,29,149,.08)}
+  .card h3{font-size:14px;color:#4c1d95;margin-bottom:10px}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .row label{font-size:13px;color:#64748b;flex-shrink:0;width:56px}
+  .row input{flex:1;min-height:44px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:16px;outline:none;background:#f8fafc}
+  .row input:focus{border-color:#7c3aed;background:#fff}
+  .btn{min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .btn-primary{width:100%;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff}
+  .btn-mini{min-height:38px;padding:0 12px;font-size:13px;font-weight:600;border-radius:9px;background:#ede9fe;color:#6d28d9}
+  .result{display:none;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-radius:16px;padding:16px;text-align:center;margin-bottom:12px}
+  .result.show{display:block}
+  .result .big{font-size:32px;font-weight:800;margin:4px 0}
+  .result .exact{font-size:12px;opacity:.85}
+  .item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:14px}
+  .item:last-child{border-bottom:0}
+  .item .name{flex:1;color:#334155}
+  .item .cost{font-weight:700;color:#7c3aed}
+  .item button{min-width:34px;min-height:34px;border:0;border-radius:8px;background:#fee2e2;color:#dc2626;font-size:15px;cursor:pointer}
+  .empty{font-size:12px;color:#cbd5e1;text-align:center;padding:8px 0}
+  .tips{font-size:11px;color:#94a3b8;text-align:center;margin-top:4px}
 </style>
-<h2>💰 旅行分账计算器</h2>
-<p class="sub">输入花费和人数，自动算每人该付多少</p>
-<div class="card">
-  <h3>总花费</h3>
-  <div class="row"><label>金额 ¥</label><input id="amount" type="number" placeholder="0" value="500"></div>
-  <div class="row"><label>人数</label><input id="people" type="number" placeholder="0" value="4"></div>
-  <button class="btn" style="width:100%" onclick="calc()">计算每人应付</button>
-</div>
-<div class="card" id="result" style="display:none">
-  <h3>💰 每人应付</h3>
-  <p id="perPerson" style="font-size:24px;font-weight:bold;color:#7c3aed;text-align:center;margin:12px 0"></p>
-  <p style="font-size:12px;color:#999;text-align:center">通过微信 AA 收款一键发给朋友</p>
-</div>
-<div class="card">
-  <h3>✏️ 记录额外分摊项</h3>
-  <div class="row"><label>名称</label><input id="itemName" placeholder="比如：打车"></div>
-  <div class="row"><label>金额</label><input id="itemCost" type="number" placeholder="0"></div>
-  <button class="btn" style="width:100%" onclick="addItem()">添加</button>
-  <div id="items" style="margin-top:10px"></div>
+</head>
+<body>
+<div class="wrap">
+  <h1>💰 旅行分账计算器</h1>
+  <p class="sub">数据自动保存，下次打开还在</p>
+
+  <div class="result" id="result">
+    <div>每人应付</div>
+    <div class="big" id="perPerson">¥0</div>
+    <div class="exact" id="exact">总额 ¥0 · 共 0 人</div>
+  </div>
+
+  <div class="card">
+    <h3>基本信息</h3>
+    <div class="row"><label>总花费</label><input id="amount" type="number" inputmode="decimal" placeholder="0.00" value="0"></div>
+    <div class="row"><label>人数</label><input id="people" type="number" inputmode="numeric" placeholder="0" value="2"></div>
+    <button class="btn btn-primary" id="calcBtn">计算每人应付</button>
+  </div>
+
+  <div class="card">
+    <h3>✏️ 额外分摊项（打车 / 门票 / 房费…）</h3>
+    <div class="row"><input id="itemName" placeholder="名称，如：打车"></div>
+    <div class="row"><input id="itemCost" type="number" inputmode="decimal" placeholder="金额 ¥"></div>
+    <button class="btn btn-primary" id="addBtn">添加分摊项</button>
+    <div id="items"></div>
+  </div>
+  <p class="tips">微坞会自动记住你填的数据，刷新 / 全屏 / 重新进入都不丢</p>
 </div>
 <script>
-var items=[];
-function calc(){
-  var a=parseFloat(document.getElementById('amount').value)||0;
-  var p=parseInt(document.getElementById('people').value)||1;
-  var total=items.reduce(function(s,i){return s+i.cost},a);
-  var per=Math.ceil(total/p);
-  document.getElementById('perPerson').textContent='¥ '+per;
-  document.getElementById('result').style.display='block';
-}
-function addItem(){
-  var n=document.getElementById('itemName').value.trim();
-  var c=parseFloat(document.getElementById('itemCost').value)||0;
-  if(!n||c<=0)return;
-  items.push({name:n,cost:c});
-  renderItems();
-  document.getElementById('itemName').value='';
-  document.getElementById('itemCost').value='';
-  calc();
-}
-function removeItem(i){items.splice(i,1);renderItems();calc()}
+var KEY = "wewoo-travel-split";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
+function save(){localStorage.setItem(KEY, JSON.stringify(data))}
+var data = load();
+if(!Array.isArray(data.items)) data.items = [];
+if(typeof data.amount !== "number") data.amount = 0;
+if(typeof data.people !== "number") data.people = 2;
+
+var amountEl=document.getElementById("amount"), peopleEl=document.getElementById("people");
+var itemNameEl=document.getElementById("itemName"), itemCostEl=document.getElementById("itemCost");
+
 function renderItems(){
-  document.getElementById('items').innerHTML=items.map(function(it,i){
-    return '<div class="member"><span>'+it.name+'</span><span>¥'+it.cost+' <button class="btn-danger" onclick="removeItem('+i+')">×</button></span></div>'
-  }).join('');
+  var box=document.getElementById("items");
+  if(data.items.length===0){box.innerHTML='<div class="empty">还没有分摊项，添加一笔试试</div>';return}
+  box.innerHTML="";
+  data.items.forEach(function(it,i){
+    var d=document.createElement("div");d.className="item";
+    d.innerHTML='<span class="name">'+it.name+'</span><span class="cost">¥'+Number(it.cost).toFixed(2)+'</span>';
+    var b=document.createElement("button");b.textContent="×";b.onclick=function(){data.items.splice(i,1);save();renderItems();calc();};
+    d.appendChild(b);box.appendChild(d);
+  });
 }
-</script>`,
+function calc(){
+  var a=parseFloat(amountEl.value)||0;
+  var p=parseInt(peopleEl.value)||1;
+  if(p<1)p=1;
+  var extra=data.items.reduce(function(s,it){return s+(parseFloat(it.cost)||0)},0);
+  var total=a+extra;
+  var per=total/p;
+  document.getElementById("result").classList.add("show");
+  document.getElementById("perPerson").textContent="¥ "+Math.ceil(per);
+  document.getElementById("exact").textContent="总额 ¥"+total.toFixed(2)+"（含分摊 ¥"+extra.toFixed(2)+"）· 共 "+p+" 人";
+}
+function remember(){
+  data.amount=parseFloat(amountEl.value)||0;
+  data.people=parseInt(peopleEl.value)||2;
+  save();
+}
+document.getElementById("calcBtn").onclick=function(){calc();remember();};
+document.getElementById("addBtn").onclick=function(){
+  var n=itemNameEl.value.trim(), c=parseFloat(itemCostEl.value)||0;
+  if(!n){itemNameEl.focus();return}
+  if(c<=0){itemCostEl.focus();return}
+  data.items.push({name:n,cost:c});
+  save();
+  itemNameEl.value="";itemCostEl.value="";
+  renderItems();calc();
+};
+amountEl.value=data.amount||"";peopleEl.value=data.people;
+renderItems();
+if(data.items.length>0||data.amount>0)calc();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #667eea, #764ba2)",
     createdAt: "2026-07-20T10:30:00Z",
     description: "和朋友们一起旅行，快速算出每人该付多少钱",
@@ -134,69 +185,106 @@ function renderItems(){
     authorId: "user-002",
     category: "工程计算",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#fff5f5;padding:16px;color:#333}
-h2{text-align:center;color:#c2410c;font-size:18px;margin-bottom:4px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:16px}
-.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.card h3{font-size:14px;color:#c2410c;margin-bottom:10px}
-.row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.row label{font-size:13px;color:#666;flex-shrink:0}
-.row input,.row select{flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-.btn{width:100%;padding:10px;background:#ea580c;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-top:4px}
-.result{background:linear-gradient(135deg,#ffedd5,#fed7aa);border-radius:12px;padding:16px;margin-top:12px;text-align:center}
-.result .val{font-size:22px;font-weight:bold;color:#c2410c}
-.result .label{font-size:12px;color:#9a3412}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>螺栓强度校核</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#fff7ed,#fef2f2);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#9a3412;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px rgba(154,52,18,.08)}
+  .card h3{font-size:14px;color:#9a3412;margin-bottom:10px}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .row label{font-size:13px;color:#64748b;flex-shrink:0;width:88px}
+  .row input,.row select{flex:1;min-height:44px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:16px;outline:none;background:#f8fafc}
+  .row select{font-size:15px}
+  .row input:focus,.row select:focus{border-color:#ea580c;background:#fff}
+  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ea580c,#f97316);color:#fff;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .result{display:none;border-radius:16px;padding:16px;margin-bottom:12px;text-align:center}
+  .result.show{display:block}
+  .result.ok{background:#f0fdf4;border:1.5px solid #bbf7d0}
+  .result.warn{background:#fffbeb;border:1.5px solid #fde68a}
+  .result .big{font-size:26px;font-weight:800;color:#9a3412;margin:4px 0}
+  .result .row2{display:flex;justify-content:space-between;font-size:13px;color:#64748b;padding:4px 0;border-bottom:1px dashed #e2e8f0}
+  .result .row2:last-child{border-bottom:0}
+  .result .row2 b{color:#334155}
+  .tips{font-size:11px;color:#94a3b8;text-align:center;margin-top:4px}
 </style>
-<h2>🔩 螺栓强度校核</h2>
-<p class="sub">输入螺栓参数，一键计算抗拉与剪切强度</p>
-<div class="card">
-  <h3>螺栓参数</h3>
-  <div class="row"><label>公称直径 d</label><input id="d" type="number" placeholder="mm" value="16"></div>
-  <div class="row"><label>螺距 P</label><select id="pitch"><option value="0.5">M3-0.5</option><option value="0.7">M4-0.7</option><option value="0.8">M5-0.8</option><option value="1">M6-1.0</option><option value="1.25">M8-1.25</option><option value="1.5">M10-1.5</option><option value="1.75">M12-1.75</option><option value="2" selected>M16-2.0</option><option value="2.5">M20-2.5</option></select></div>
-  <div class="row"><label>性能等级</label><select id="grade"><option value="4.8">4.8</option><option value="5.6">5.6</option><option value="8.8" selected>8.8</option><option value="10.9">10.9</option><option value="12.9">12.9</option></select></div>
-  <div class="row"><label>安全系数 n</label><input id="safety" type="number" placeholder="" value="1.5" step="0.1"></div>
-  <button class="btn" onclick="calculate()">计算强度</button>
-</div>
-<div class="result" id="result" style="display:none">
-  <h3 style="color:#c2410c;margin-bottom:8px">计算结果</h3>
-  <div class="grid">
-    <div><div class="label">抗拉强度 σb</div><div class="val" id="sigmaB">-</div></div>
-    <div><div class="label">屈服强度 σs</div><div class="val" id="sigmaS">-</div></div>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔩 螺栓强度校核</h1>
+  <p class="sub">输入参数，一键计算许用应力与可承受拉力</p>
+  <div class="card">
+    <h3>参数输入</h3>
+    <div class="row"><label>公称直径 d</label><input id="d" type="number" inputmode="decimal" placeholder="mm" value="16"></div>
+    <div class="row"><label>性能等级</label><select id="grade">
+      <option value="4.8">4.8 级（普通）</option>
+      <option value="5.8">5.8 级</option>
+      <option value="8.8" selected>8.8 级（高强）</option>
+      <option value="10.9">10.9 级（高强）</option>
+      <option value="12.9">12.9 级（超高强）</option>
+    </select></div>
+    <div class="row"><label>安全系数</label><input id="safety" type="number" inputmode="decimal" step="0.1" value="1.5"></div>
+    <div class="row"><label>受拉载荷 F</label><input id="load" type="number" inputmode="decimal" placeholder="kN（可选）" value=""></div>
+    <button class="btn" id="calcBtn">计算强度</button>
   </div>
-  <div class="grid">
-    <div><div class="label">许用拉应力</div><div class="val" id="allowT">-</div></div>
-    <div><div class="label">许用剪应力</div><div class="val" id="allowS">-</div></div>
-  </div>
-  <p style="font-size:12px;color:#9a3412;margin-top:8px" id="verdict"></p>
+  <div class="result" id="result"></div>
+  <p class="tips">数据自动保存 · 载荷校核：F ≤ 许用拉力即安全</p>
 </div>
 <script>
-function calculate(){
-  var d=parseFloat(document.getElementById('d').value)||16;
-  var p=parseFloat(document.getElementById('pitch').value)||2;
-  var g=document.getElementById('grade').value;
-  var n=parseFloat(document.getElementById('safety').value)||1.5;
-  var d1=d-1.0825*p;
-  var A1=Math.PI*d1*d1/4;
-  var gb=parseInt(g.split('.')[0])*100;
-  var gs=parseInt(g.split('.')[0])*10*parseInt(g.split('.')[1]);
-  var sigmaB=gb;
-  var sigmaS=gs;
-  var allowTensile=sigmaS/n;
-  var allowShear=allowTensile*0.6;
-  document.getElementById('sigmaB').textContent=sigmaB+' MPa';
-  document.getElementById('sigmaS').textContent=sigmaS+' MPa';
-  document.getElementById('allowT').textContent=allowTensile.toFixed(1)+' MPa';
-  document.getElementById('allowS').textContent=allowShear.toFixed(1)+' MPa';
-  var ft=A1*allowTensile/1000;
-  var fs=A1*allowShear/1000;
-  var v=ft>50?'✅ 强度足够，可安全使用':ft>20?'⚠️ 中等载荷可用，重载请增大直径':'❌ 强度不足，建议增大直径或提高等级';
-  document.getElementById('verdict').textContent='螺纹小径: '+d1.toFixed(2)+'mm | 危险截面积: '+A1.toFixed(1)+'mm² | 评估: '+v;
-  document.getElementById('result').style.display='block';
+var KEY="wewoo-bolt-check";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
+var data=load();
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+var dEl=document.getElementById("d"),gEl=document.getElementById("grade"),sEl=document.getElementById("safety"),lEl=document.getElementById("load");
+if(data.d!==undefined)dEl.value=data.d;
+if(data.g!==undefined)gEl.value=data.g;
+if(data.s!==undefined)sEl.value=data.s;
+if(data.l!==undefined)lEl.value=data.l;
+
+function area(d){
+  // 有效应力截面积 As ≈ 0.7854 * (d - 0.9382*P)^2，P 按粗牙近似；这里用公称直径简化
+  return Math.PI*(d*d)/4;
 }
-</script>`,
+function calc(){
+  var d=parseFloat(dEl.value)||0;
+  var g=gEl.value;
+  var n=parseFloat(sEl.value)||1.5;
+  var f=parseFloat(lEl.value)||0;
+  if(d<=0){alert("请输入公称直径");return}
+  if(n<=0){sEl.value=1;n=1}
+  var gb=(parseInt(g.split(".")[0])*100);
+  var gs=(parseInt(g.split(".")[0])*10)*parseInt(g.split(".")[1]);
+  var allow=gs/n;
+  var As=area(d);
+  var maxKN=allow*As/1000; // 许用拉力 kN（按有效面积简化）
+  var ok=true;
+  var extra="";
+  if(f>0){
+    ok=f<=maxKN;
+    extra='<div class="row2"><span>校核载荷 '+f+' kN</span><b>'+(ok?"✅ 安全":"⚠️ 超载")+'</b></div>';
+  }
+  var r=document.getElementById("result");
+  r.className="result show "+(ok?"ok":"warn");
+  r.innerHTML='<div class="big">许用应力 [σ] = '+allow.toFixed(1)+' MPa</div>'+
+    '<div class="row2"><span>抗拉强度 σb</span><b>'+gb+' MPa</b></div>'+
+    '<div class="row2"><span>屈服强度 σs</span><b>'+gs+' MPa</b></div>'+
+    '<div class="row2"><span>许用拉力（估算）</span><b>约 '+maxKN.toFixed(1)+' kN</b></div>'+
+    extra;
+  data.d=d;data.g=g;data.s=n;data.l=f;save();
+}
+document.getElementById("calcBtn").onclick=calc;
+calc();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #f093fb, #f5576c)",
     createdAt: "2026-07-19T14:00:00Z",
     description: "输入螺栓直径和材料参数，一键计算抗拉强度",
@@ -208,72 +296,119 @@ function calculate(){
     authorId: "user-003",
     category: "教育",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'KaiTi','STKaiti',serif;background:#f0f9ff;padding:16px;color:#333}
-h2{text-align:center;color:#0369a1;font-size:20px;margin-bottom:8px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:16px}
-.qcard{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center}
-.verse{font-size:22px;color:#0c4a6e;line-height:1.8;margin-bottom:16px;letter-spacing:2px}
-.verse .blank{color:#0369a1;font-weight:bold;font-size:24px}
-.poem{font-size:12px;color:#999;margin-bottom:10px}
-.options{display:grid;gap:8px;margin-top:12px}
-.opt{padding:12px;border:2px solid #e0e7ff;border-radius:10px;font-size:14px;cursor:pointer;background:#fff;transition:all .2s}
-.opt:hover{border-color:#7dd3fc;background:#f0f9ff}
-.opt.correct{border-color:#22c55e;background:#f0fdf4;color:#166534}
-.opt.wrong{border-color:#ef4444;background:#fef2f2;color:#991b1b}
-.opt.disabled{pointer-events:none}
-.btn{width:100%;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;margin-top:12px}
-.score{text-align:center;margin-top:10px;font-size:14px;color:#0284c7}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>古诗词随机抽查</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#fefce8,#fff7ed);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#92400e;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .stats{display:flex;gap:8px;margin-bottom:12px}
+  .stat{flex:1;background:#fff;border-radius:12px;padding:10px;text-align:center;box-shadow:0 2px 8px rgba(146,64,14,.06)}
+  .stat .num{font-size:20px;font-weight:800;color:#d97706}
+  .stat .lbl{font-size:11px;color:#94a3b8;margin-top:2px}
+  .card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(146,64,14,.08)}
+  .prompt{font-size:22px;font-weight:700;color:#78350f;text-align:center;padding:18px 8px;background:#fffbeb;border-radius:12px;border:1.5px dashed #fcd34d;margin-bottom:12px}
+  .mode{font-size:12px;color:#b45309;text-align:center;margin-bottom:10px}
+  .input{width:100%;min-height:46px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:16px;outline:none;background:#f8fafc;margin-bottom:10px}
+  .input:focus{border-color:#d97706;background:#fff}
+  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:#f3f4f6;color:#6b7280;margin-top:8px}
+  .feedback{display:none;border-radius:12px;padding:12px;margin-top:10px;font-size:14px;text-align:center}
+  .feedback.show{display:block}
+  .feedback.ok{background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0}
+  .feedback.no{background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca}
+  .feedback .poem{font-weight:700;margin-top:4px}
 </style>
-<h2>📜 古诗词抽查</h2>
-<p class="sub">随机出题 · 课堂互动神器</p>
-<div class="qcard">
-  <p class="poem" id="source"></p>
-  <p class="verse" id="question"></p>
-  <div class="options" id="options"></div>
-  <p style="margin-top:10px;font-size:13px;color:#666" id="feedback"></p>
-  <button class="btn" id="nextBtn" onclick="next()">下一题 ▶</button>
+</head>
+<body>
+<div class="wrap">
+  <h1>📜 古诗词随机抽查</h1>
+  <p class="sub">考考你的诗词积累，成绩自动保存</p>
+  <div class="stats">
+    <div class="stat"><div class="num" id="sTotal">0</div><div class="lbl">已答</div></div>
+    <div class="stat"><div class="num" id="sRight">0</div><div class="lbl">答对</div></div>
+    <div class="stat"><div class="num" id="sRate">0%</div><div class="lbl">正确率</div></div>
+  </div>
+  <div class="card">
+    <div class="mode" id="mode">请补充下一句</div>
+    <div class="prompt" id="prompt">——</div>
+    <input class="input" id="answer" placeholder="输入你的答案" autocomplete="off">
+    <button class="btn" id="submitBtn">提交答案</button>
+    <button class="btn ghost" id="nextBtn">下一题</button>
+    <div class="feedback" id="feedback"></div>
+  </div>
 </div>
-<p class="score">✅ <span id="correct">0</span> / <span id="total">0</span></p>
 <script>
-var bank=[
-  {v:'床前明月光，__疑是地上霜',a:'李白《静夜思》',c:'疑',w:['凝','疑','怡','颐'],hint:'怀疑的疑'},
-  {v:'举头望明月，__头思故乡',a:'李白《静夜思》',c:'低',w:['地','低','底','滴'],hint:'低头'},
-  {v:'春眠不觉晓，__处闻啼鸟',a:'孟浩然《春晓》',c:'处',w:['处','初','出','楚'],hint:'到处'},
-  {v:'锄禾日当午，__滴禾下土',a:'李绅《悯农》',c:'汗',w:['汉','汗','旱','寒'],hint:'汗水'},
-  {v:'白日依山尽，黄河入__流',a:'王之涣《登鹳雀楼》',c:'海',w:['海','湖','江','河'],hint:'大海'},
-  {v:'飞流直下三千尺，__是银河落九天',a:'李白《望庐山瀑布》',c:'疑',w:['疑','以','已','宜'],hint:'怀疑'},
-  {v:'停车坐爱枫林晚，__叶红于二月花',a:'杜牧《山行》',c:'霜',w:['双','霜','爽','孀'],hint:'霜雪'},
+var POEMS=[
+  ["床前明月光","疑是地上霜"],
+  ["白日依山尽","黄河入海流"],
+  ["春眠不觉晓","处处闻啼鸟"],
+  ["锄禾日当午","汗滴禾下土"],
+  ["举头望明月","低头思故乡"],
+  ["红豆生南国","春来发几枝"],
+  ["离离原上草","一岁一枯荣"],
+  ["两个黄鹂鸣翠柳","一行白鹭上青天"],
+  ["千山鸟飞绝","万径人踪灭"],
+  ["飞流直下三千尺","疑是银河落九天"],
+  ["欲穷千里目","更上一层楼"],
+  ["少壮不努力","老大徒伤悲"],
+  ["野火烧不尽","春风吹又生"],
+  ["停车坐爱枫林晚","霜叶红于二月花"],
+  ["随风潜入夜","润物细无声"],
+  ["海内存知己","天涯若比邻"],
+  ["会当凌绝顶","一览众山小"],
+  ["但愿人长久","千里共婵娟"]
 ];
-var score=0,total=0,answered=false;
-function next(){
+var KEY="wewoo-poem-quiz";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{t:0,r:0}}catch(e){return{t:0,r:0}}}
+var data=load();if(typeof data.t!=="number")data.t=0;if(typeof data.r!=="number")data.r=0;
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function refreshStats(){
+  document.getElementById("sTotal").textContent=data.t;
+  document.getElementById("sRight").textContent=data.r;
+  document.getElementById("sRate").textContent=(data.t?Math.round(data.r/data.t*100):0)+"%";
+}
+var cur=null, mode=0, answered=false;
+function newQuestion(){
+  cur=POEMS[Math.floor(Math.random()*POEMS.length)];
+  mode=Math.random()<0.5?0:1; // 0=填下句 1=填上句
+  document.getElementById("mode").textContent=mode===0?"请补充下一句":"请补充上一句";
+  document.getElementById("prompt").textContent=mode===0?cur[0]:cur[1];
+  document.getElementById("answer").value="";
+  document.getElementById("feedback").className="feedback";
   answered=false;
-  document.getElementById('feedback').textContent='';
-  var q=bank[Math.floor(Math.random()*bank.length)];
-  document.getElementById('source').textContent='—— '+q.a;
-  document.getElementById('question').innerHTML=q.v.replace('__','<span class="blank">__</span>');
-  var opts=document.getElementById('options');
-  var shuffled=q.w.slice().sort(function(){return Math.random()-.5});
-  var html=shuffled.map(function(w){
-    return '<button class="opt" onclick="answer(this,\\''+w+'\\',\\''+q.c+'\\')">'+w+'</button>';
-  }).join('');
-  opts.innerHTML=html;
+  document.getElementById("submitBtn").textContent="提交答案";
+  document.getElementById("answer").focus();
 }
-function answer(el,w,c){
-  if(answered)return;answered=true;
-  total++;
-  if(w===c){score++;el.classList.add('correct');document.getElementById('feedback').textContent='✅ 太棒了！';}
-  else{el.classList.add('wrong');document.getElementById('feedback').textContent='❌ 正确答案：'+c+' ('+bank.find(function(q){return q.c===c}).hint+')';
-    var opts=document.querySelectorAll('.opt');
-    for(var i=0;i<opts.length;i++){if(opts[i].textContent===c)opts[i].classList.add('correct');}
-  }
-  var all=document.querySelectorAll('.opt');for(var j=0;j<all.length;j++)all[j].classList.add('disabled');
-  document.getElementById('correct').textContent=score;
-  document.getElementById('total').textContent=total;
+function normalize(s){return s.replace(/[，。！？、\s]/g,"")}
+function submit(){
+  if(answered){nextQuestion();return}
+  var val=document.getElementById("answer").value.trim();
+  if(!val)return;
+  var right=mode===0?cur[1]:cur[0];
+  var ok=normalize(val)===normalize(right);
+  data.t++;if(ok)data.r++;save();refreshStats();
+  var fb=document.getElementById("feedback");
+  fb.className="feedback show "+(ok?"ok":"no");
+  fb.innerHTML=(ok?"✅ 答对啦！":"❌ 答案是：")+"<div class='poem'>"+right+"</div>";
+  answered=true;
+  document.getElementById("submitBtn").textContent="下一题";
 }
-next();
-</script>`,
+document.getElementById("submitBtn").onclick=submit;
+document.getElementById("nextBtn").onclick=function(){if(!answered){submit()}else{newQuestion()}};
+document.getElementById("answer").addEventListener("keydown",function(e){if(e.key==="Enter")submit()});
+refreshStats();
+newQuestion();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #4facfe, #00f2fe)",
     createdAt: "2026-07-18T09:15:00Z",
     description: "课堂上随机出题，考考学生的诗词积累",
@@ -285,67 +420,128 @@ next();
     authorId: "user-004",
     category: "生活",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#fff7ed;padding:16px;color:#333}
-h2{text-align:center;color:#c2410c;font-size:18px;margin-bottom:8px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:12px}
-.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.card h3{font-size:14px;color:#c2410c;margin-bottom:10px}
-.row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.row label{font-size:13px;color:#666;flex-shrink:0}
-.row input,.row select{flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-.btn{width:100%;padding:10px;background:#ea580c;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer}
-.tag{padding:3px 10px;border-radius:20px;font-size:11px;color:#fff}
-.tag-g{background:#22c55e}.tag-f{background:#f59e0b}.tag-d{background:#3b82f6}.tag-r{background:#ef4444}
-.log-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #fef3c7;font-size:13px}
-.log-item .time{color:#999;font-size:11px}
-.remove{color:#ef4444;background:none;border:none;font-size:16px;cursor:pointer}
-.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-.sbox{background:#fff;border-radius:10px;padding:10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-.sbox .num{font-size:20px;font-weight:bold;color:#c2410c}
-.sbox .lbl{font-size:11px;color:#999}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>宝宝辅食记录</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#fdf2f8,#fff7ed);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#be185d;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .stats{display:flex;gap:8px;margin-bottom:12px}
+  .stat{flex:1;background:#fff;border-radius:12px;padding:10px;text-align:center;box-shadow:0 2px 8px rgba(190,24,93,.06)}
+  .stat .num{font-size:18px;font-weight:800;color:#db2777}
+  .stat .lbl{font-size:11px;color:#94a3b8;margin-top:2px}
+  .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px rgba(190,24,93,.08)}
+  .card h3{font-size:14px;color:#be185d;margin-bottom:10px}
+  .row{display:flex;gap:8px;margin-bottom:10px}
+  .row input{flex:1;min-height:44px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:16px;outline:none;background:#f8fafc}
+  .row input:focus{border-color:#db2777;background:#fff}
+  .reacts{display:flex;gap:8px;margin-bottom:10px}
+  .react{flex:1;min-height:44px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:14px;cursor:pointer;color:#64748b}
+  .react.sel{color:#fff;font-weight:700}
+  .react.sel.r1{background:#10b981;border-color:#10b981}
+  .react.sel.r2{background:#f59e0b;border-color:#f59e0b}
+  .react.sel.r3{background:#ef4444;border-color:#ef4444}
+  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#db2777,#f472b6);color:#fff;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .rec{display:flex;align-items:flex-start;gap:8px;padding:10px 0;border-bottom:1px solid #f1f5f9}
+  .rec:last-child{border-bottom:0}
+  .rec .tag{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .rec .tag.r1{background:#d1fae5}.rec .tag.r2{background:#fef3c7}.rec .tag.r3{background:#fee2e2}
+  .rec .body{flex:1;min-width:0}
+  .rec .food{font-size:15px;font-weight:700;color:#334155}
+  .rec .meta{font-size:11px;color:#94a3b8;margin-top:2px}
+  .rec .note{font-size:12px;color:#64748b;margin-top:2px}
+  .rec button{min-width:34px;min-height:34px;border:0;border-radius:8px;background:#fee2e2;color:#dc2626;font-size:14px;cursor:pointer}
+  .empty{font-size:12px;color:#cbd5e1;text-align:center;padding:12px 0}
 </style>
-<h2>🍼 宝宝辅食记录</h2>
-<p class="sub">记录每一餐 · 关注宝宝营养</p>
-<div class="card">
-  <h3>➕ 添加记录</h3>
-  <div class="row"><label>食物</label><input id="food" placeholder="如：南瓜泥"></div>
-  <div class="row"><label>类型</label><select id="type"><option value="g">🥬 谷物</option><option value="f">🍎 水果</option><option value="d">🥩 肉蛋</option><option value="r">🥦 蔬菜</option></select></div>
-  <div class="row"><label style="font-size:13px">🐣 过敏反应</label><select id="reaction"><option value="无">✅ 无</option><option value="轻微">⚠️ 轻微皮疹</option><option value="明显">🚨 明显不适</option></select></div>
-  <button class="btn" onclick="addFood()">📝 记录</button>
-</div>
-<div class="summary" id="summary">
-  <div class="sbox"><div class="num" id="cnt">0</div><div class="lbl">今日记录</div></div>
-  <div class="sbox"><div class="num" id="allergy">0</div><div class="lbl">⚠️ 过敏项</div></div>
-</div>
-<div class="card">
-  <h3>📋 今日清单</h3>
-  <div id="log"></div>
+</head>
+<body>
+<div class="wrap">
+  <h1>🍼 宝宝辅食记录</h1>
+  <p class="sub">记录每天吃了什么，宝宝反应如何（自动保存）</p>
+  <div class="stats">
+    <div class="stat"><div class="num" id="sCount">0</div><div class="lbl">记录数</div></div>
+    <div class="stat"><div class="num" id="sLike">0</div><div class="lbl">爱吃</div></div>
+    <div class="stat"><div class="num" id="sWarn">0</div><div class="lbl">不爱/留意</div></div>
+  </div>
+  <div class="card">
+    <h3>✏️ 新增辅食记录</h3>
+    <div class="row">
+      <input id="food" placeholder="食物，如：南瓜泥" style="flex:2">
+      <input id="date" type="date" style="flex:1.4">
+    </div>
+    <div class="reacts">
+      <button class="react r1" data-r="1">😋 爱吃</button>
+      <button class="react r2" data-r="2">😐 一般</button>
+      <button class="react r3" data-r="3">😣 不爱</button>
+    </div>
+    <input class="row" id="note" placeholder="备注（可选），如：加了米糊" style="width:100%;min-height:44px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:16px;outline:none;background:#f8fafc;margin-bottom:10px">
+    <button class="btn" id="addBtn">添加记录</button>
+  </div>
+  <div class="card">
+    <h3>📋 记录列表</h3>
+    <div id="list"></div>
+  </div>
 </div>
 <script>
-var logs=[];
-function addFood(){
-  var f=document.getElementById('food').value.trim();
-  var t=document.getElementById('type').value;
-  var r=document.getElementById('reaction').value;
-  if(!f)return;
-  var now=new Date();
-  logs.push({food:f,type:t,reaction:r,time:now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')});
-  document.getElementById('food').value='';
+var KEY="wewoo-baby-food";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+var list=load();if(!Array.isArray(list))list=[];
+function save(){localStorage.setItem(KEY,JSON.stringify(list))}
+var reactSel=1;
+document.querySelectorAll(".react").forEach(function(b){
+  b.onclick=function(){
+    reactSel=parseInt(b.dataset.r);
+    document.querySelectorAll(".react").forEach(function(x){x.classList.remove("sel")});
+    b.classList.add("sel");
+  };
+});
+document.querySelector(".react.r1").classList.add("sel");
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+document.getElementById("date").value=today();
+var REACT={1:["😋","r1"],2:["😐","r2"],3:["😣","r3"]};
+function add(){
+  var food=document.getElementById("food").value.trim();
+  var date=document.getElementById("date").value||today();
+  var note=document.getElementById("note").value.trim();
+  if(!food){document.getElementById("food").focus();return}
+  list.unshift({food:food,date:date,r:reactSel,note:note});
+  save();
+  document.getElementById("food").value="";document.getElementById("note").value="";
   render();
 }
-function remove(i){logs.splice(i,1);render()}
-function typeLabel(t){var m={g:'🥬',f:'🍎',d:'🥩',r:'🥦'};return (m[t]||'')}
+function del(i){list.splice(i,1);save();render()}
 function render(){
-  document.getElementById('cnt').textContent=logs.length;
-  document.getElementById('allergy').textContent=logs.filter(function(l){return l.reaction!=='无'}).length;
-  document.getElementById('log').innerHTML=logs.length===0?'<p style="color:#999;text-align:center;font-size:13px;padding:12px 0">还没有记录~</p>':
-    logs.map(function(l,i){
-      return '<div class="log-item"><div><span>'+typeLabel(l.type)+' '+l.food+'</span> <span class="time">'+l.time+'</span></div><div style="display:flex;align-items:center;gap:6px">'+(l.reaction!=='无'?'<span style="font-size:12px;color:#ef4444">⚠️</span>':'')+'<button class="remove" onclick="remove('+i+')">×</button></div></div>';
-    }).join('');
+  var box=document.getElementById("list");
+  if(list.length===0){box.innerHTML='<div class="empty">还没有记录，先添加一条吧</div>';refreshStats();return}
+  box.innerHTML="";
+  list.forEach(function(it,i){
+    var d=document.createElement("div");d.className="rec";
+    var em=REACT[it.r]||REACT[1];
+    d.innerHTML='<div class="tag '+em[1]+'">'+em[0]+'</div>'+
+      '<div class="body"><div class="food">'+it.food+'</div>'+
+      '<div class="meta">'+it.date+(it.note?" · "+it.note:"")+'</div></div>';
+    var b=document.createElement("button");b.textContent="×";b.onclick=function(){del(i)};
+    d.appendChild(b);box.appendChild(d);
+  });
+  refreshStats();
 }
-</script>`,
+function refreshStats(){
+  document.getElementById("sCount").textContent=list.length;
+  document.getElementById("sLike").textContent=list.filter(function(x){return x.r===1}).length;
+  document.getElementById("sWarn").textContent=list.filter(function(x){return x.r===3}).length;
+}
+document.getElementById("addBtn").onclick=add;
+render();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #fa8231, #f7b731)",
     createdAt: "2026-07-21T16:45:00Z",
     description: "记录每天宝宝吃了什么，自动生成营养报告",
@@ -357,61 +553,98 @@ function render(){
     authorId: "user-005",
     category: "旅行",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#ecfdf5;padding:16px;color:#333}
-h2{text-align:center;color:#047857;font-size:18px;margin-bottom:4px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:16px}
-.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.card h3{font-size:14px;color:#047857;margin-bottom:10px}
-.row{display:flex;gap:6px;align-items:center;margin-bottom:8px}
-.row input{flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-.btn{width:100%;padding:10px;background:#059669;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer}
-.hotel{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;margin-bottom:6px;background:#f9fafb}
-.hotel.best{background:#d1fae5;border:2px solid #10b981}
-.hotel .info{flex:1}
-.hotel .name{font-size:14px;font-weight:600}
-.hotel .plat{font-size:11px;color:#999}
-.hotel .price{font-size:16px;font-weight:bold;color:#047857}
-.remove{color:#ef4444;background:none;border:none;font-size:16px;cursor:pointer;margin-left:8px}
-.rank{margin-top:8px}
-.rank-item{display:flex;justify-content:space-between;padding:8px 10px;background:#f9fafb;border-radius:8px;margin-bottom:4px;font-size:13px}
-.rank-item .rnk{color:#059669;font-weight:bold}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>酒店比价小助手</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#ecfeff,#f0f9ff);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#0e7490;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px rgba(14,116,144,.08)}
+  .card h3{font-size:14px;color:#0e7490;margin-bottom:10px}
+  .row{display:flex;gap:8px;margin-bottom:10px}
+  .row input{flex:1;min-height:44px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:16px;outline:none;background:#f8fafc}
+  .row input:focus{border-color:#06b6d4;background:#fff}
+  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#0891b2,#06b6d4);color:#fff;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .hotel{display:flex;align-items:center;gap:10px;padding:12px;border:1.5px solid #e2e8f0;border-radius:12px;margin-bottom:8px;background:#fff}
+  .hotel.best{border-color:#f59e0b;background:#fffbeb}
+  .hotel .idx{width:26px;height:26px;border-radius:8px;background:#e0f2fe;color:#0369a1;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .hotel.best .idx{background:#f59e0b;color:#fff}
+  .hotel .body{flex:1;min-width:0}
+  .hotel .name{font-size:15px;font-weight:700;color:#334155}
+  .hotel .meta{font-size:12px;color:#64748b;margin-top:2px}
+  .hotel .score{font-size:13px;font-weight:800;color:#0e7490;text-align:right}
+  .hotel .score small{display:block;font-size:10px;color:#94a3b8;font-weight:400}
+  .hotel button{min-width:32px;min-height:32px;border:0;border-radius:8px;background:#fee2e2;color:#dc2626;font-size:13px;cursor:pointer}
+  .empty{font-size:12px;color:#cbd5e1;text-align:center;padding:12px 0}
+  .tip{font-size:11px;color:#94a3b8;text-align:center;margin-top:6px}
 </style>
-<h2>🏨 酒店比价小助手</h2>
-<p class="sub">多平台比价 · 省钱一目了然</p>
-<div class="card">
-  <h3>➕ 添加酒店报价</h3>
-  <div class="row"><input id="hname" placeholder="酒店名称"></div>
-  <div class="row"><input id="hplat" placeholder="平台（如：携程、美团）"><input id="hprice" type="number" placeholder="价格 ¥"></div>
-  <button class="btn" onclick="addHotel()">添加报价</button>
-</div>
-<div class="card">
-  <h3>🏆 价格排行</h3>
-  <div id="hotels"><p style="color:#999;text-align:center;font-size:13px;padding:8px">还没有添加报价</p></div>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏨 酒店比价小助手</h1>
+  <p class="sub">输入候选酒店，自动算性价比并推荐（自动保存）</p>
+  <div class="card">
+    <h3>✏️ 添加候选酒店</h3>
+    <div class="row"><input id="name" placeholder="酒店名称" style="flex:1.6"></div>
+    <div class="row">
+      <input id="price" type="number" inputmode="decimal" placeholder="每晚价格 ¥" style="flex:1">
+      <input id="rate" type="number" inputmode="decimal" min="0" max="5" step="0.1" placeholder="评分 0-5" style="flex:.8">
+    </div>
+    <button class="btn" id="addBtn">添加并比较</button>
+  </div>
+  <div class="card">
+    <h3>📊 性价比排行（每花 100 元获得多少评分）</h3>
+    <div id="list"></div>
+  </div>
+  <p class="tip">性价比 = 评分 ÷ 每晚价格 × 100，越高越划算；黄色为推荐</p>
 </div>
 <script>
-var hotels=[];
-function addHotel(){
-  var n=document.getElementById('hname').value.trim();
-  var p=document.getElementById('hplat').value.trim();
-  var pr=parseFloat(document.getElementById('hprice').value)||0;
-  if(!n||pr<=0)return;
-  hotels.push({name:n,plat:p||'未标注',price:pr});
-  document.getElementById('hname').value='';
-  document.getElementById('hplat').value='';
-  document.getElementById('hprice').value='';
+var KEY="wewoo-hotel-compare";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+var list=load();if(!Array.isArray(list))list=[];
+function save(){localStorage.setItem(KEY,JSON.stringify(list))}
+function add(){
+  var name=document.getElementById("name").value.trim();
+  var price=parseFloat(document.getElementById("price").value)||0;
+  var rate=parseFloat(document.getElementById("rate").value)||0;
+  if(!name){document.getElementById("name").focus();return}
+  if(price<=0){document.getElementById("price").focus();return}
+  if(rate<=0||rate>5){document.getElementById("rate").focus();return}
+  list.push({name:name,price:price,rate:rate});
+  save();
+  document.getElementById("name").value="";document.getElementById("price").value="";document.getElementById("rate").value="";
   render();
 }
-function remove(i){hotels.splice(i,1);render()}
+function del(i){list.splice(i,1);save();render()}
 function render(){
-  var sorted=hotels.slice().sort(function(a,b){return a.price-b.price});
-  document.getElementById('hotels').innerHTML=hotels.length===0?'<p style="color:#999;text-align:center;font-size:13px;padding:8px">还没有添加报价</p>':
-    sorted.map(function(h,i){
-      return '<div class="hotel'+(i===0?' best':'')+'"><div class="info"><div class="name">'+(i===0?'👑 ':'')+h.name+'</div><div class="plat">'+h.plat+'</div></div><div class="price">¥'+h.price+'</div><button class="remove" onclick="remove('+hotels.indexOf(h)+')">×</button></div>';
-    }).join('');
+  var box=document.getElementById("list");
+  if(list.length===0){box.innerHTML='<div class="empty">还没有酒店，添加几家对比吧</div>';return}
+  var sorted=list.map(function(h,i){return {h:h,i:i,v:h.rate/h.price*100}}).sort(function(a,b){return b.v-a.v});
+  var bestV=sorted[0].v;
+  box.innerHTML="";
+  sorted.forEach(function(s,rank){
+    var d=document.createElement("div");d.className="hotel"+(rank===0?" best":"");
+    var total="约 ¥"+(s.h.price*(s.h.rate/5)).toFixed(0)+" 等价体验";
+    d.innerHTML='<div class="idx">'+(rank+1)+'</div>'+
+      '<div class="body"><div class="name">'+s.h.name+'</div>'+
+      '<div class="meta">¥'+s.h.price.toFixed(0)+'/晚 · 评分 '+s.h.rate.toFixed(1)+' · '+total+'</div></div>'+
+      '<div class="score">'+s.v.toFixed(1)+'<small>分/百元</small></div>';
+    var b=document.createElement("button");b.textContent="×";b.onclick=function(){del(s.i)};
+    d.appendChild(b);box.appendChild(d);
+  });
 }
-</script>`,
+document.getElementById("addBtn").onclick=add;
+render();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #43e97b, #38f9d7)",
     createdAt: "2026-07-17T11:00:00Z",
     description: "对比多家酒店，找到性价比最高的选择",
@@ -423,64 +656,92 @@ function render(){
     authorId: "user-002",
     category: "工程计算",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#faf5ff;padding:16px;color:#333}
-h2{text-align:center;color:#7c3aed;font-size:18px;margin-bottom:4px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:16px}
-.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.card h3{font-size:14px;color:#7c3aed;margin-bottom:10px}
-.row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.row label{font-size:13px;color:#666;flex-shrink:0}
-.row input{flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-.btn{width:100%;padding:10px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer}
-.result{background:linear-gradient(135deg,#ede9fe,#ddd6fe);border-radius:12px;padding:16px;margin-top:12px}
-.result .row-r{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #c4b5fd;font-size:13px}
-.result .row-r:last-child{border-bottom:none}
-.result .val{font-weight:bold;color:#5b21b6}
-.formula{font-size:11px;color:#7c3aed;text-align:center;margin-top:10px;font-style:italic}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>齿轮参数速算</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#f5f3ff,#eef2ff);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#5b21b6;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px rgba(91,33,182,.08)}
+  .card h3{font-size:14px;color:#5b21b6;margin-bottom:10px}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .row label{font-size:13px;color:#64748b;flex-shrink:0;width:96px}
+  .row input{flex:1;min-height:44px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:16px;outline:none;background:#f8fafc}
+  .row input:focus{border-color:#7c3aed;background:#fff}
+  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .out{background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:12px;padding:6px 12px}
+  .out .li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #e9d5ff;font-size:14px}
+  .out .li:last-child{border-bottom:0}
+  .out .li span{color:#64748b}
+  .out .li b{color:#5b21b6}
+  .out .li.hl b{color:#c026d3;font-size:16px}
+  .tips{font-size:11px;color:#94a3b8;text-align:center;margin-top:6px}
 </style>
-<h2>⚙️ 齿轮参数速算</h2>
-<p class="sub">输入模数和齿数，秒出所有参数</p>
-<div class="card">
-  <h3>基本参数</h3>
-  <div class="row"><label>模数 m</label><input id="module" type="number" placeholder="mm" value="2"></div>
-  <div class="row"><label>齿数 z</label><input id="teeth" type="number" placeholder="" value="30"></div>
-  <div class="row"><label>压力角 α</label><select id="alpha" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px"><option value="20" selected>20°</option><option value="14.5">14.5°</option><option value="25">25°</option></select></div>
-  <button class="btn" onclick="calc()">计算参数</button>
-</div>
-<div class="result" id="result" style="display:none">
-  <h3 style="color:#7c3aed;margin-bottom:10px">计算结果</h3>
-  <div class="row-r"><span>分度圆直径 d</span><span class="val" id="pitchD"></span></div>
-  <div class="row-r"><span>齿顶圆直径 da</span><span class="val" id="addendumD"></span></div>
-  <div class="row-r"><span>齿根圆直径 df</span><span class="val" id="dedendumD"></span></div>
-  <div class="row-r"><span>齿顶高 ha</span><span class="val" id="addendumH"></span></div>
-  <div class="row-r"><span>齿根高 hf</span><span class="val" id="dedendumH"></span></div>
-  <div class="row-r"><span>全齿高 h</span><span class="val" id="totalH"></span></div>
-  <div class="row-r"><span>周节 p</span><span class="val" id="circularP"></span></div>
-  <p class="formula">ha = m · z / 2cosβ（直齿 β=0）</p>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚙️ 齿轮参数速算</h1>
+  <p class="sub">输入模数与齿数，秒出全套齿轮尺寸（自动保存）</p>
+  <div class="card">
+    <h3>参数输入</h3>
+    <div class="row"><label>模数 m</label><input id="m" type="number" inputmode="decimal" step="0.25" value="2"></div>
+    <div class="row"><label>主动轮 z1</label><input id="z1" type="number" inputmode="numeric" value="20"></div>
+    <div class="row"><label>从动轮 z2</label><input id="z2" type="number" inputmode="numeric" value="60"></div>
+    <div class="row"><label>压力角 α</label><input id="ang" type="number" inputmode="decimal" value="20"></div>
+    <button class="btn" id="calcBtn">计算参数</button>
+  </div>
+  <div class="card">
+    <h3>📐 计算结果</h3>
+    <div class="out" id="out"></div>
+  </div>
+  <p class="tips">标准直齿圆柱齿轮 · 数据自动保存，下次打开还在</p>
 </div>
 <script>
+var KEY="wewoo-gear-calc";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
+var data=load();
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+var mEl=document.getElementById("m"),z1El=document.getElementById("z1"),z2El=document.getElementById("z2"),aEl=document.getElementById("ang");
+if(data.m!==undefined)mEl.value=data.m;
+if(data.z1!==undefined)z1El.value=data.z1;
+if(data.z2!==undefined)z2El.value=data.z2;
+if(data.ang!==undefined)aEl.value=data.ang;
+function fmt(v){return Math.round(v*1000)/1000}
 function calc(){
-  var m=parseFloat(document.getElementById('module').value)||2;
-  var z=parseFloat(document.getElementById('teeth').value)||30;
-  var d=m*z;
-  var ha=m;
-  var hf=1.25*m;
-  var da=d+2*ha;
-  var df=d-2*hf;
-  var h=ha+hf;
-  var p=Math.PI*m;
-  document.getElementById('pitchD').textContent=d.toFixed(2)+' mm';
-  document.getElementById('addendumD').textContent=da.toFixed(2)+' mm';
-  document.getElementById('dedendumD').textContent=df.toFixed(2)+' mm';
-  document.getElementById('addendumH').textContent=ha.toFixed(2)+' mm';
-  document.getElementById('dedendumH').textContent=hf.toFixed(2)+' mm';
-  document.getElementById('totalH').textContent=h.toFixed(2)+' mm';
-  document.getElementById('circularP').textContent=p.toFixed(3)+' mm';
-  document.getElementById('result').style.display='block';
+  var m=parseFloat(mEl.value)||0;
+  var z1=parseInt(z1El.value)||0;
+  var z2=parseInt(z2El.value)||0;
+  var ang=parseFloat(aEl.value)||20;
+  if(m<=0||z1<=0||z2<=0){document.getElementById("out").innerHTML='<div style="color:#dc2626;text-align:center;padding:8px">请输入有效参数</div>';return}
+  var rows=[
+    ["分度圆直径 d1",fmt(m*z1)+" mm"],
+    ["分度圆直径 d2",fmt(m*z2)+" mm"],
+    ["齿顶圆 da1",fmt(m*(z1+2))+" mm"],
+    ["齿顶圆 da2",fmt(m*(z2+2))+" mm"],
+    ["齿根圆 df1",fmt(m*(z1-2.5))+" mm"],
+    ["齿根圆 df2",fmt(m*(z2-2.5))+" mm"],
+    ["中心距 a",fmt(m*(z1+z2)/2)+" mm"],
+    ["全齿高 h",fmt(2.25*m)+" mm"],
+    ["齿距 p",fmt(Math.PI*m)+" mm"],
+    ["传动比 i = z2/z1",fmt(z2/z1)]
+  ];
+  var html='<div class="li hl"><span>传动比（减速比）</span><b>1 : '+fmt(z2/z1)+'</b></div>';
+  rows.forEach(function(r){html+='<div class="li"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>'});
+  document.getElementById("out").innerHTML=html;
+  data.m=m;data.z1=z1;data.z2=z2;data.ang=ang;save();
 }
-</script>`,
+document.getElementById("calcBtn").onclick=calc;
+calc();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #a18cd1, #fbc2eb)",
     createdAt: "2026-07-16T08:30:00Z",
     description: "输入模数和齿数，秒出节圆直径和中心距",
@@ -492,84 +753,111 @@ function calc(){
     authorId: "user-003",
     category: "教育",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#fffbeb;padding:16px;color:#333}
-h2{text-align:center;color:#b45309;font-size:18px;margin-bottom:4px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:16px}
-.card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center;margin-bottom:10px}
-.chinese{font-size:28px;color:#b45309;margin-bottom:4px;font-weight:bold}
-.hint{font-size:12px;color:#999;margin-bottom:12px}
-.answer{width:100%;padding:12px;border:2px solid #d4a373;border-radius:10px;font-size:18px;text-align:center;margin-bottom:10px;outline:none;letter-spacing:2px}
-.answer:focus{border-color:#b45309}
-.btn{width:100%;padding:10px;background:#d97706;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;margin-bottom:6px}
-.btn2{background:#fcd34d;color:#92400e}
-.msg{font-size:14px;margin-top:6px;min-height:20px}
-.score{display:flex;justify-content:center;gap:16px;font-size:13px;color:#b45309}
-.result-list{margin-top:10px;text-align:left}
-.result-list .item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #fef3c7;font-size:13px}
-.correct-w{color:#16a34a}.wrong-w{color:#dc2626}.skip-w{color:#9ca3af}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>英语单词小测</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#eff6ff,#ecfeff);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#1d4ed8;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .stats{display:flex;gap:8px;margin-bottom:12px}
+  .stat{flex:1;background:#fff;border-radius:12px;padding:10px;text-align:center;box-shadow:0 2px 8px rgba(29,78,216,.06)}
+  .stat .num{font-size:20px;font-weight:800;color:#2563eb}
+  .stat .lbl{font-size:11px;color:#94a3b8;margin-top:2px}
+  .card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(29,78,216,.08)}
+  .word{font-size:30px;font-weight:800;color:#1e3a8a;text-align:center;padding:16px 8px;background:#eff6ff;border-radius:12px;margin-bottom:12px;letter-spacing:.5px}
+  .opt{display:block;width:100%;min-height:48px;border:1.5px solid #e2e8f0;border-radius:12px;background:#fff;font-size:16px;color:#334155;margin-bottom:8px;cursor:pointer;text-align:left;padding:0 14px;transition:all .15s}
+  .opt:active{transform:scale(.98)}
+  .opt.right{background:#dcfce7;border-color:#22c55e;color:#15803d;font-weight:700}
+  .opt.wrong{background:#fee2e2;border-color:#ef4444;color:#b91c1c}
+  .opt.dim{opacity:.5}
+  .feed{display:none;font-size:14px;text-align:center;padding:10px;border-radius:12px;margin-top:8px}
+  .feed.show{display:block}
+  .feed.ok{background:#f0fdf4;color:#15803d}
+  .feed.no{background:#fef2f2;color:#b91c1c}
+  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;transition:transform .1s;margin-top:6px}
+  .btn:active{transform:scale(.97)}
 </style>
-<h2>🇬🇧 英语单词小测</h2>
-<p class="sub">看中文拼英文 · 四六级词汇</p>
-<div class="card" id="quizArea">
-  <p class="chinese" id="word"></p>
-  <p class="hint" id="hintText"></p>
-  <input class="answer" id="spell" placeholder="拼写单词..." autocomplete="off">
-  <p class="msg" id="msg"></p>
-  <button class="btn" onclick="check()">提交 ✏️</button>
-  <button class="btn btn2" onclick="skip()">跳过 →</button>
-</div>
-<div class="score">
-  <span>✅ <span id="sCorrect">0</span></span>
-  <span>❌ <span id="sWrong">0</span></span>
-  <span>⏭ <span id="sSkip">0</span></span>
-</div>
-<div id="results" class="result-list" style="display:none">
-  <h4 style="margin-top:10px;color:#b45309;font-size:14px">📊 测验结果</h4>
+</head>
+<body>
+<div class="wrap">
+  <h1>📖 英语单词小测</h1>
+  <p class="sub">看英文选中文释义 · 成绩自动保存</p>
+  <div class="stats">
+    <div class="stat"><div class="num" id="sTotal">0</div><div class="lbl">已答</div></div>
+    <div class="stat"><div class="num" id="sRight">0</div><div class="lbl">答对</div></div>
+    <div class="stat"><div class="num" id="sRate">0%</div><div class="lbl">正确率</div></div>
+  </div>
+  <div class="card">
+    <div class="word" id="word">—</div>
+    <div id="opts"></div>
+    <div class="feed" id="feed"></div>
+    <button class="btn" id="nextBtn">下一题</button>
+  </div>
 </div>
 <script>
-var bank=[{c:'勤奋的',e:'diligent',h:'形容词'},{c:'杰出的',e:'remarkable',h:'形容词'},{c:'丰富的',e:'abundant',h:'形容词'},{c:'精确的',e:'accurate',h:'形容词'},{c:'牺牲',e:'sacrifice',h:'名词/动词'},{c:'灵活的',e:'flexible',h:'形容词'},{c:'必不可少的',e:'indispensable',h:'形容词'},{c:'矛盾',e:'contradiction',h:'名词'},{c:'热情',e:'enthusiasm',h:'名词'},{c:'现象',e:'phenomenon',h:'名词'}];
-var correct=0,wrong=0,skip=0,results=[],current=null,quizEnd=false;
-function pick(){
-  if(bank.length===0){endQuiz();return;}
-  var i=Math.floor(Math.random()*bank.length);
-  current=bank[i];bank.splice(i,1);
-  document.getElementById('word').textContent=current.c;
-  document.getElementById('hintText').textContent='['+current.h+'] · 首字母: '+current.e[0].toUpperCase();
-  document.getElementById('spell').value='';
-  document.getElementById('msg').textContent='';
-  document.getElementById('spell').focus();
+var WORDS=[
+  ["abandon","放弃；抛弃"],["ability","能力；才能"],["absorb","吸收；使专心"],["abstract","抽象的"],["academic","学术的"],
+  ["access","接近；通道"],["accompany","陪伴"],["accomplish","完成；实现"],["accurate","准确的"],["achieve","实现；达到"],
+  ["adapt","适应；改编"],["adequate","足够的"],["adjust","调整；适应"],["admire","钦佩；欣赏"],["adopt","采用；收养"],
+  ["advance","前进；进步"],["advantage","优势"],["adventure","冒险"],["affect","影响"],["afford","负担得起"],
+  ["agency","代理处；机构"],["ambition","雄心；野心"],["analyze","分析"],["announce","宣布"],["anxious","焦虑的"],
+  ["apparent","明显的"],["appeal","呼吁；吸引"],["apply","申请；应用"],["appreciate","感激；欣赏"],["approach","接近；方法"],
+  ["appropriate","适当的"],["approve","批准；赞成"],["arise","出现；升起"],["arrange","安排"],["aspect","方面"],
+  ["assess","评估"],["assign","分配；指派"],["assist","帮助"],["assume","假定"],["attach","附上；系上"],
+  ["attain","达到；获得"],["attempt","尝试"],["attitude","态度"],["attract","吸引"],["available","可用的"],
+  ["average","平均的"],["avoid","避免"],["aware","意识到的"],["balance","平衡"],["barrier","障碍"]
+];
+var KEY="wewoo-word-quiz";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{t:0,r:0}}catch(e){return{t:0,r:0}}}
+var data=load();if(typeof data.t!=="number")data.t=0;if(typeof data.r!=="number")data.r=0;
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function refreshStats(){
+  document.getElementById("sTotal").textContent=data.t;
+  document.getElementById("sRight").textContent=data.r;
+  document.getElementById("sRate").textContent=(data.t?Math.round(data.r/data.t*100):0)+"%";
 }
-function check(){
-  if(quizEnd)return;
-  var ans=document.getElementById('spell').value.trim().toLowerCase();
-  if(!ans)return;
-  if(ans===current.e){correct++;document.getElementById('msg').innerHTML='<span style="color:#16a34a">✅ 太棒了！</span>';}
-  else{wrong++;document.getElementById('msg').innerHTML='<span style="color:#dc2626">❌ 正确答案: '+current.e+'</span>';}
-  results.push({word:current,userAns:ans});
-  updateScore();
-  setTimeout(pick,800);
+var cur=null,curRight=null,answered=false;
+function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t}return arr}
+function newQ(){
+  cur=WORDS[Math.floor(Math.random()*WORDS.length)];
+  var pool=shuffle(WORDS.slice()).filter(function(w){return w[0]!==cur[0]}).slice(0,3).map(function(w){return w[1]});
+  pool.push(cur[1]);pool=shuffle(pool);
+  curRight=cur[1];
+  document.getElementById("word").textContent=cur[0];
+  document.getElementById("feed").className="feed";
+  answered=false;
+  var box=document.getElementById("opts");box.innerHTML="";
+  pool.forEach(function(txt){
+    var b=document.createElement("button");b.className="opt";b.textContent=txt;
+    b.onclick=function(){pick(b,txt)};
+    box.appendChild(b);
+  });
 }
-function skip(){if(quizEnd)return;skip++;results.push({word:current,userAns:null});updateScore();pick()}
-function updateScore(){
-  document.getElementById('sCorrect').textContent=correct;
-  document.getElementById('sWrong').textContent=wrong;
-  document.getElementById('sSkip').textContent=skip;
+function pick(btn,txt){
+  if(answered)return;
+  answered=true;
+  var ok=txt===curRight;
+  data.t++;if(ok)data.r++;save();refreshStats();
+  document.querySelectorAll(".opt").forEach(function(b){
+    if(b.textContent===curRight){b.classList.add("right")}
+    else{b.classList.add("dim")}
+  });
+  if(!ok)btn.classList.add("wrong");
+  var fb=document.getElementById("feed");
+  fb.className="feed show "+(ok?"ok":"no");
+  fb.textContent=ok?"✅ 回答正确！"+cur[0]+" = "+cur[1]:"❌ 正确答案："+cur[0]+" = "+cur[1];
 }
-function endQuiz(){
-  quizEnd=true;
-  document.getElementById('quizArea').innerHTML='<p style="font-size:18px;color:#b45309;padding:20px">🎉 测验完成！</p><p style="font-size:14px;color:#666">正确 '+correct+' / 错误 '+wrong+' / 跳过 '+skip+'</p>';
-  var list=document.getElementById('results');
-  list.style.display='block';
-  list.innerHTML='<h4 style="margin-bottom:10px;color:#b45309;font-size:14px">📊 详细结果</h4>'+results.map(function(r){
-    var cls=r.userAns===null?'skip-w':r.userAns===r.word.e?'correct-w':'wrong-w';
-    var icon=r.userAns===null?'⏭':r.userAns===r.word.e?'✅':'❌';
-    return '<div class="item"><span>'+icon+' '+r.word.c+'</span><span class="'+cls+'">'+(r.userAns||'跳过')+' → '+r.word.e+'</span></div>';
-  }).join('');
-}
-pick();
-</script>`,
+document.getElementById("nextBtn").onclick=function(){if(!answered){document.querySelectorAll(".opt")[0]&&document.querySelectorAll(".opt")[0].click()}newQ()};
+refreshStats();newQ();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #ffecd2, #fcb69f)",
     createdAt: "2026-07-22T07:00:00Z",
     description: "随机抽取四六级词汇，限时拼写测试",
@@ -581,61 +869,132 @@ pick();
     authorId: "user-004",
     category: "生活",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#eff6ff;padding:16px;color:#333}
-h2{text-align:center;color:#1d4ed8;font-size:18px;margin-bottom:4px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:12px}
-.progress{text-align:center;margin-bottom:16px}
-.progress .big{font-size:36px;font-weight:bold;color:#1d4ed8}
-.progress .unit{font-size:14px;color:#60a5fa}
-.water-bar{background:#dbeafe;border-radius:10px;height:10px;margin:8px 0;overflow:hidden}
-.water-fill{background:linear-gradient(90deg,#3b82f6,#2563eb);height:100%;border-radius:10px;transition:width .3s}
-.glasses{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-.glass{aspect-ratio:1;border-radius:16px;border:3px solid #93c5fd;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;background:#fff;font-size:28px}
-.glass.filled{background:#dbeafe;border-color:#3b82f6;transform:scale(1.05)}
-.glass .ml{font-size:10px;color:#93c5fd;margin-top:2px}
-.controls{display:flex;gap:8px}
-.btn{flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;cursor:pointer;color:#fff}
-.btn-blue{background:#3b82f6}.btn-gray{background:#9ca3af}
-.stats{display:flex;justify-content:space-around;margin-top:14px;font-size:12px;color:#6b7280}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>每日喝水打卡</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#4facfe,#00f2fe);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  .card{background:#fff;border-radius:20px;padding:20px 18px;box-shadow:0 12px 32px rgba(2,132,199,.2);margin-bottom:12px}
+  .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  .title{font-size:20px;font-weight:800;color:#0f172a}
+  .date{font-size:12px;color:#94a3b8;margin-bottom:10px}
+  .cups{display:flex;align-items:flex-end;gap:5px;height:64px;margin:14px 0 10px}
+  .cup{width:22px;border-radius:8px 8px 4px 4px;background:#e2e8f0;transition:height .3s,background .3s}
+  .cup.on{background:#38bdf8}
+  .count-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+  .count{font-size:40px;font-weight:800;color:#0284c7}
+  .count small{font-size:14px;color:#94a3b8;font-weight:600}
+  .bar{height:10px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-bottom:6px}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#38bdf8,#0ea5e9);border-radius:99px;transition:width .4s}
+  .goal-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .goal-row label{font-size:12px;color:#94a3b8}
+  .goal-row input{width:64px;min-height:36px;border:1.5px solid #e2e8f0;border-radius:9px;text-align:center;font-size:15px;font-weight:700;color:#0284c7;outline:none}
+  .row{display:flex;gap:10px}
+  .btn{flex:1;min-height:48px;border:0;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .btn-add{background:#0284c7;color:#fff}
+  .btn-sub{background:#f1f5f9;color:#64748b}
+  .btn-reset{flex:none;min-width:104px;background:#fff;color:#f43f5e;border:1.5px solid #fecdd3}
+  .streak{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding:10px;background:#f0f9ff;border-radius:12px;color:#0369a1;font-size:13px;font-weight:600}
+  .streak b{font-size:16px;color:#0284c7}
+  .hist-title{font-size:13px;font-weight:700;color:#334155;margin-bottom:8px}
+  .hist{display:flex;align-items:flex-end;gap:6px;height:70px}
+  .hist .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .hist .col .v{font-size:10px;color:#64748b}
+  .hist .col .bar2{width:100%;background:#e0f2fe;border-radius:6px 6px 2px 2px;position:relative;flex:1;display:flex;align-items:flex-end;overflow:hidden}
+  .hist .col .bar2 i{display:block;width:100%;background:#0ea5e9;border-radius:6px 6px 2px 2px}
+  .hist .col .d{font-size:10px;color:#94a3b8}
+  .hist .col.today .d{color:#0284c7;font-weight:700}
 </style>
-<h2>💧 每日喝水打卡</h2>
-<p class="sub">每天 8 杯水 · 健康好习惯</p>
-<div class="progress" id="progressBar">
-  <span class="big" id="totalMl">0</span><span class="unit"> ml</span>
-  <div class="water-bar"><div class="water-fill" id="fillBar" style="width:0%"></div></div>
-  <span style="font-size:12px;color:#60a5fa">目标: 2000ml</span>
-</div>
-<div class="glasses" id="glasses"></div>
-<div class="controls">
-  <button class="btn btn-blue" onclick="addGlass()">+ 一杯 (250ml)</button>
-  <button class="btn btn-gray" onclick="resetDay()">🔄 重置</button>
-</div>
-<div class="stats">
-  <span id="cupCount">已喝 0 杯</span>
-  <span id="completion">完成 0%</span>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="head"><div class="title">💧 每日喝水打卡</div><div style="font-size:26px">🥤</div></div>
+    <div class="date" id="date"></div>
+    <div class="cups" id="cups"></div>
+    <div class="count-row">
+      <div class="count"><span id="count">0</span><small> / <span id="goalLbl">8</span> 杯</small></div>
+      <div style="font-size:12px;color:#94a3b8" id="pct">0%</div>
+    </div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="goal-row"><label>每日目标（杯）</label><input id="goal" type="number" inputmode="numeric" value="8"></div>
+    <div class="row">
+      <button class="btn btn-add" id="add">+1 杯</button>
+      <button class="btn btn-sub" id="sub">-1 杯</button>
+      <button class="btn btn-reset" id="reset">清零</button>
+    </div>
+    <div class="streak">🔥 连续打卡 <b id="streak">0</b> 天</div>
+  </div>
+  <div class="card">
+    <div class="hist-title">📊 近 7 天喝水情况</div>
+    <div class="hist" id="hist"></div>
+  </div>
 </div>
 <script>
-var TARGET=2000,CUP=250;
-var cups=Math.floor(TARGET/CUP);
-var filled=0;
-function render(){
-  var total=filled*CUP;
-  var pct=Math.min(100,Math.round(total/TARGET*100));
-  document.getElementById('totalMl').textContent=total;
-  document.getElementById('fillBar').style.width=pct+'%';
-  document.getElementById('cupCount').textContent='已喝 '+filled+' / '+cups+' 杯';
-  document.getElementById('completion').textContent='完成 '+pct+'%';
-  document.getElementById('glasses').innerHTML=Array.from({length:cups},function(_,i){
-    return '<div class="glass'+(i<filled?' filled':'')+'" onclick="toggle('+i+')">💧<span class="ml">250ml</span></div>';
-  }).join('');
+var KEY="wewoo-water-track";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
+var data=load();if(!data.days)data.days={};if(!data.goal)data.goal=8;
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function keyOf(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+var tk=keyOf(new Date());
+if(typeof data.days[tk]!=="number")data.days[tk]=0;
+var count=data.days[tk],goal=data.goal;
+function calcStreak(){
+  var d=new Date();
+  if((data.days[tk]||0)===0)d.setDate(d.getDate()-1);
+  var s=0;
+  for(var i=0;i<365;i++){
+    var k=keyOf(d);
+    if((data.days[k]||0)>0)s++;else break;
+    d.setDate(d.getDate()-1);
+  }
+  return s;
 }
-function addGlass(){if(filled<cups){filled++;render()}}
-function toggle(i){filled=i+1;if(filled===cups+1)filled=cups;render()}
-function resetDay(){filled=0;render()}
+function render(){
+  document.getElementById("date").textContent=tk.replace(/-/g,"/")+" · 数据自动保存";
+  document.getElementById("count").textContent=count;
+  document.getElementById("goalLbl").textContent=goal;
+  document.getElementById("pct").textContent=Math.min(100,Math.round(count/goal*100))+"%";
+  document.getElementById("bar").style.width=Math.min(100,count/goal*100)+"%";
+  document.getElementById("streak").textContent=calcStreak();
+  var cups=document.getElementById("cups");cups.innerHTML="";
+  var n=Math.min(goal,10);
+  for(var i=0;i<n;i++){
+    var c=document.createElement("div");c.className="cup"+(i<count?" on":"");
+    c.style.height=(20+i*5)+"px";cups.appendChild(c);
+  }
+  // 近7天
+  var hist=document.getElementById("hist");hist.innerHTML="";
+  var max=1;
+  var days=[];
+  for(var j=6;j>=0;j--){
+    var d=new Date();d.setDate(d.getDate()-j);
+    var k=keyOf(d);
+    var v=data.days[k]||0;
+    if(v>max)max=v;
+    days.push({k:k,v:v,today:j===0});
+  }
+  days.forEach(function(it){
+    var col=document.createElement("div");col.className="col"+(it.today?" today":"");
+    col.innerHTML='<div class="v">'+it.v+'</div><div class="bar2"><i style="height:'+Math.round(it.v/max*100)+'%"></i></div><div class="d">'+(it.today?"今天":it.k.slice(5).replace("-","/"))+'</div>';
+    hist.appendChild(col);
+  });
+}
+function commit(){data.days[tk]=count;save();render()}
+document.getElementById("add").onclick=function(){count++;commit()};
+document.getElementById("sub").onclick=function(){if(count>0){count--;commit()}};
+document.getElementById("reset").onclick=function(){count=0;commit()};
+document.getElementById("goal").onchange=function(){var g=parseInt(this.value)||8;if(g<1)g=1;if(g>30)g=30;this.value=g;data.goal=g;goal=g;save();render()};
 render();
-</script>`,
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #667eea, #764ba2)",
     createdAt: "2026-07-20T12:00:00Z",
     description: "设置喝水目标，记录每日饮水，8杯水健康打卡",
@@ -647,68 +1006,115 @@ render();
     authorId: "user-001",
     category: "旅行",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#fdf2f8;padding:16px;color:#333}
-h2{text-align:center;color:#be185d;font-size:18px;margin-bottom:4px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:12px}
-.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.card h3{font-size:14px;color:#be185d;margin-bottom:10px}
-.row{display:flex;gap:6px;align-items:center;margin-bottom:8px}
-.row input{flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-.row select{flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-.btn{width:100%;padding:10px;background:#db2777;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer}
-.total-bar{background:linear-gradient(135deg,#db2777,#f472b6);color:#fff;border-radius:12px;padding:14px;text-align:center;margin-bottom:12px}
-.total-bar .big{font-size:26px;font-weight:bold}
-.total-bar .lbl{font-size:11px;opacity:.8}
-.cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.cat{padding:3px 8px;border-radius:12px;font-size:11px;background:#fce7f3;color:#be185d}
-.log-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #fdf2f8;font-size:13px}
-.log-item .cat-tag{font-size:10px;padding:1px 6px;border-radius:8px;margin-left:6px}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>行程花费日记</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#f0fdf4,#fefce8);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#15803d;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .total{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border-radius:16px;padding:14px;text-align:center;margin-bottom:12px}
+  .total .lbl{font-size:12px;opacity:.85}
+  .total .big{font-size:30px;font-weight:800}
+  .cats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .cat{font-size:12px;background:#fff;border-radius:99px;padding:5px 10px;color:#64748b;box-shadow:0 2px 6px rgba(22,163,74,.08)}
+  .cat b{color:#15803d}
+  .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px rgba(22,163,74,.08)}
+  .card h3{font-size:14px;color:#15803d;margin-bottom:10px}
+  .row{display:flex;gap:8px;margin-bottom:10px}
+  .row select,.row input{min-height:44px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:16px;outline:none;background:#f8fafc}
+  .row select{flex:1;font-size:14px}
+  .row input{flex:1}
+  .row input:focus,.row select:focus{border-color:#16a34a;background:#fff}
+  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:14px}
+  .item:last-child{border-bottom:0}
+  .item .emoji{font-size:18px}
+  .item .name{flex:1;color:#334155}
+  .item .name small{display:block;font-size:11px;color:#94a3b8}
+  .item .cost{font-weight:700;color:#15803d}
+  .item button{min-width:34px;min-height:34px;border:0;border-radius:8px;background:#fee2e2;color:#dc2626;font-size:14px;cursor:pointer}
+  .empty{font-size:12px;color:#cbd5e1;text-align:center;padding:12px 0}
 </style>
-<h2>📒 行程花费日记</h2>
-<p class="sub">旅途每一笔，清清楚楚</p>
-<div class="total-bar">
-  <div class="lbl">💰 旅行总花费</div>
-  <div class="big" id="total">¥0</div>
-</div>
-<div class="card">
-  <h3>➕ 记一笔</h3>
-  <div class="row"><input id="desc" placeholder="买了什么 / 花了什么钱"></div>
-  <div class="row"><input id="cost" type="number" placeholder="金额 ¥"><select id="cat"><option value="🏨住宿">🏨 住宿</option><option value="🍜餐饮">🍜 餐饮</option><option value="🚕交通">🚕 交通</option><option value="🎫门票">🎫 门票</option><option value="🛍购物">🛍 购物</option><option value="📱其他">📱 其他</option></select></div>
-  <button class="btn" onclick="add()">💾 记录</button>
-</div>
-<div class="card">
-  <h3>📋 消费明细</h3>
-  <div id="cats" class="cats"></div>
-  <div id="log"></div>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧾 行程花费日记</h1>
+  <p class="sub">每一笔开销都记下来，自动分类统计（自动保存）</p>
+  <div class="total"><div class="lbl">总花费</div><div class="big" id="total">¥0.00</div></div>
+  <div class="cats" id="cats"></div>
+  <div class="card">
+    <h3>✏️ 记一笔</h3>
+    <div class="row">
+      <select id="cat">
+        <option value="餐饮">🍜 餐饮</option>
+        <option value="交通">🚗 交通</option>
+        <option value="住宿">🏨 住宿</option>
+        <option value="门票">🎫 门票</option>
+        <option value="购物">🛍️ 购物</option>
+        <option value="其他">📦 其他</option>
+      </select>
+      <input id="amount" type="number" inputmode="decimal" placeholder="金额 ¥" style="flex:.9">
+    </div>
+    <input id="note" placeholder="备注，如：机场大巴" style="width:100%;min-height:44px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:16px;outline:none;background:#f8fafc;margin-bottom:10px">
+    <button class="btn" id="addBtn">添加</button>
+  </div>
+  <div class="card">
+    <h3>📋 明细</h3>
+    <div id="list"></div>
+  </div>
 </div>
 <script>
-var logs=[];
+var KEY="wewoo-travel-expense";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+var list=load();if(!Array.isArray(list))list=[];
+function save(){localStorage.setItem(KEY,JSON.stringify(list))}
+var EMOJI={"餐饮":"🍜","交通":"🚗","住宿":"🏨","门票":"🎫","购物":"🛍️","其他":"📦"};
 function add(){
-  var d=document.getElementById('desc').value.trim();
-  var c=parseFloat(document.getElementById('cost').value)||0;
-  var t=document.getElementById('cat').value;
-  if(!d||c<=0)return;
-  logs.unshift({desc:d,cost:c,cat:t});
-  document.getElementById('desc').value='';
-  document.getElementById('cost').value='';
+  var cat=document.getElementById("cat").value;
+  var amount=parseFloat(document.getElementById("amount").value)||0;
+  var note=document.getElementById("note").value.trim();
+  if(amount<=0){document.getElementById("amount").focus();return}
+  list.unshift({cat:cat,amount:amount,note:note,t:Date.now()});
+  save();
+  document.getElementById("amount").value="";document.getElementById("note").value="";
   render();
 }
+function del(i){list.splice(i,1);save();render()}
 function render(){
-  var total=logs.reduce(function(s,l){return s+l.cost},0);
-  document.getElementById('total').textContent='¥'+total;
-  var cmap={};
-  logs.forEach(function(l){cmap[l.cat]=(cmap[l.cat]||0)+l.cost});
-  document.getElementById('cats').innerHTML=Object.keys(cmap).map(function(k){
-    return '<span class="cat">'+k+' ¥'+cmap[k]+'</span>';
-  }).join('');
-  document.getElementById('log').innerHTML=logs.length===0?'<p style="color:#999;text-align:center;font-size:13px;padding:12px">还没有记录 · 开始记一笔吧</p>':
-    logs.map(function(l,i){
-      return '<div class="log-item"><span>'+l.desc+'<span class="cat-tag" style="background:#fce7f3;color:#be185d">'+l.cat+'</span></span><span style="font-weight:600;color:#be185d">¥'+l.cost+'</span></div>';
-    }).join('');
+  var total=list.reduce(function(s,x){return s+x.amount},0);
+  document.getElementById("total").textContent="¥"+total.toFixed(2);
+  var agg={};
+  list.forEach(function(x){if(!agg[x.cat])agg[x.cat]=0;agg[x.cat]+=x.amount});
+  var cats=document.getElementById("cats");cats.innerHTML="";
+  Object.keys(agg).forEach(function(k){
+    var s=document.createElement("span");s.className="cat";
+    s.innerHTML=(EMOJI[k]||"📦")+" "+k+" <b>¥"+agg[k].toFixed(0)+"</b>";
+    cats.appendChild(s);
+  });
+  var box=document.getElementById("list");
+  if(list.length===0){box.innerHTML='<div class="empty">还没有记录，记第一笔吧</div>';return}
+  box.innerHTML="";
+  list.forEach(function(it,i){
+    var d=document.createElement("div");d.className="item";
+    d.innerHTML='<span class="emoji">'+(EMOJI[it.cat]||"📦")+'</span>'+
+      '<span class="name">'+it.cat+'<small>'+(it.note||"无备注")+'</small></span>'+
+      '<span class="cost">¥'+it.amount.toFixed(2)+'</span>';
+    var b=document.createElement("button");b.textContent="×";b.onclick=function(){del(i)};
+    d.appendChild(b);box.appendChild(d);
+  });
 }
-</script>`,
+document.getElementById("addBtn").onclick=add;
+render();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #f093fb, #f5576c)",
     createdAt: "2026-07-15T18:00:00Z",
     description: "旅途中的每一笔开销都记下来，自动分类统计",
@@ -720,80 +1126,118 @@ function render(){
     authorId: "user-005",
     category: "工程计算",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#f0f9ff;padding:16px;color:#333}
-h2{text-align:center;color:#0369a1;font-size:18px;margin-bottom:8px}
-.tabs{display:flex;gap:4px;margin-bottom:14px;overflow-x:auto}
-.tab{padding:6px 14px;border-radius:20px;font-size:13px;border:1px solid #bae6fd;background:#fff;color:#0369a1;cursor:pointer;white-space:nowrap;flex-shrink:0}
-.tab.active{background:#0369a1;color:#fff;border-color:#0369a1}
-.card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:10px}
-.row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.row input{flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;text-align:center}
-.row select{flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fff}
-.swap{text-align:center;margin:6px 0;font-size:20px;color:#0369a1}
-.result-bar{background:linear-gradient(135deg,#e0f2fe,#bae6fd);border-radius:10px;padding:12px;text-align:center;margin-top:8px}
-.result-bar .val{font-size:22px;font-weight:bold;color:#075985}
-.result-bar .lbl{font-size:11px;color:#0369a1}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>单位换算大全</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#fdf4ff,#f5f3ff);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#7e22ce;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .tab{min-height:40px;padding:0 14px;border:1.5px solid #e2e8f0;border-radius:99px;background:#fff;font-size:13px;color:#64748b;cursor:pointer}
+  .tab.sel{background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border-color:transparent;font-weight:700}
+  .card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(126,34,206,.08)}
+  .row{display:flex;gap:8px;margin-bottom:10px}
+  .row input{flex:1;min-height:46px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:18px;font-weight:700;outline:none;background:#f8fafc;text-align:center}
+  .row input:focus{border-color:#a855f7;background:#fff}
+  .row select{min-height:46px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 10px;font-size:14px;outline:none;background:#f8fafc;flex:1.1}
+  .swap{display:block;margin:0 auto 10px;min-width:44px;min-height:44px;border:0;border-radius:12px;background:#f3e8ff;color:#7e22ce;font-size:18px;cursor:pointer}
+  .result{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-radius:12px;padding:14px;text-align:center;margin-top:6px}
+  .result .big{font-size:26px;font-weight:800;word-break:break-all}
+  .result .lbl{font-size:12px;opacity:.85;margin-top:2px}
+  .tips{font-size:11px;color:#94a3b8;text-align:center;margin-top:10px}
 </style>
-<h2>📐 单位换算大全</h2>
-<div class="tabs" id="tabs">
-  <button class="tab active" onclick="switchTab('length')">📏 长度</button>
-  <button class="tab" onclick="switchTab('weight')">⚖️ 重量</button>
-  <button class="tab" onclick="switchTab('temp')">🌡 温度</button>
-  <button class="tab" onclick="switchTab('area')">📐 面积</button>
-  <button class="tab" onclick="switchTab('volume')">🧴 体积</button>
-</div>
-<div class="card">
-  <div class="row"><input id="inputVal" type="number" placeholder="输入数值" value="1" oninput="convert()"><select id="fromUnit" onchange="convert()"></select></div>
-  <div class="swap">⇅</div>
-  <div class="row"><select id="toUnit" onchange="convert()"></select></div>
-  <div class="result-bar"><span class="val" id="outputVal">—</span><span class="lbl" id="outputUnit"></span></div>
+</head>
+<body>
+<div class="wrap">
+  <h1>📐 单位换算大全</h1>
+  <p class="sub">长度 / 重量 / 面积 / 体积 / 温度 / 速度 · 自动保存</p>
+  <div class="tabs" id="tabs"></div>
+  <div class="card">
+    <div class="row"><input id="val" type="number" inputmode="decimal" placeholder="输入数值"></div>
+    <div class="row">
+      <select id="from"></select>
+      <select id="to"></select>
+    </div>
+    <button class="swap" id="swap">⇅</button>
+    <div class="result"><div class="big" id="out">—</div><div class="lbl" id="outLbl">输入数值开始换算</div></div>
+  </div>
+  <p class="tips">数据自动保存 · 刷新 / 全屏 / 重新进入都保留上次的选择</p>
 </div>
 <script>
-var units={
-  length:{units:{m:1,km:1000,cm:0.01,mm:0.001,inch:0.0254,ft:0.3048,mile:1609.34},name:'长度'},
-  weight:{units:{kg:1,g:0.001,mg:1e-6,ton:1000,lb:0.4536,oz:0.02835},name:'重量'},
-  temp:{units:{C:1,F:1,K:1},name:'温度',custom:true},
-  area:{units:{m2:1,km2:1e6,cm2:1e-4,ha:10000,mu:666.67},name:'面积'},
-  volume:{units:{L:1,mL:0.001,m3:1000,gal:3.785,qt:0.946},name:'体积'}
+var GROUPS={
+  "长度":{base:"m",units:[["m","米",1],["km","千米",1000],["cm","厘米",0.01],["mm","毫米",0.001],["in","英寸",0.0254],["ft","英尺",0.3048],["yd","码",0.9144],["mile","英里",1609.344]]},
+  "重量":{base:"kg",units:[["kg","千克",1],["g","克",0.001],["mg","毫克",1e-6],["t","吨",1000],["jin","斤",0.5],["lb","磅",0.453592],["oz","盎司",0.0283495]]},
+  "面积":{base:"m2",units:[["m2","平方米",1],["km2","平方千米",1e6],["cm2","平方厘米",1e-4],["mu","亩",666.667],["ha","公顷",10000],["ft2","平方英尺",0.092903]]},
+  "体积":{base:"L",units:[["L","升",1],["ml","毫升",0.001],["m3","立方米",1000],["cm3","立方厘米",0.001],["gal","加仑(美)",3.78541],["cup","杯",0.24]]},
+  "温度":{base:"C",units:[["C","摄氏度",0],["F","华氏度",1],["K","开尔文",2]]},
+  "速度":{base:"m/s",units:[["ms","米/秒",1],["kmh","千米/时",0.277778],["mph","英里/时",0.44704],["knot","节",0.514444]]}
 };
-var current='length';
-function switchTab(t){
-  current=t;
-  var tabs=document.querySelectorAll('.tab');
-  for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('active');
-  event.target.classList.add('active');
-  loadUnits();convert();
+var KEY="wewoo-unit-convert";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
+var data=load();
+var curGroup=data.group||"长度";
+var fromEl=document.getElementById("from"),toEl=document.getElementById("to"),valEl=document.getElementById("val");
+
+function fillTabs(){
+  var box=document.getElementById("tabs");box.innerHTML="";
+  Object.keys(GROUPS).forEach(function(g){
+    var b=document.createElement("button");b.className="tab"+(g===curGroup?" sel":"");
+    b.textContent=g;b.onclick=function(){curGroup=g;data.group=g;save();fillTabs();fillUnits();convert();};
+    box.appendChild(b);
+  });
 }
-function loadUnits(){
-  var keys=Object.keys(units[current].units);
-  var opts=keys.map(function(k){return '<option value="'+k+'">'+k+'</option>';}).join('');
-  document.getElementById('fromUnit').innerHTML=opts;
-  document.getElementById('toUnit').innerHTML=opts;
+function fillUnits(){
+  var g=GROUPS[curGroup];fromEl.innerHTML="";toEl.innerHTML="";
+  g.units.forEach(function(u,i){
+    var o=document.createElement("option");o.value=String(i);o.textContent=u[1];
+    fromEl.appendChild(o);
+    var o2=document.createElement("option");o2.value=String(i);o2.textContent=u[1];
+    toEl.appendChild(o2);
+  });
+  var fi=data.from||0,ti=data.to||1;
+  if(g.units[fi])fromEl.value=fi;
+  if(g.units[ti])toEl.value=ti;
+}
+function toBase(v,idx){
+  var u=GROUPS[curGroup].units[idx];
+  if(curGroup==="温度"){
+    if(idx===0)return v;if(idx===1)return (v-32)*5/9;return v-273.15;
+  }
+  return v*u[2];
+}
+function fromBase(v,idx){
+  var u=GROUPS[curGroup].units[idx];
+  if(curGroup==="温度"){
+    if(idx===0)return v;if(idx===1)return v*9/5+32;return v+273.15;
+  }
+  return v/u[2];
 }
 function convert(){
-  var v=parseFloat(document.getElementById('inputVal').value)||0;
-  var f=document.getElementById('fromUnit').value;
-  var t=document.getElementById('toUnit').value;
-  var u=units[current];
-  var result;
-  if(u.custom){
-    if(f==='C'&&t==='F')result=v*9/5+32;
-    else if(f==='F'&&t==='C')result=(v-32)*5/9;
-    else if(f==='C'&&t==='K')result=v+273.15;
-    else if(f==='K'&&t==='C')result=v-273.15;
-    else if(f==='F'&&t==='K')result=(v-32)*5/9+273.15;
-    else if(f==='K'&&t==='F')result=(v-273.15)*9/5+32;
-    else result=v;
-  }else{
-    result=v*u.units[f]/u.units[t];
-  }
-  document.getElementById('outputVal').textContent=result.toFixed(4);
-  document.getElementById('outputUnit').textContent=' '+t;
+  var v=parseFloat(valEl.value);
+  if(isNaN(v)){document.getElementById("out").textContent="—";return}
+  var fi=parseInt(fromEl.value)||0,ti=parseInt(toEl.value)||0;
+  var res=fromBase(toBase(v,fi),ti);
+  document.getElementById("out").textContent=Math.round(res*1e8)/1e8;
+  var fn=GROUPS[curGroup].units[fi][1],tn=GROUPS[curGroup].units[ti][1];
+  document.getElementById("outLbl").textContent=v+" "+fn+" = "+tn;
+  data.from=fi;data.to=ti;data.group=curGroup;save();
 }
-loadUnits();convert();
-</script>`,
+document.getElementById("swap").onclick=function(){
+  var t=fromEl.value;fromEl.value=toEl.value;toEl.value=t;
+  data.from=parseInt(fromEl.value);data.to=parseInt(toEl.value);save();convert();
+};
+fromEl.onchange=convert;toEl.onchange=convert;
+valEl.addEventListener("input",convert);
+fillTabs();fillUnits();convert();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #4facfe, #00f2fe)",
     createdAt: "2026-07-14T13:00:00Z",
     description: "长度、面积、体积、重量、温度…30 种单位瞬间换算",
@@ -805,87 +1249,118 @@ loadUnits();convert();
     authorId: "user-003",
     category: "教育",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#fff7ed;padding:16px;color:#333}
-h2{text-align:center;color:#c2410c;font-size:20px;margin-bottom:4px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:12px}
-.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center;margin-bottom:10px}
-.question{font-size:36px;font-weight:bold;color:#c2410c;margin-bottom:14px;letter-spacing:4px}
-.answer{width:100%;padding:14px;border:3px solid #fdba74;border-radius:12px;font-size:24px;text-align:center;outline:none;margin-bottom:10px}
-.answer:focus{border-color:#ea580c}
-.btn{width:100%;padding:10px;background:#ea580c;color:#fff;border:none;border-radius:10px;font-size:15px;cursor:pointer}
-.msg{font-size:15px;margin:8px 0;min-height:22px}
-.stats-bar{display:flex;justify-content:center;gap:20px;font-size:13px;color:#c2410c;margin-top:4px}
-.timer{font-size:28px;font-weight:bold;color:#ea580c;margin-bottom:8px}
-.start-btn{width:100%;padding:16px;background:#ea580c;color:#fff;border:none;border-radius:12px;font-size:18px;cursor:pointer;margin-top:10px}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>九九乘法测验</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#fef2f2,#fefce8);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#dc2626;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .stats{display:flex;gap:8px;margin-bottom:12px}
+  .stat{flex:1;background:#fff;border-radius:12px;padding:10px;text-align:center;box-shadow:0 2px 8px rgba(220,38,38,.06)}
+  .stat .num{font-size:18px;font-weight:800;color:#ef4444}
+  .stat .lbl{font-size:11px;color:#94a3b8;margin-top:2px}
+  .card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(220,38,38,.08)}
+  .question{font-size:40px;font-weight:800;color:#1e293b;text-align:center;padding:18px 8px;background:#fef2f2;border-radius:12px;margin-bottom:12px;letter-spacing:2px}
+  .input{width:100%;min-height:52px;border:1.5px solid #e2e8f0;border-radius:12px;text-align:center;font-size:28px;font-weight:700;outline:none;background:#f8fafc;margin-bottom:10px}
+  .input:focus{border-color:#ef4444;background:#fff}
+  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .feed{display:none;font-size:15px;text-align:center;padding:10px;border-radius:12px;margin-top:8px}
+  .feed.show{display:block}
+  .feed.ok{background:#f0fdf4;color:#15803d}
+  .feed.no{background:#fef2f2;color:#b91c1c}
+  .wrong-title{font-size:13px;font-weight:700;color:#334155;margin:12px 0 6px}
+  .wrong{display:flex;justify-content:space-between;font-size:13px;color:#64748b;padding:6px 0;border-bottom:1px dashed #f1f5f9}
+  .wrong b{color:#b91c1c}
 </style>
-<h2>✖️ 九九乘法测验</h2>
-<p class="sub">计时答题 · 看看你能对几道</p>
-<div id="startScreen" style="text-align:center;padding:30px 0">
-  <p style="font-size:40px;margin-bottom:12px">🧮</p>
-  <p style="color:#c2410c;font-size:15px;font-weight:bold">限时 60 秒 · 10 道题</p>
-  <button class="start-btn" onclick="start()">开始挑战 🚀</button>
-</div>
-<div id="quizArea" style="display:none">
-  <div class="timer" id="timer">60</div>
-  <div class="card">
-    <p class="question" id="qText"></p>
-    <input type="number" class="answer" id="ans" placeholder="?" autocomplete="off">
-    <p class="msg" id="msg"></p>
+</head>
+<body>
+<div class="wrap">
+  <h1>✖️ 九九乘法测验</h1>
+  <p class="sub">随机出题 · 计时答题 · 错题重做 · 成绩自动保存</p>
+  <div class="stats">
+    <div class="stat"><div class="num" id="sQ">0</div><div class="lbl">本轮答对</div></div>
+    <div class="stat"><div class="num" id="sBest">0</div><div class="lbl">最快纪录</div></div>
+    <div class="stat"><div class="num" id="sTime">0s</div><div class="lbl">本轮用时</div></div>
   </div>
-  <div class="stats-bar">
-    <span>✅ <span id="sc">0</span></span>
-    <span>❌ <span id="sw">0</span></span>
-    <span>📝 <span id="sq">0</span>/10</span>
+  <div class="card">
+    <div class="question" id="q">—</div>
+    <input class="input" id="ans" type="number" inputmode="numeric" placeholder="答案" autocomplete="off">
+    <button class="btn" id="goBtn">提交</button>
+    <div class="feed" id="feed"></div>
+    <div class="wrong-title" id="wrongTitle" style="display:none">📋 本轮错题</div>
+    <div id="wrongs"></div>
   </div>
 </div>
 <script>
-var correct=0,wrong=0,qnum=0,timer=60,a,b,active=false;
-function start(){
-  document.getElementById('startScreen').style.display='none';
-  document.getElementById('quizArea').style.display='block';
-  correct=0;wrong=0;qnum=0;timer=60;active=true;
-  updateScore();
-  document.getElementById('timer').textContent=timer;
-  var ti=setInterval(function(){
-    timer--;document.getElementById('timer').textContent=timer;
-    if(timer<=0){clearInterval(ti);endQuiz();}
-  },1000);
-  window._timerId=ti;
-  next();
+var KEY="wewoo-multiply-best";
+function loadBest(){try{return JSON.parse(localStorage.getItem(KEY))||0}catch(e){return 0}}
+var best=loadBest();
+var right=0,wrongs=[],startT=Date.now(),curA=0,curB=0,answered=false;
+function renderStats(){
+  document.getElementById("sQ").textContent=right;
+  document.getElementById("sBest").textContent=best>0?best+"s":"—";
+  document.getElementById("sTime").textContent=Math.round((Date.now()-startT)/1000)+"s";
 }
-function next(){
-  if(!active)return;
-  var ansEl=document.getElementById('ans');
-  ansEl.value='';ansEl.focus();
-  document.getElementById('msg').textContent='';
-  a=Math.floor(Math.random()*9)+1;
-  b=Math.floor(Math.random()*9)+1;
-  document.getElementById('qText').textContent=a+' × '+b+' = ?';
+function newQ(){
+  curA=1+Math.floor(Math.random()*9);curB=1+Math.floor(Math.random()*9);
+  document.getElementById("q").textContent=curA+" × "+curB+" = ?";
+  document.getElementById("ans").value="";
+  document.getElementById("feed").className="feed";
+  answered=false;
+  document.getElementById("goBtn").textContent="提交";
+  document.getElementById("ans").focus();
 }
-ans.addEventListener('keydown',function(e){
-  if(e.key==='Enter'){
-    var val=parseInt(document.getElementById('ans').value);
-    if(isNaN(val))return;
-    qnum++;
-    if(val===a*b){correct++;document.getElementById('msg').textContent='✅';document.getElementById('msg').style.color='#16a34a';}
-    else{wrong++;document.getElementById('msg').textContent='❌ '+a+'×'+b+'='+(a*b);document.getElementById('msg').style.color='#dc2626';}
-    updateScore();
-    if(qnum>=10||timer<=0){endQuiz();return;}
-    setTimeout(next,500);
+function renderWrongs(){
+  document.getElementById("wrongTitle").style.display=wrongs.length?"block":"none";
+  var html="";
+  wrongs.forEach(function(w){
+    var m=w.match(/（你答 (\d+)）/);
+    var clean=w.replace(/（你答.*?）/,"");
+    html+='<div class="wrong"><span>'+clean+'</span><b>你答 '+(m?m[1]:"")+'</b></div>';
+  });
+  document.getElementById("wrongs").innerHTML=html;
+}
+function finishRound(){
+  var secs=Math.round((Date.now()-startT)/1000);
+  if(best===0||secs<best){best=secs;localStorage.setItem(KEY,JSON.stringify(best))}
+  document.getElementById("feed").className="feed show ok";
+  document.getElementById("feed").textContent="🎉 完成 10 题！用时 "+secs+"s"+(best===secs?"（新纪录！）":"");
+  right=0;wrongs=[];startT=Date.now();
+  renderWrongs();renderStats();
+  setTimeout(newQ,1600);
+}
+function submit(){
+  if(answered){newQ();return}
+  var v=parseInt(document.getElementById("ans").value);
+  if(isNaN(v))return;
+  var correct=curA*curB;
+  answered=true;
+  var fb=document.getElementById("feed");
+  if(v===correct){
+    right++;
+    fb.className="feed show ok";fb.textContent="✅ 答对啦！"+curA+"×"+curB+"="+correct;
+  }else{
+    wrongs.push(curA+"×"+curB+"="+correct+"（你答 "+v+"）");
+    fb.className="feed show no";fb.textContent="❌ 正确答案："+curA+"×"+curB+"="+correct;
   }
-});
-function updateScore(){
-  document.getElementById('sc').textContent=correct;
-  document.getElementById('sw').textContent=wrong;
-  document.getElementById('sq').textContent=qnum;
+  renderWrongs();
+  document.getElementById("goBtn").textContent="下一题";
+  renderStats();
+  if(v===correct&&right>=10)setTimeout(finishRound,600);
 }
-function endQuiz(){
-  active=false;clearInterval(window._timerId);
-  document.getElementById('quizArea').innerHTML='<div class="card"><p style="font-size:40px;margin-bottom:8px">🏆</p><p style="font-size:22px;font-weight:bold;color:#c2410c">挑战结束</p><p style="font-size:14px;color:#666;margin-top:8px">正确 '+correct+' 题 / 错误 '+wrong+' 题 / 共 '+qnum+' 题</p><p style="font-size:36px;font-weight:bold;color:#ea580c;margin-top:12px">'+(correct>=9?'🌟 ':correct>=6?'👍 ':'💪 ')+(correct*10)+' 分</p><button class="btn" onclick="location.reload()" style="margin-top:14px">再来一次 🔄</button></div>';
-}
-</script>`,
+document.getElementById("goBtn").onclick=submit;
+document.getElementById("ans").addEventListener("keydown",function(e){if(e.key==="Enter")submit()});
+newQ();renderStats();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #fa8231, #f7b731)",
     createdAt: "2026-07-13T10:00:00Z",
     description: "随机出题，计时答题，小学生口算练习神器",
@@ -897,82 +1372,128 @@ function endQuiz(){
     authorId: "user-004",
     category: "生活",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#f0fdf4;padding:16px;color:#333}
-h2{text-align:center;color:#166534;font-size:18px;margin-bottom:4px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:12px}
-.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.card h3{font-size:14px;color:#166534;margin-bottom:10px}
-.row{display:flex;gap:6px;align-items:center;margin-bottom:8px}
-.row input{flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-.btn{width:100%;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer}
-.food-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;margin-bottom:6px;background:#f9fafb}
-.food-item.expiring{background:#fef2f2;border:2px solid #fecaca}
-.food-item.expired{background:#fef2f2;border:2px solid #ef4444}
-.food-item .info{flex:1}
-.food-item .fname{font-size:14px;font-weight:600}
-.food-item .fdate{font-size:11px;color:#999;margin-top:2px}
-.food-item .badge{padding:2px 8px;border-radius:10px;font-size:11px;color:#fff}
-.badge-good{background:#22c55e}.badge-warn{background:#f59e0b}.badge-bad{background:#ef4444}
-.remove{color:#ef4444;background:none;border:none;font-size:16px;cursor:pointer;margin-left:8px}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
-.stat{background:#fff;border-radius:10px;padding:8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.stat .num{font-size:18px;font-weight:bold}
-.stat .lbl{font-size:10px;color:#999}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>冰箱食材管理</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#f0f9ff,#ecfeff);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#0369a1;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .alerts{display:flex;gap:8px;margin-bottom:12px}
+  .alert{flex:1;background:#fff;border-radius:12px;padding:10px;text-align:center;box-shadow:0 2px 8px rgba(3,105,161,.06)}
+  .alert .num{font-size:20px;font-weight:800}
+  .alert .lbl{font-size:11px;color:#94a3b8;margin-top:2px}
+  .alert.exp .num{color:#dc2626}.alert.warn .num{color:#f59e0b}.alert.ok .num{color:#10b981}
+  .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px rgba(3,105,161,.08)}
+  .card h3{font-size:14px;color:#0369a1;margin-bottom:10px}
+  .row{display:flex;gap:8px;margin-bottom:10px}
+  .row input{flex:1;min-height:44px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:16px;outline:none;background:#f8fafc}
+  .row input:focus{border-color:#0ea5e9;background:#fff}
+  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .item{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #f1f5f9}
+  .item:last-child{border-bottom:0}
+  .item .ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .item.exp .ico{background:#fee2e2}.item.warn .ico{background:#fef3c7}.item.ok .ico{background:#d1fae5}
+  .item .body{flex:1;min-width:0}
+  .item .name{font-size:15px;font-weight:700;color:#334155}
+  .item .meta{font-size:12px;margin-top:2px}
+  .item.exp .meta{color:#dc2626;font-weight:600}
+  .item.warn .meta{color:#b45309;font-weight:600}
+  .item.ok .meta{color:#94a3b8}
+  .item button{min-width:34px;min-height:34px;border:0;border-radius:8px;background:#fee2e2;color:#dc2626;font-size:14px;cursor:pointer}
+  .empty{font-size:12px;color:#cbd5e1;text-align:center;padding:12px 0}
 </style>
-<h2>🧊 冰箱食材管理</h2>
-<p class="sub">录入食材 · 快过期自动提醒</p>
-<div class="card">
-  <h3>➕ 添加食材</h3>
-  <div class="row"><input id="fname" placeholder="食材名称（如：鸡蛋）"></div>
-  <div class="row"><label style="font-size:13px;color:#666;flex-shrink:0">保质期</label><input id="fdate" type="date"></div>
-  <button class="btn" onclick="addFood()">📥 放入冰箱</button>
-</div>
-<div class="stats-grid" id="stats">
-  <div class="stat"><div class="num" style="color:#16a34a" id="fresh">0</div><div class="lbl">✅ 新鲜</div></div>
-  <div class="stat"><div class="num" style="color:#f59e0b" id="warn">0</div><div class="lbl">⚠️ 临近</div></div>
-  <div class="stat"><div class="num" style="color:#ef4444" id="bad">0</div><div class="lbl">🚫 过期</div></div>
-</div>
-<div class="card">
-  <h3>📋 食材清单</h3>
-  <div id="foodList"></div>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧊 冰箱食材管理</h1>
+  <p class="sub">录入食材与保质期，快过期自动提醒（自动保存）</p>
+  <div class="alerts">
+    <div class="alert exp"><div class="num" id="cExp">0</div><div class="lbl">已过期</div></div>
+    <div class="alert warn"><div class="num" id="cWarn">0</div><div class="lbl">快过期</div></div>
+    <div class="alert ok"><div class="num" id="cOk">0</div><div class="lbl">新鲜</div></div>
+  </div>
+  <div class="card">
+    <h3>✏️ 添加食材</h3>
+    <div class="row">
+      <input id="name" placeholder="食材名称，如：牛奶" style="flex:1.6">
+      <input id="qty" placeholder="数量" style="flex:.7">
+    </div>
+    <div class="row"><input id="exp" type="date" style="flex:1"></div>
+    <button class="btn" id="addBtn">添加</button>
+  </div>
+  <div class="card">
+    <h3>📋 食材清单（按紧急程度排序）</h3>
+    <div id="list"></div>
+  </div>
 </div>
 <script>
-var foods=[];
-function addFood(){
-  var n=document.getElementById('fname').value.trim();
-  var d=document.getElementById('fdate').value;
-  if(!n||!d)return;
-  foods.push({name:n,expiry:d});
-  document.getElementById('fname').value='';
-  document.getElementById('fdate').value='';
+var KEY="wewoo-fridge";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+var list=load();if(!Array.isArray(list))list=[];
+function save(){localStorage.setItem(KEY,JSON.stringify(list))}
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+document.getElementById("exp").value=today();
+function daysLeft(exp){
+  var a=new Date(exp),b=new Date(today());
+  return Math.round((a-b)/86400000);
+}
+function stateOf(exp){
+  var d=daysLeft(exp);
+  if(d<0)return "exp";
+  if(d<=3)return "warn";
+  return "ok";
+}
+function add(){
+  var name=document.getElementById("name").value.trim();
+  var qty=document.getElementById("qty").value.trim()||"1";
+  var exp=document.getElementById("exp").value||today();
+  if(!name){document.getElementById("name").focus();return}
+  list.push({name:name,qty:qty,exp:exp});
+  save();
+  document.getElementById("name").value="";document.getElementById("qty").value="";
   render();
 }
-function remove(i){foods.splice(i,1);render()}
-function daysLeft(d){
-  var now=new Date();now.setHours(0,0,0,0);
-  var exp=new Date(d);
-  return Math.ceil((exp-now)/(1000*60*60*24));
-}
+function del(i){list.splice(i,1);save();render()}
 function render(){
-  var sorted=foods.slice().sort(function(a,b){return daysLeft(a.expiry)-daysLeft(b.expiry)});
-  var fresh=0,warn=0,bad=0;
-  document.getElementById('foodList').innerHTML=sorted.length===0?'<p style="color:#999;text-align:center;font-size:13px;padding:12px">冰箱空空如也~</p>':
-    sorted.map(function(f,i){
-      var d=daysLeft(f.expiry);
-      var status,cls,badge;
-      if(d<0){status='expired';cls='expired';badge='badge-bad';bad++;}
-      else if(d<=3){status='expiring';cls='expiring';badge='badge-warn';warn++;}
-      else{status='';cls='';badge='badge-good';fresh++;}
-      var label=d<0?'已过期 '+Math.abs(d)+' 天':d===0?'今天到期':'还有 '+d+' 天';
-      return '<div class="food-item '+cls+'"><div class="info"><div class="fname">'+f.name+'</div><div class="fdate">📅 '+f.expiry+' · '+label+'</div></div><span class="badge '+badge+'">'+(d<0?'🚫':d<=3?'⚠️':'✅')+'</span><button class="remove" onclick="remove('+foods.indexOf(f)+')">×</button></div>';
-    }).join('');
-  document.getElementById('fresh').textContent=fresh;
-  document.getElementById('warn').textContent=warn;
-  document.getElementById('bad').textContent=bad;
+  var expN=0,warnN=0,okN=0;
+  list.forEach(function(it){
+    var s=stateOf(it.exp);
+    if(s==="exp")expN++;else if(s==="warn")warnN++;else okN++;
+  });
+  document.getElementById("cExp").textContent=expN;
+  document.getElementById("cWarn").textContent=warnN;
+  document.getElementById("cOk").textContent=okN;
+  var box=document.getElementById("list");
+  if(list.length===0){box.innerHTML='<div class="empty">还没有食材，先添加吧</div>';return}
+  var sorted=list.map(function(it,i){return {it:it,i:i,s:stateOf(it.exp)}})
+    .sort(function(a,b){var o={exp:0,warn:1,ok:2};return o[a.s]-o[b.s]});
+  box.innerHTML="";
+  sorted.forEach(function(x){
+    var d=document.createElement("div");d.className="item "+x.s;
+    var ico=x.s==="exp"?"⚠️":(x.s==="warn"?"⏰":"✅");
+    var meta;
+    if(x.s==="exp")meta="已过期 "+(-daysLeft(x.exp))+" 天";
+    else if(x.s==="warn")meta="还有 "+daysLeft(x.exp)+" 天到期";
+    else meta="保质期至 "+x.it.exp;
+    d.innerHTML='<div class="ico">'+ico+'</div>'+
+      '<div class="body"><div class="name">'+x.it.name+'</div>'+
+      '<div class="meta">'+x.it.qty+' · '+meta+'</div></div>';
+    var b=document.createElement("button");b.textContent="×";b.onclick=function(){del(x.i)};
+    d.appendChild(b);box.appendChild(d);
+  });
 }
-</script>`,
+document.getElementById("addBtn").onclick=add;
+render();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #43e97b, #38f9d7)",
     createdAt: "2026-07-12T15:00:00Z",
     description: "录入食材和保质期，快过期时自动提醒不浪费",
@@ -984,72 +1505,190 @@ function render(){
     authorId: "user-005",
     category: "旅行",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#f5f3ff;padding:16px;color:#333}
-h2{text-align:center;color:#5b21b6;font-size:18px;margin-bottom:4px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:12px}
-.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.card h3{font-size:14px;color:#5b21b6;margin-bottom:10px}
-.row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-.row label{font-size:13px;color:#666;flex-shrink:0}
-.row input,.row select{flex:1;min-width:80px;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-.btn{width:100%;padding:10px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer}
-.btn-sm{padding:4px 10px;font-size:12px}
-.tag{padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;margin-left:4px}
-.result{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-radius:14px;padding:16px;text-align:center;margin-top:10px}
-.result .big{font-size:32px;font-weight:bold}
-.result .small{font-size:12px;opacity:.8}
-.currency-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
-.cbtn{padding:6px 12px;border-radius:16px;font-size:12px;border:1px solid #c4b5fd;background:#fff;color:#5b21b6;cursor:pointer}
-.cbtn.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>旅行分账 Pro 版</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#f5f3ff,#eef2ff);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:440px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#4c1d95;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px rgba(76,29,149,.08)}
+  .card h3{font-size:14px;color:#4c1d95;margin-bottom:10px}
+  .row{display:flex;gap:8px;margin-bottom:10px}
+  .row input{flex:1;min-height:44px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:16px;outline:none;background:#f8fafc}
+  .row input:focus{border-color:#7c3aed;background:#fff}
+  .row select{min-height:44px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 10px;font-size:14px;outline:none;background:#f8fafc;flex:1}
+  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .btn.mini{flex:none;width:88px;min-height:44px}
+  .members{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .member{min-height:38px;padding:0 12px;border-radius:99px;border:1.5px solid #e2e8f0;background:#fff;font-size:13px;color:#64748b;cursor:pointer}
+  .member.on{background:#7c3aed;color:#fff;border-color:#7c3aed;font-weight:700}
+  .member.x{color:#dc2626;background:#fee2e2;border-color:#fecaca}
+  .split{font-size:12px;color:#94a3b8;margin-bottom:8px}
+  .rec{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
+  .rec:last-child{border-bottom:0}
+  .rec .info{flex:1}
+  .rec .info b{color:#334155}
+  .rec .info small{display:block;color:#94a3b8;font-size:11px}
+  .rec .amt{font-weight:700;color:#7c3aed}
+  .rec button{min-width:32px;min-height:32px;border:0;border-radius:8px;background:#fee2e2;color:#dc2626;font-size:13px;cursor:pointer}
+  .settle{background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:12px;padding:12px}
+  .settle .li{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dashed #e9d5ff}
+  .settle .li:last-child{border-bottom:0}
+  .settle .li b{color:#6d28d9}
+  .settle .tip{font-size:11px;color:#94a3b8;margin-top:6px;text-align:center}
+  .empty{font-size:12px;color:#cbd5e1;text-align:center;padding:10px 0}
 </style>
-<h2>💰 旅行分账 Pro</h2>
-<p class="sub">多人分账 · 多币种支持 · 小费计算</p>
-<div class="card">
-  <h3>🌍 选择币种</h3>
-  <div class="currency-bar" id="cbar">
-    <button class="cbtn active" onclick="setCurrency('CNY','¥',1)">¥ 人民币</button>
-    <button class="cbtn" onclick="setCurrency('USD','$',7.2)">$ 美元</button>
-    <button class="cbtn" onclick="setCurrency('JPY','¥',0.047)">¥ 日元</button>
-    <button class="cbtn" onclick="setCurrency('EUR','€',7.8)">€ 欧元</button>
+</head>
+<body>
+<div class="wrap">
+  <h1>💸 旅行分账 Pro</h1>
+  <p class="sub">多人多笔消费 · 自动算清谁给谁钱 · 自动保存</p>
+  <div class="card">
+    <h3>👥 成员管理</h3>
+    <div class="row"><input id="mName" placeholder="成员名，如：小明"><button class="btn mini" id="addM">添加</button></div>
+    <div class="members" id="members"></div>
+  </div>
+  <div class="card">
+    <h3>✏️ 记一笔消费</h3>
+    <div class="row"><input id="eDesc" placeholder="消费内容，如：晚餐" style="flex:1.4"><input id="eAmt" type="number" inputmode="decimal" placeholder="金额 ¥" style="flex:.9"></div>
+    <div class="row"><select id="ePayer"></select></div>
+    <div class="split">分摊给：<span id="splitHint">默认全部成员</span></div>
+    <div class="members" id="splitSel"></div>
+    <button class="btn" id="addE">添加消费</button>
+  </div>
+  <div class="card">
+    <h3>🧾 消费记录</h3>
+    <div id="records"></div>
+  </div>
+  <div class="card">
+    <h3>🤝 结算建议</h3>
+    <div class="settle" id="settle"></div>
   </div>
 </div>
-<div class="card">
-  <h3>💰 总花费</h3>
-  <div class="row"><label>金额</label><input id="amount" type="number" value="2000"> <span id="sym" style="font-weight:bold;color:#5b21b6">¥</span></div>
-  <div class="row"><label>人数</label><input id="people" type="number" value="4"></div>
-  <div class="row"><label>小费 %</label><input id="tip" type="number" value="10" style="max-width:80px"> <span style="font-size:12px;color:#999">可选</span></div>
-  <button class="btn" onclick="calc()">🧾 计算分账</button>
-</div>
-<div class="result" id="result" style="display:none">
-  <div class="small">每人应付</div>
-  <div class="big" id="perPerson"></div>
-  <div class="small" id="detail" style="margin-top:6px"></div>
-</div>
 <script>
-var rate=1,symbol='¥',cur='CNY';
-function setCurrency(c,s,r){
-  rate=r;symbol=s;cur=c;
-  document.getElementById('sym').textContent=s;
-  var btns=document.querySelectorAll('.cbtn');
-  for(var i=0;i<btns.length;i++)btns[i].classList.remove('active');
-  event.target.classList.add('active');
-  calc();
+var KEY="wewoo-travel-pro";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{m:[],e:[]}}catch(e){return{m:[],e:[]}}}
+var data=load();if(!Array.isArray(data.m))data.m=[];if(!Array.isArray(data.e))data.e=[];
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+var payerEl=document.getElementById("ePayer");
+function renderMembers(){
+  var box=document.getElementById("members");box.innerHTML="";
+  data.m.forEach(function(name,i){
+    var b=document.createElement("button");b.className="member on";b.textContent=name;
+    box.appendChild(b);
+    var x=document.createElement("button");x.className="member x";x.textContent="×";
+    x.onclick=function(){
+      data.m.splice(i,1);
+      data.e=data.e.filter(function(e){return e.payer!==name});
+      save();renderMembers();renderAll();
+    };
+    box.appendChild(x);
+  });
+  if(data.m.length===0)box.innerHTML='<div class="empty">先添加成员</div>';
+  payerEl.innerHTML="";
+  data.m.forEach(function(name){
+    var o=document.createElement("option");o.value=name;o.textContent=name;
+    payerEl.appendChild(o);
+  });
+  renderSplit();
 }
-function calc(){
-  var a=parseFloat(document.getElementById('amount').value)||0;
-  var p=parseInt(document.getElementById('people').value)||1;
-  var t=parseFloat(document.getElementById('tip').value)||0;
-  var total=a*(1+t/100);
-  var per=Math.ceil(total/p);
-  var cny=Math.round(per*rate*100)/100;
-  var detail=total!==a?'含小费 '+t+'% · 总计 '+symbol+total.toFixed(0)+' · ':'';
-  document.getElementById('detail').textContent=detail+(cur!=='CNY'?'≈ ¥'+cny:'');
-  document.getElementById('perPerson').textContent=symbol+per;
-  document.getElementById('result').style.display='block';
+function renderSplit(){
+  var box=document.getElementById("splitSel");box.innerHTML="";
+  data.m.forEach(function(name){
+    var b=document.createElement("button");b.className="member on";b.textContent=name;
+    b.dataset.on="1";
+    b.onclick=function(){
+      if(b.dataset.on==="1"){b.dataset.on="0";b.classList.remove("on")}
+      else{b.dataset.on="1";b.classList.add("on")}
+      updateSplitHint();
+    };
+    box.appendChild(b);
+  });
+  updateSplitHint();
 }
-</script>`,
+function updateSplitHint(){
+  var n=document.querySelectorAll("#splitSel .member.on").length;
+  document.getElementById("splitHint").textContent=n===data.m.length?"全部成员":n+" 个成员";
+}
+document.getElementById("addM").onclick=function(){
+  var n=document.getElementById("mName").value.trim();
+  if(!n){document.getElementById("mName").focus();return}
+  if(data.m.indexOf(n)>=0){document.getElementById("mName").focus();return}
+  data.m.push(n);save();
+  document.getElementById("mName").value="";
+  renderMembers();
+};
+document.getElementById("addE").onclick=function(){
+  var desc=document.getElementById("eDesc").value.trim();
+  var amt=parseFloat(document.getElementById("eAmt").value)||0;
+  var payer=payerEl.value;
+  if(!desc){document.getElementById("eDesc").focus();return}
+  if(amt<=0){document.getElementById("eAmt").focus();return}
+  if(!payer)return;
+  var split=[];
+  document.querySelectorAll("#splitSel .member.on").forEach(function(b){split.push(b.textContent)});
+  data.e.unshift({desc:desc,amt:amt,payer:payer,split:split});
+  save();
+  document.getElementById("eDesc").value="";document.getElementById("eAmt").value="";
+  renderAll();
+};
+function delE(i){data.e.splice(i,1);save();renderAll()}
+function renderAll(){renderRecords();renderSettle()}
+function renderRecords(){
+  var box=document.getElementById("records");
+  if(data.e.length===0){box.innerHTML='<div class="empty">还没有消费记录</div>';return}
+  box.innerHTML="";
+  data.e.forEach(function(it,i){
+    var d=document.createElement("div");d.className="rec";
+    d.innerHTML='<div class="info"><b>'+it.desc+'</b><small>'+it.payer+' 付 · 分摊给 '+(it.split.length?it.split.join("、"):"全部")+'</small></div>'+
+      '<span class="amt">¥'+it.amt.toFixed(2)+'</span>';
+    var b=document.createElement("button");b.textContent="×";b.onclick=function(){delE(i)};
+    d.appendChild(b);box.appendChild(d);
+  });
+}
+function renderSettle(){
+  var box=document.getElementById("settle");
+  if(data.m.length===0||data.e.length===0){box.innerHTML='<div class="empty">添加成员和消费后自动生成结算</div>';return}
+  var share={},paid={};
+  data.m.forEach(function(n){share[n]=0;paid[n]=0});
+  data.e.forEach(function(it){
+    var parts=it.split&&it.split.length?it.split:data.m.slice();
+    parts.forEach(function(p){if(share[p]!==undefined)share[p]+=it.amt/parts.length});
+    if(paid[it.payer]!==undefined)paid[it.payer]+=it.amt;
+  });
+  var bal={};
+  data.m.forEach(function(n){bal[n]=Math.round((paid[n]-share[n])*100)/100});
+  var html="";
+  data.m.forEach(function(n){
+    var v=bal[n];
+    html+='<div class="li"><span>'+n+'</span><b style="color:'+(v>=0?"#059669":"#dc2626")+'">'+(v>=0?"应收 ¥":"应付 ¥")+Math.abs(v).toFixed(2)+'</b></div>';
+  });
+  html+='<div class="tip">最少转账次数建议</div>';
+  var payList=data.m.filter(function(n){return bal[n]<-0.01}).map(function(n){return {o:n,v:-bal[n]}}).sort(function(a,b){return b.v-a.v});
+  var getList=data.m.filter(function(n){return bal[n]>0.01}).map(function(n){return {g:n,v:bal[n]}}).sort(function(a,b){return b.v-a.v});
+  var gi=0;
+  payList.forEach(function(p){
+    while(p.v>0.01&&gi<getList.length){
+      var take=Math.min(p.v,getList[gi].v);
+      html+='<div class="li"><span>'+p.o+' → '+getList[gi].g+'</span><b>¥'+take.toFixed(2)+'</b></div>';
+      p.v=Math.round((p.v-take)*100)/100;
+      getList[gi].v=Math.round((getList[gi].v-take)*100)/100;
+      if(getList[gi].v<=0.01)gi++;
+    }
+  });
+  box.innerHTML=html;
+}
+renderMembers();renderAll();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #f093fb, #f5576c)",
     createdAt: "2026-07-22T08:00:00Z",
     description: "基于原版分账计算器，增加了多币种换算功能",
@@ -1062,82 +1701,109 @@ function calc(){
     authorId: "user-003",
     category: "教育",
     visibility: "public",
-    code: `<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'KaiTi','STKaiti',serif;background:#fefce8;padding:16px;color:#333}
-h2{text-align:center;color:#854d0e;font-size:20px;margin-bottom:4px}
-.sub{text-align:center;color:#999;font-size:12px;margin-bottom:16px}
-.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center;margin-bottom:10px}
-.poem-hint{font-size:12px;color:#a16207;margin-bottom:8px}
-.verse{font-size:22px;color:#713f12;line-height:2;letter-spacing:2px;margin-bottom:14px}
-.verse .blank-input{display:inline-block;width:50px;border:none;border-bottom:2px solid #eab308;font-size:22px;text-align:center;font-family:inherit;margin:0 4px;outline:none;color:#713f12;background:transparent}
-.verse .blank-input:focus{border-bottom-color:#854d0e}
-.verse .filled{color:#16a34a}.verse .wrong-fill{color:#dc2626}
-.btn{width:100%;padding:10px;background:#ca8a04;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;margin-top:4px}
-.btn2{background:#fef3c7;color:#854d0e;margin-top:6px}
-.msg{font-size:14px;margin-top:10px;min-height:20px}
-.score{display:flex;justify-content:center;gap:20px;font-size:13px;color:#854d0e}
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>小学生古诗词填空</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#fefce8,#fff7ed);min-height:100vh;padding:16px;color:#1e293b}
+  .wrap{max-width:420px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;color:#a16207;text-align:center;margin-bottom:2px}
+  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
+  .stats{display:flex;gap:8px;margin-bottom:12px}
+  .stat{flex:1;background:#fff;border-radius:12px;padding:10px;text-align:center;box-shadow:0 2px 8px rgba(161,98,7,.06)}
+  .stat .num{font-size:20px;font-weight:800;color:#ca8a04}
+  .stat .lbl{font-size:11px;color:#94a3b8;margin-top:2px}
+  .card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(161,98,7,.08)}
+  .title2{font-size:13px;color:#a16207;text-align:center;margin-bottom:4px}
+  .poem{font-size:22px;font-weight:700;color:#713f12;text-align:center;padding:18px 8px;background:#fffbeb;border-radius:12px;border:1.5px dashed #fde047;margin-bottom:12px;line-height:1.8}
+  .poem .blank{display:inline-block;min-width:72px;border-bottom:2px solid #ca8a04;color:#ca8a04;font-weight:800}
+  .input{width:100%;min-height:46px;border:1.5px solid #e2e8f0;border-radius:10px;text-align:center;font-size:18px;outline:none;background:#f8fafc;margin-bottom:10px}
+  .input:focus{border-color:#ca8a04;background:#fff}
+  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ca8a04,#eab308);color:#fff;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .feed{display:none;font-size:15px;text-align:center;padding:10px;border-radius:12px;margin-top:8px}
+  .feed.show{display:block}
+  .feed.ok{background:#f0fdf4;color:#15803d}
+  .feed.no{background:#fef2f2;color:#b91c1c}
 </style>
-<h2>✍️ 古诗词填空</h2>
-<p class="sub">适合小学生 · 填出空缺的字</p>
-<div class="card" id="quiz">
-  <p class="poem-hint" id="hint"></p>
-  <p class="verse" id="verse"></p>
-  <p class="msg" id="msg"></p>
-  <button class="btn" onclick="submit()">提交 ✅</button>
-  <button class="btn btn2" onclick="nextQ()">下一题 ▶</button>
-</div>
-<div class="score">
-  <span>✅ <span id="sc">0</span></span>
-  <span>❌ <span id="sw">0</span></span>
-  <span>📝 <span id="sq">0</span></span>
+</head>
+<body>
+<div class="wrap">
+  <h1>📖 小学生古诗词填空</h1>
+  <p class="sub">挖空的诗句，你能填对吗？（自动保存成绩）</p>
+  <div class="stats">
+    <div class="stat"><div class="num" id="sTotal">0</div><div class="lbl">已答</div></div>
+    <div class="stat"><div class="num" id="sRight">0</div><div class="lbl">答对</div></div>
+    <div class="stat"><div class="num" id="sRate">0%</div><div class="lbl">正确率</div></div>
+  </div>
+  <div class="card">
+    <div class="title2" id="author">—</div>
+    <div class="poem" id="poem">—</div>
+    <input class="input" id="ans" placeholder="填写空缺的字词" autocomplete="off">
+    <button class="btn" id="goBtn">提交</button>
+    <div class="feed" id="feed"></div>
+  </div>
 </div>
 <script>
-var bank=[
-  {before:'床前明月光',after:'是地上霜',blank:'疑',hint:'李白《静夜思》'},
-  {before:'春眠不觉晓',after:'处闻啼鸟',blank:'处',hint:'孟浩然《春晓》'},
-  {before:'锄禾日当午',after:'滴禾下土',blank:'汗',hint:'李绅《悯农》'},
-  {before:'白日依山尽',after:'河入海流',blank:'黄',hint:'王之涣《登鹳雀楼》'},
-  {before:'离离原上草',after:'岁一枯荣',blank:'一',hint:'白居易《赋得古原草送别》'},
-  {before:'小荷才露尖尖角',after:'有蜻蜓立上头',blank:'早',hint:'杨万里《小池》'},
+var ITEMS=[
+  {a:"李白",p:"床前明月光，疑是地上霜。举头望明月，低头思故（ ）",k:"乡"},
+  {a:"骆宾王",p:"鹅鹅鹅，曲项向天歌。白毛浮绿水，红掌拨清（ ）",k:"波"},
+  {a:"王之涣",p:"白日依山尽，黄河入海流。欲穷千里目，更上一（ ）楼",k:"层"},
+  {a:"李绅",p:"锄禾日当午，汗滴禾下土。谁知盘中餐，粒粒皆辛（ ）",k:"苦"},
+  {a:"孟浩然",p:"春眠不觉晓，处处闻啼鸟。夜来风雨声，花落知多（ ）",k:"少"},
+  {a:"王维",p:"红豆生南国，春来发几枝。愿君多采撷，此物最相（ ）",k:"思"},
+  {a:"贺知章",p:"碧玉妆成一树高，万条垂下绿丝绦。不知细叶谁裁出，二月春风似剪（ ）",k:"刀"},
+  {a:"杜甫",p:"两个黄鹂鸣翠柳，一行白鹭上青天。窗含西岭千秋雪，门泊东吴万里（ ）",k:"船"},
+  {a:"杜牧",p:"远上寒山石径斜，白云生处有人家。停车坐爱枫林晚，霜叶红于二月（ ）",k:"花"},
+  {a:"柳宗元",p:"千山鸟飞绝，万径人踪灭。孤舟蓑笠翁，独钓寒江（ ）",k:"雪"},
+  {a:"王安石",p:"墙角数枝梅，凌寒独自开。遥知不是雪，为有暗香（ ）",k:"来"},
+  {a:"杨万里",p:"泉眼无声惜细流，树阴照水爱晴柔。小荷才露尖尖角，早有蜻蜓立上（ ）",k:"头"},
+  {a:"李白",p:"飞流直下三千尺，疑是银河落九（ ）",k:"天"},
+  {a:"王翰",p:"葡萄美酒夜光杯，欲饮琵琶马上催。醉卧沙场君莫笑，古来征战几人（ ）",k:"回"}
 ];
-var correct=0,wrong=0,qnum=0,current=null;
-function nextQ(){
-  var i=Math.floor(Math.random()*bank.length);
-  current=bank[i];
-  document.getElementById('hint').textContent='—— '+current.hint;
-  var blanks=document.querySelectorAll('.blank-input');
-  for(var j=0;j<blanks.length;j++){blanks[j].className='blank-input';blanks[j].value='';}
-  document.getElementById('verse').innerHTML=current.before+'<input class="blank-input" id="blankInput" maxlength="1" oninput="handleInput()">'+current.after;
-  document.getElementById('msg').textContent='';
-  document.getElementById('blankInput').focus();
+var KEY="wewoo-poem-fill";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{t:0,r:0}}catch(e){return{t:0,r:0}}}
+var data=load();if(typeof data.t!=="number")data.t=0;if(typeof data.r!=="number")data.r=0;
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function refreshStats(){
+  document.getElementById("sTotal").textContent=data.t;
+  document.getElementById("sRight").textContent=data.r;
+  document.getElementById("sRate").textContent=(data.t?Math.round(data.r/data.t*100):0)+"%";
 }
-function handleInput(){
-  var inp=document.getElementById('blankInput');
-  if(inp&&inp.value.length>0){inp.value=inp.value[inp.value.length-1];}
+var cur=null,answered=false;
+function newQ(){
+  cur=ITEMS[Math.floor(Math.random()*ITEMS.length)];
+  document.getElementById("author").textContent="—— "+cur.a+"《"+(cur.p.split("。")[0].slice(0,4))+"》";
+  document.getElementById("poem").innerHTML=cur.p.replace("（ ）",'<span class="blank">____</span>');
+  document.getElementById("ans").value="";
+  document.getElementById("feed").className="feed";
+  answered=false;
+  document.getElementById("goBtn").textContent="提交";
+  document.getElementById("ans").focus();
 }
 function submit(){
-  if(!current)return;
-  var inp=document.getElementById('blankInput');
-  if(!inp)return;
-  var val=inp.value.trim();
-  qnum++;
-  if(val===current.blank){
-    correct++;inp.className='blank-input filled';inp.disabled=true;
-    document.getElementById('msg').innerHTML='<span style="color:#16a34a">✅ 太棒了！</span>';
-  }else{
-    wrong++;inp.className='blank-input wrong-fill';inp.disabled=true;
-    document.getElementById('msg').innerHTML='<span style="color:#dc2626">❌ 正确答案：'+current.blank+'</span>';
-  }
-  updateScore();
+  if(answered){newQ();return}
+  var v=document.getElementById("ans").value.trim();
+  if(!v)return;
+  var ok=v===cur.k;
+  data.t++;if(ok)data.r++;save();refreshStats();
+  document.getElementById("poem").innerHTML=cur.p.replace("（ ）",'<span class="blank" style="color:#15803d;border-color:#22c55e">'+cur.k+'</span>');
+  var fb=document.getElementById("feed");
+  fb.className="feed show "+(ok?"ok":"no");
+  fb.textContent=ok?"✅ 太棒了，答对了！":"❌ 正确答案是："+cur.k;
+  answered=true;
+  document.getElementById("goBtn").textContent="下一题";
 }
-function updateScore(){
-  document.getElementById('sc').textContent=correct;
-  document.getElementById('sw').textContent=wrong;
-  document.getElementById('sq').textContent=qnum;
-}
-nextQ();
-</script>`,
+document.getElementById("goBtn").onclick=submit;
+document.getElementById("ans").addEventListener("keydown",function(e){if(e.key==="Enter")submit()});
+refreshStats();newQ();
+</script>
+</body>
+</html>`,
     thumbnailGradient: "linear-gradient(135deg, #43e97b, #38f9d7)",
     createdAt: "2026-07-22T09:00:00Z",
     description: "改编自古诗词随机抽查，改为填空模式更适合作业",
@@ -1294,7 +1960,52 @@ modeIndicator.addEventListener('dblclick',function(){handleAction('DEG/RAD')});
 updateDisplay();resultDisplay.textContent='0';resultDisplay.className='result';
 console.log('安全科学计算器已加载')})();
 </script>
-</body>
+<script>
+(function(){
+  // 计算历史（自动保存）：监听表达式/结果变化，记录到 localStorage
+  var KEY = 'wewoo-sci-calc-history';
+  function loadHist(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+  var hist = loadHist();
+  var calcEl = document.querySelector('.calculator');
+  if(!calcEl) return;
+  var panel = document.createElement('div');
+  panel.style.cssText = 'margin-top:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:14px';
+  panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+    '<span style="font-size:13px;color:rgba(200,210,230,.8)">🕘 计算历史（自动保存）</span>' +
+    '<button id="wewooHistClear" style="min-height:32px;padding:0 10px;border:0;border-radius:8px;background:rgba(255,80,80,.15);color:#ff7a7a;font-size:12px;cursor:pointer">清空</button></div>' +
+    '<div id="wewooHist" style="font-size:12px;color:rgba(255,255,255,.35)"></div>';
+  calcEl.appendChild(panel);
+  var listEl = document.getElementById('wewooHist');
+  function render(){
+    if(!hist.length){listEl.innerHTML = '暂无历史'; return}
+    listEl.innerHTML = '';
+    hist.slice().reverse().forEach(function(h){
+      var d = document.createElement('div');
+      d.style.cssText = 'display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:12px';
+      d.innerHTML = '<span style="color:rgba(200,210,230,.7);word-break:break-all">' + h.expr + '</span><b style="color:#7ae0b0;flex-shrink:0">' + h.res + '</b>';
+      listEl.appendChild(d);
+    });
+  }
+  var lastExpr = '';
+  function check(){
+    var r = document.querySelector('.result');
+    if(!r) return;
+    var txt = r.textContent;
+    if(!txt || txt === '0' || r.classList.contains('error')) return;
+    var exprEl = document.querySelector('.expression');
+    var expr = exprEl ? exprEl.textContent.replace(/[▌|]/g, '') : '';
+    if(!expr || expr === lastExpr) return;
+    lastExpr = expr;
+    hist.push({expr: expr, res: txt});
+    if(hist.length > 50) hist = hist.slice(-50);
+    try{localStorage.setItem(KEY, JSON.stringify(hist))}catch(e){}
+    render();
+  }
+  setInterval(check, 700);
+  document.getElementById('wewooHistClear').onclick = function(){hist = []; try{localStorage.removeItem(KEY)}catch(e){} render()};
+  render();
+})();
+</script></body>
 </html>
 `,
     thumbnailGradient: "linear-gradient(135deg, #0d0d2b, #2d1b4e)",
@@ -1378,7 +2089,7 @@ h2 .icon{font-size:24px}
 </div>
 </div>
 <script>
-var history=[];
+var histList=JSON.parse(localStorage.getItem('wewoo-pw-hist')||'[]');
 var chars={upper:'ABCDEFGHIJKLMNOPQRSTUVWXYZ',lower:'abcdefghijklmnopqrstuvwxyz',num:'0123456789',sym:'!@#$%^&*()-_=+[]{}|;:,.<>?'};
 
 function updateLen(){
@@ -1416,8 +2127,9 @@ else if(pct<=60){bar.style.background='#f59e0b';document.getElementById('label')
 else if(pct<=85){bar.style.background='#6366f1';document.getElementById('label').textContent='强 — 足够安全'}
 else {bar.style.background='#10b981';document.getElementById('label').textContent='极强 — 非常安全'}
 // History
-history.unshift(pw);
-if(history.length>10)history.pop();
+histList.unshift(pw);
+if(histList.length>10)histList.pop();
+localStorage.setItem('wewoo-pw-hist',JSON.stringify(histList));
 renderHistory()
 }
 
@@ -1433,10 +2145,10 @@ setTimeout(function(){btn.textContent='📋';btn.classList.remove('copied')},150
 
 function renderHistory(){
 var h=document.getElementById('hist');
-h.innerHTML=history.map(function(p,i){return '<div class="history-item"><span>'+p.substring(0,24)+(p.length>24?'…':'')+'</span><button class="copy-sm" onclick="copyHistory('+i+')">复制</button></div>'}).join('')
+h.innerHTML=histList.map(function(p,i){return '<div class="history-item"><span>'+p.substring(0,24)+(p.length>24?'…':'')+'</span><button class="copy-sm" onclick="copyHistory('+i+')">复制</button></div>'}).join('')
 }
 function copyHistory(i){
-navigator.clipboard.writeText(history[i]).catch(function(){})
+navigator.clipboard.writeText(histList[i]).catch(function(){})
 }
 
 generate()
@@ -1594,7 +2306,20 @@ function clearAll() {
   document.querySelector('.actions').style.display='';
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',i===0));
 }
-</script>
+<script>
+// 记忆：输入内容自动保存，刷新/重进不丢
+(function(){
+  var KEY = 'wewoo-ai-format-input';
+  var ta = document.getElementById('inputArea');
+  if(!ta) return;
+  try{ ta.value = localStorage.getItem(KEY) || ''; }catch(e){}
+  var timer = null;
+  ta.addEventListener('input', function(){
+    clearTimeout(timer);
+    timer = setTimeout(function(){ try{ localStorage.setItem(KEY, ta.value); }catch(e){} }, 500);
+  });
+})();
+</script></script>
 </body>
 </html>
 
@@ -2209,6 +2934,20 @@ function clearAll() {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
         }
+            /* ===== 移动端适配 ===== */
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+            .header { padding: 18px 16px; border-radius: 14px; gap: 10px; }
+            .header-title h1 { font-size: 20px; }
+            .header-icon { font-size: 26px; }
+            .header-badge { padding: 6px 12px; font-size: 11px; }
+            .search-section { padding: 16px 14px; gap: 12px; }
+            .search-group { min-width: 100%; }
+            .search-btn { min-height: 46px; }
+            .result-section, .table-section { margin-bottom: 16px; }
+            .result-card { padding: 16px; }
+            .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        }
     </style>
 </head>
 <body>
@@ -2625,13 +3364,14 @@ function clearAll() {
 
         // 类型切换 → 更新规格下拉
         typeSelect.addEventListener('change', function() {
+            saveLastQuery();
             updateSpecOptions(this.value);
             // 自动查询第一个
             queryThread();
         });
 
         // 规格切换 → 自动查询
-        specSelect.addEventListener('change', queryThread);
+        specSelect.addEventListener('change', function() { saveLastQuery(); queryThread(); });
 
         // 查询按钮 → 查询
         queryBtn.addEventListener('click', queryThread);
@@ -2651,15 +3391,26 @@ function clearAll() {
         //  初始化
         // ================================================================
 
-        function init() {
-            // 设置默认类型
-            const defaultType = 'metric_coarse';
+                function init() {
+            // 恢复上次查询的型号（记忆功能：刷新/重进后保留）
+            let saved = null;
+            try { saved = JSON.parse(localStorage.getItem('wewoo-thread-last') || 'null'); } catch (e) {}
+            const defaultType = (saved && saved.type) || 'metric_coarse';
             typeSelect.value = defaultType;
             updateSpecOptions(defaultType);
+            if (saved && saved.spec) {
+                for (let i = 0; i < specSelect.options.length; i++) {
+                    if (specSelect.options[i].value === saved.spec) { specSelect.selectedIndex = i; break; }
+                }
+            }
             // 渲染表格
             renderTable();
             // 自动查询第一个
             queryThread();
+        }
+
+        function saveLastQuery() {
+            try { localStorage.setItem('wewoo-thread-last', JSON.stringify({ type: typeSelect.value, spec: specSelect.value })); } catch (e) {}
         }
 
         init();
