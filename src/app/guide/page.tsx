@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { GUIDE_REQ_TEXT, aiPrompts } from "@/lib/aiPrompts";
 
 const steps = [
   {
@@ -67,29 +68,6 @@ const steps = [
     color: "from-purple-400 to-pink-500",
     desc: "发布成功后，可以复制链接发给朋友，或者让他们扫二维码。所有人都能在手机上直接打开使用！",
     tip: "链接在微信、QQ 里也能直接打开",
-  },
-];
-
-const aiPrompts = [
-  {
-    label: "BMI 计算器",
-    prompt: "帮我写一个 BMI 计算器，输入身高和体重，点击按钮就能算出 BMI 值并显示是否正常。要好看一点，用渐变背景，圆角卡片。全部代码放在一个 HTML 文件里。",
-  },
-  {
-    label: "倒计时器",
-    prompt: "帮我写一个倒计时器，可以设置倒计时的时间和提示文字。开始后显示剩余时间，到时间了会有动画提醒。用漂亮的颜色，适配手机屏幕。全部代码放在一个 HTML 文件里。",
-  },
-  {
-    label: "随机点名器",
-    prompt: "帮我写一个随机点名器，可以输入一串名字（用逗号分隔），点开始按钮后名字快速滚动，再点一下就随机停在一个名字上。要有动画效果。把名单用 localStorage 保存，下次打开还在。全部代码放在一个 HTML 文件里。",
-  },
-  {
-    label: "颜色选择器",
-    prompt: "帮我写一个颜色选择器，点击可以选颜色，显示颜色的 HEX 值和 RGB 值，还可以复制。界面要简洁好看。全部代码放在一个 HTML 文件里。",
-  },
-  {
-    label: "喝水打卡（带记忆）",
-    prompt: "帮我写一个喝水打卡记录器，每喝一杯水点一下按钮，显示今天喝了多少杯和连续打卡天数。用 localStorage 保存数据，刷新页面不丢失。界面可爱一点，适配手机。全部代码放在一个 HTML 文件里。",
   },
 ];
 
@@ -162,8 +140,27 @@ export default function GuidePage() {
               {step.code && (
                 <div className="border-t border-gray-100 bg-gray-50 p-5 lg:p-6">
                   <p className="text-sm font-medium text-gray-700 mb-3">
-                    下面这些话可以直接发给 AI（长按可以复制）。想让工具记住用户的数据（打卡、进度、账目），在需求里加上「数据用 localStorage 保存，刷新不丢失」即可：
+                    下面这些话可以直接发给 AI（长按可以复制），都已按微坞的要求写好（手机适配 + localStorage 记忆），照用就能做出功能完整的工具。也可以先复制下面的「微坞通用创作要求」，再随意组合你的想法：
                   </p>
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-indigo-700">📋 微坞通用创作要求（建议每条都加上）</span>
+                      <button
+                        className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                        onClick={() => {
+                          if (typeof navigator !== "undefined" && navigator.clipboard) {
+                            navigator.clipboard.writeText(GUIDE_REQ_TEXT);
+                          }
+                        }}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        复制
+                      </button>
+                    </div>
+                    <p className="text-xs text-indigo-700 leading-relaxed">{GUIDE_REQ_TEXT}</p>
+                  </div>
                   <div className="space-y-3">
                     {aiPrompts.map((p) => (
                       <div key={p.label} className="bg-white rounded-xl border border-gray-200 p-4">

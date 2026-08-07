@@ -15,6 +15,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
 import { captureCover, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
+import { AI_PROMPT_TEMPLATE, aiPrompts } from "@/lib/aiPrompts";
+import { getLsSnapshot } from "@/lib/toolStateBridge";
 
 // --- Constants ---
 
@@ -25,57 +27,147 @@ const TEMPLATE_CODE = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>记忆计数器</title>
+  <title>喝水打卡</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(135deg,#667eea,#764ba2)}
-    .card{width:100%;max-width:320px;background:#fff;border-radius:24px;padding:36px 28px;text-align:center;box-shadow:0 16px 40px rgba(0,0,0,.25)}
-    .emoji{font-size:40px}
-    .num{font-size:64px;font-weight:800;color:#4f46e5;margin:8px 0}
-    .hint{font-size:12px;color:#9ca3af;margin-bottom:24px}
-    .btn{display:block;width:100%;min-height:48px;border:0;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:12px}
-    .btn-primary{background:#4f46e5;color:#fff}
-    .btn-ghost{background:#f3f4f6;color:#6b7280}
+    body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(160deg,#4facfe,#00f2fe)}
+    .card{width:100%;max-width:340px;background:#fff;border-radius:24px;padding:28px 22px;box-shadow:0 16px 40px rgba(0,0,0,.18)}
+    .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .title{font-size:20px;font-weight:800;color:#0f172a}
+    .date{font-size:12px;color:#94a3b8;margin-top:2px}
+    .cups{display:flex;align-items:flex-end;gap:5px;height:64px;margin:16px 0 12px}
+    .cup{width:18px;border-radius:8px 8px 4px 4px;background:#e2e8f0;transition:height .3s,background .3s}
+    .cup.on{background:#38bdf8}
+    .count-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+    .count{font-size:40px;font-weight:800;color:#0284c7}
+    .count small{font-size:14px;color:#94a3b8;font-weight:600}
+    .goal{font-size:12px;color:#94a3b8}
+    .bar{height:10px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-bottom:16px}
+    .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#38bdf8,#0ea5e9);border-radius:99px;transition:width .4s}
+    .row{display:flex;gap:10px;margin-top:10px}
+    .btn{flex:1;min-height:48px;border:0;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer}
+    .btn-add{background:#0284c7;color:#fff}
+    .btn-sub{background:#f1f5f9;color:#64748b}
+    .btn-reset{flex:none;min-width:110px;background:#fff;color:#f43f5e;border:1.5px solid #fecdd3}
+    .streak{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:16px;padding:11px;background:#f0f9ff;border-radius:12px;color:#0369a1;font-size:13px;font-weight:600}
+    .streak b{font-size:16px;color:#0284c7}
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="emoji">🧮</div>
-    <div class="num" id="num">0</div>
-    <p class="hint">数据会自动保存，刷新页面也不丢</p>
-    <button class="btn btn-primary" id="add">+1</button>
-    <button class="btn btn-ghost" id="reset">重置</button>
+    <div class="head">
+      <div>
+        <div class="title">💧 喝水打卡</div>
+        <div class="date" id="date"></div>
+      </div>
+      <div style="font-size:28px">🥤</div>
+    </div>
+
+    <div class="cups" id="cups"></div>
+    <div class="count-row">
+      <div class="count"><span id="count">0</span><small> / 8 杯</small></div>
+      <div class="goal" id="goal">目标 8 杯</div>
+    </div>
+    <div class="bar"><i id="bar"></i></div>
+
+    <div class="row">
+      <button class="btn btn-add" id="add">+1 杯</button>
+      <button class="btn btn-sub" id="sub">-1 杯</button>
+    </div>
+    <div class="row">
+      <button class="btn btn-reset" id="reset">清零今天</button>
+      <div class="streak" style="flex:1;margin:0">🔥 连续打卡 <b id="streak">0</b> 天</div>
+    </div>
   </div>
+
   <script>
-    // 记忆功能示例：用 localStorage 保存数据
-    // 微坞会自动持久化 localStorage，刷新页面、切换全屏、重新进入都能恢复
-    var KEY = 'wewoo-demo-count';
-    var num = parseInt(localStorage.getItem(KEY) || '0', 10);
-    var el = document.getElementById('num');
-    el.textContent = num;
-    document.getElementById('add').addEventListener('click', function() {
-      num++;
-      localStorage.setItem(KEY, String(num));
-      el.textContent = num;
+    // ===== 记忆功能示例 =====
+    // 微坞会自动持久化 localStorage：刷新页面、切换全屏、重新进入都能恢复
+    var KEY = "wewoo-water-data";
+    var GOAL = 8;
+
+    function todayKey() {
+      var d = new Date();
+      var m = String(d.getMonth() + 1).padStart(2, "0");
+      var day = String(d.getDate()).padStart(2, "0");
+      return d.getFullYear() + "-" + m + "-" + day;
+    }
+
+    function load() {
+      try {
+        var raw = localStorage.getItem(KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) { return {}; }
+    }
+
+    var data = load();
+    var tk = todayKey();
+    if (typeof data[tk] !== "number") data[tk] = 0;
+    var count = data[tk];
+
+    function save() {
+      localStorage.setItem(KEY, JSON.stringify(data));
+    }
+
+    function calcStreak() {
+      var d = new Date();
+      if ((data[tk] || 0) === 0) d.setDate(d.getDate() - 1); // 今天还没喝，从昨天开始算
+      var streak = 0;
+      for (var i = 0; i < 365; i++) {
+        var m = String(d.getMonth() + 1).padStart(2, "0");
+        var day = String(d.getDate()).padStart(2, "0");
+        var k = d.getFullYear() + "-" + m + "-" + day;
+        if ((data[k] || 0) > 0) streak++;
+        else break;
+        d.setDate(d.getDate() - 1);
+      }
+      return streak;
+    }
+
+    function render() {
+      document.getElementById("date").textContent = tk.replace(/-/g, "/") + " · 数据自动保存";
+      document.getElementById("count").textContent = count;
+      document.getElementById("goal").textContent = "目标 " + GOAL + " 杯";
+      document.getElementById("bar").style.width = Math.min(100, count / GOAL * 100) + "%";
+      document.getElementById("streak").textContent = calcStreak();
+
+      var cups = document.getElementById("cups");
+      cups.innerHTML = "";
+      for (var i = 0; i < 8; i++) {
+        var c = document.createElement("div");
+        c.className = "cup" + (i < count ? " on" : "");
+        c.style.height = (20 + i * 5) + "px";
+        cups.appendChild(c);
+      }
+    }
+
+    document.getElementById("add").addEventListener("click", function () {
+      count++;
+      data[tk] = count;
+      save();
+      render();
     });
-    document.getElementById('reset').addEventListener('click', function() {
-      num = 0;
-      localStorage.setItem(KEY, '0');
-      el.textContent = num;
+    document.getElementById("sub").addEventListener("click", function () {
+      if (count > 0) {
+        count--;
+        data[tk] = count;
+        save();
+        render();
+      }
     });
+    document.getElementById("reset").addEventListener("click", function () {
+      count = 0;
+      data[tk] = 0;
+      save();
+      render();
+    });
+
+    render();
   </script>
 </body>
 </html>`;
 
 const LOCAL_STORAGE_KEY = "wewoo-versions";
-
-const AI_PROMPT_TEMPLATE = `请帮我写一个完整、独立的单文件 HTML 应用，用于[工具功能]。要求：
-1. 移动端优先，适配 375px 宽度，所有按钮和输入框至少 44px。
-2. 自带 CSS 样式，设计简洁现代，颜色柔和。
-3. 完全自包含，不引用外部 CDN 或图片，不使用网络请求（fetch/XHR）、cookie、弹窗、跳转、外部链接。
-4. 需要记住用户数据时（如打卡记录、游戏进度、表单内容），用 localStorage 保存和读取。微坞会自动持久化这些数据：刷新页面、切换全屏、下次进入都能恢复。
-5. 用户输入无效数据时给出友好提示。
-6. 将完整代码放在 \`\`\`html 块中。`;
 
 const THUMBNAIL_GRADIENTS = [
   "linear-gradient(135deg, #667eea, #764ba2)",
@@ -511,7 +603,7 @@ function CreatePageInner() {
   const mobileActions = (
     <>
       <button
-        onClick={() => { setCode(TEMPLATE_CODE); toast.info("已填入示例工具"); }}
+        onClick={() => { setPreviewLsSeed(readPreviewSeed()); setCode(TEMPLATE_CODE); toast.info("已填入示例工具"); }}
         className="min-w-[44px] min-h-[44px] flex items-center justify-center px-2 py-1 text-xs rounded-lg transition-all font-medium bg-indigo-500 text-white hover:bg-indigo-600"
       >
         示例
@@ -539,7 +631,7 @@ function CreatePageInner() {
         重置
       </button>
       <button
-        onClick={() => { setCode(TEMPLATE_CODE); toast.info("已填入示例工具"); }}
+        onClick={() => { setPreviewLsSeed(readPreviewSeed()); setCode(TEMPLATE_CODE); toast.info("已填入示例工具"); }}
         className="min-w-[44px] min-h-[44px] flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -567,9 +659,32 @@ function CreatePageInner() {
     </div>
   );
 
+    // 🔥 预览记忆：恢复上次保存的 localStorage 快照（刷新/全屏/重新进入预览都能接着用）
+  const [previewLsSeed, setPreviewLsSeed] = useState<Record<string, string> | null>(null);
+  const readPreviewSeed = useCallback((): Record<string, string> | null => {
+    if (typeof window === "undefined") return null;
+    const lsKey = "wewoo-ls-preview" + (user?.id ? "-" + user.id : "");
+    let local: Record<string, string> | null = null;
+    try {
+      const raw = localStorage.getItem(lsKey);
+      if (raw) local = JSON.parse(raw);
+    } catch { /* ignore */ }
+    const bridge = getLsSnapshot("preview");
+    const merged: Record<string, string> = {
+      ...(local && typeof local === "object" ? local : {}),
+      ...(bridge && typeof bridge === "object" ? bridge : {}),
+    };
+    return Object.keys(merged).length > 0 ? merged : null;
+  }, [user?.id]);
+
+  // 首次进入时加载一次；「示例 / 全屏」等入口会按需刷新
+  useEffect(() => {
+    setPreviewLsSeed(readPreviewSeed());
+  }, [readPreviewSeed]);
+
   // 🔥 Blob URL for iframe preview (more compatible than srcdoc)
   const isWechatPreview = useIsWechat();
-  const { srcDoc: previewSrcDoc, blobUrl: previewBlobUrl, sandbox: previewSandbox } = useBlobSrcDoc(debouncedCode);
+  const { srcDoc: previewSrcDoc, blobUrl: previewBlobUrl, sandbox: previewSandbox } = useBlobSrcDoc(debouncedCode, previewLsSeed);
 
   // 普通浏览器用 srcDoc；微信/QQ 才用 blob URL（sandbox iframe 的 null origin 无法加载父页面 blob）
   const previewIframeProps = isWechatPreview
@@ -621,7 +736,7 @@ function CreatePageInner() {
               编辑
             </button>
             <button
-              onClick={() => { setMobileTab("preview"); setFullscreenPreview(true); }}
+              onClick={() => { setPreviewLsSeed(readPreviewSeed()); setMobileTab("preview"); setFullscreenPreview(true); }}
               className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${
                 mobileTab === "preview"
                   ? "bg-white text-indigo-600 shadow-sm"
@@ -687,7 +802,7 @@ function CreatePageInner() {
           />
 
           {/* AI Prompt Helper */}
-          <div className={`flex-shrink-0 border-t border-gray-700 transition-all duration-300 overflow-hidden ${promptExpanded ? "max-h-[500px]" : "max-h-0"}`}>
+          <div className={`flex-shrink-0 border-t border-gray-700 transition-all duration-300 overflow-hidden ${promptExpanded ? "max-h-[720px]" : "max-h-0"}`}>
             <div className="px-3 lg:px-4 py-3 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -728,6 +843,28 @@ function CreatePageInner() {
                     </>
                   )}
                 </button>
+              </div>
+              {/* 示例提示词：点一下复制，照着改就能用 */}
+              <div>
+                <div className="mb-1.5 text-[11px] lg:text-xs font-medium text-gray-400">
+                  ✨ 示例提示词（点一下复制，照着改就能用）
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {aiPrompts.map((p) => (
+                    <button
+                      key={p.label}
+                      onClick={() =>
+                        copyAndAnimate(p.prompt, (ok) => {
+                          if (ok) toast.success("已复制「" + p.label + "」提示词，去 AI 对话里粘贴吧");
+                        })
+                      }
+                      className="min-h-[36px] px-3 py-1.5 text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-full hover:bg-indigo-500/20 active:scale-95 transition-all"
+                      style={{ touchAction: "manipulation" }}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -836,7 +973,7 @@ function CreatePageInner() {
               </svg>
               <p className="text-sm">预览已切换为全屏模式</p>
               <button
-                onClick={() => setFullscreenPreview(true)}
+                onClick={() => { setPreviewLsSeed(readPreviewSeed()); setFullscreenPreview(true); }}
                 className="mt-1 min-h-[44px] flex items-center justify-center gap-1.5 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
               >
                 重新打开全屏预览
