@@ -1,3 +1,11 @@
+## [1.6.5] - 2026-08-08
+
+### Fixed
+- 修复内置工具（1-18）登录状态下退出后无法恢复上次状态：云端 `tool_state` / `tool_usage_history` / `tool_recent` 的 `tool_id` 为 UUID 类型，内置工具字符串 id 写入报 `invalid input syntax for type uuid`，导致记忆、使用记录、首页「最近使用」全部失效；现为 18 个内置工具建立稳定 UUID 映射（`src/lib/builtinIds.ts`），状态保存/恢复、使用记录、最近使用全部打通
+- 修复工具详情页本地墓碑 key 不一致：登录用户的 localStorage 快照按账号隔离（`wewoo-ls-<id>-<userId>`），读取时未带账号后缀导致本地缓存也读不到，现读写一致
+- 首页「最近使用」支持内置工具：内置工具状态写入 `tool_state` 后，`/api/user/recent-tools` 从 `MOCK_TOOLS` 补充详情并还原前端 id，点击可正常进入工具
+
+---
 ## [1.6.4] - 2026-08-07
 
 ### Added

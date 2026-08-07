@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedSupabase, unauthorizedResponse } from "@/lib/api-auth";
+import { toDbToolId } from "@/lib/builtinIds";
 
 /**
  * GET /api/tools/[id]/state
@@ -10,13 +11,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const dbId = toDbToolId(id);
   const ctx = await getAuthedSupabase(request);
   if (!ctx) return unauthorizedResponse();
 
   const { data, error } = await ctx.supabase
     .from("tool_state")
     .select("state_data")
-    .eq("tool_id", id)
+    .eq("tool_id", dbId)
     .eq("user_id", ctx.userId)
     .maybeSingle();
 
@@ -37,6 +39,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const dbId = toDbToolId(id);
   const ctx = await getAuthedSupabase(request);
   if (!ctx) return unauthorizedResponse();
 
@@ -55,7 +58,7 @@ export async function POST(
     .upsert(
       {
         user_id: ctx.userId,
-        tool_id: id,
+        tool_id: dbId,
         state_data: state,
         updated_at: new Date().toISOString(),
         last_used_at: new Date().toISOString(),
@@ -80,13 +83,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const dbId = toDbToolId(id);
   const ctx = await getAuthedSupabase(request);
   if (!ctx) return unauthorizedResponse();
 
   const { error } = await ctx.supabase
     .from("tool_state")
     .delete()
-    .eq("tool_id", id)
+    .eq("tool_id", dbId)
     .eq("user_id", ctx.userId);
 
   if (error) {

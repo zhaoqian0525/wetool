@@ -1,6 +1,6 @@
 {
-  "version": "1.6.4",
-  "buildDate": "2026-08-07",
-  "buildTimestamp": "2026-08-07T16:20:00+08:00",
-  "description": "内置工具全面升级：18 个早期内置工具全部完善（移动端适配 + localStorage 记忆 + 功能增强），新增喝水历史/分账结算/错题重做等完整功能；工具 15-18 大工具补齐记忆与移动端优化"
+  "version": "1.6.5",
+  "buildDate": "2026-08-08",
+  "buildTimestamp": "2026-08-08T00:25:00+08:00",
+  "description": "修复内置工具（1-18）登录状态下退出后无法恢复上次状态：云端 tool_state / tool_usage_history / tool_recent 的 tool_id 为 UUID 类型，内置工具字符串 id 写入失败导致记忆、使用记录、最近使用全部失效；现为内置工具建立稳定 UUID 映射，状态保存/恢复、使用记录、首页「最近使用」全部打通。"
 }

@@ -212,7 +212,9 @@ export default function ToolDetailPage() {
   useEffect(() => {
     if (typeof window === "undefined" || !tool?.id) return;
     try {
-      const raw = localStorage.getItem("wewoo-ls-" + tool.id);
+      const raw =
+        localStorage.getItem("wewoo-ls-" + tool.id + (user?.id ? "-" + user.id : "")) ||
+        localStorage.getItem("wewoo-ls-" + tool.id);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
@@ -220,7 +222,7 @@ export default function ToolDetailPage() {
         }
       }
     } catch { /* ignore */ }
-  }, [tool?.id]);
+  }, [tool?.id, user?.id]);
 
   // iframe 启动快照：状态加载完成后冻结一次，避免后续保存触发 iframe 重建
   const lsSeedRef = useRef<Record<string, string> | null | undefined>(undefined);
@@ -247,7 +249,7 @@ export default function ToolDetailPage() {
         // 游客墓碑合并：本机曾以游客身份使用过且云端还没有 _ls → 合并上云
         let merged = cloud;
         const guestLs = (() => {
-          try { return JSON.parse(localStorage.getItem("wewoo-ls-" + tool.id) || "null"); } catch { return null; }
+          try { return JSON.parse(localStorage.getItem("wewoo-ls-" + tool.id + (user?.id ? "-" + user.id : "")) || localStorage.getItem("wewoo-ls-" + tool.id) || "null"); } catch { return null; }
         })() as Record<string, string> | null;
         if (!cloud?._ls && guestLs && typeof guestLs === "object" && Object.keys(guestLs).length > 0) {
           merged = { ...(cloud || {}), _ls: guestLs };
