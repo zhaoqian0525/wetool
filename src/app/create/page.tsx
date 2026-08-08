@@ -197,6 +197,18 @@ interface PublishResult {
   coverUrl: string | null;
 }
 
+interface AiChatMsg {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  streaming?: boolean;
+}
+
+interface AiVersion {
+  id: string;
+  label: string;
+  code: string;
+}
 // --- Helpers ---
 
 function generateId(): string {
@@ -289,11 +301,12 @@ function CreatePageInner() {
   // AI prompt helper
   const [promptExpanded, setPromptExpanded] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiInput, setAiInput] = useState("");
+  const [aiMessages, setAiMessages] = useState<AiChatMsg[]>([]);
+  const [aiVersions, setAiVersions] = useState<AiVersion[]>([]);
+  const [aiActiveVersion, setAiActiveVersion] = useState<number | null>(null);
   const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiOutput, setAiOutput] = useState("");
   const [aiError, setAiError] = useState<string | null>(null);
-  const [aiDone, setAiDone] = useState(false);
 
   const debouncedCode = useDebounce(code, 500);
   const debouncedCodeRef = useRef(debouncedCode);
@@ -325,8 +338,20 @@ function CreatePageInner() {
         setSourceToolId(tool.id);
         setSourceToolTitle(tool.title);
         if (tool.code) setCode(tool.code);
+        setPromptExpanded(true);
+        setAiMessages((prev) =>
+          prev.length === 0
+            ? [
+                {
+                  id: genMsgId(),
+                  role: "assistant",
+                  content: `已加载工具「${tool.title ?? "改编源"}」的代码。直接告诉我你想怎么改，我会生成新版完整代码，例如：「换一套配色」「加一个功能」「改成上下布局」。`,
+                },
+              ]
+            : prev
+        );
       }
-      toast.info("已加载改编源");
+      toast.info("已加载改编源，可直接用对话修改");
       setSourceLoaded(true);
     });
   }, [sourceToolIdParam, sourceLoaded]);
@@ -426,20 +451,94 @@ function CreatePageInner() {
   }, [copyAndAnimate, toast]);
 
   // --- AI 直接生成 ---
+    // --- AI 对话生成 ---
   const aiAbortRef = useRef<AbortController | null>(null);
+  const aiChatScrollRef = useRef<HTMLDivElement>(null);
+  const aiChatKey = "wewoo-ai-chat" + (user?.id ? "-" + user.id : "");
 
-  const handleAiGenerate = useCallback(async () => {
-    const req = aiPrompt.trim();
+  const genMsgId = () => "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+  // 恢复对话（localStorage）
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(aiChatKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { messages?: AiChatMsg[]; versions?: AiVersion[]; activeVersion?: number } | null;
+      if (saved?.messages) {
+        setAiMessages(
+          saved.messages.filter(
+            (m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
+          )
+        );
+      }
+      if (saved?.versions) {
+        setAiVersions(saved.versions.filter((v) => v && typeof v.code === "string"));
+      }
+      if (typeof saved?.activeVersion === "number" && saved.activeVersion >= 0) {
+        setAiActiveVersion(saved.activeVersion);
+      }
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiChatKey]);
+
+  // 持久化对话（空对话不写入，避免误判为有历史）
+  useEffect(() => {
+    try {
+      if (aiMessages.length === 0 && aiVersions.length === 0) {
+        localStorage.removeItem(aiChatKey);
+        return;
+      }
+      localStorage.setItem(
+        aiChatKey,
+        JSON.stringify({ messages: aiMessages, versions: aiVersions, activeVersion: aiActiveVersion })
+      );
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiMessages, aiVersions, aiActiveVersion]);
+
+  // 首次进入且无历史对话时自动展开（对话优先）
+  useEffect(() => {
+    const t = setTimeout(() => {
+      let hasChat = false;
+      try { hasChat = !!localStorage.getItem(aiChatKey); } catch { /* ignore */ }
+      if (!hasChat && !promptExpanded) setPromptExpanded(true);
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 消息更新时自动滚动到底部
+  useEffect(() => {
+    const el = aiChatScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [aiMessages]);
+
+  const runAiSend = useCallback(async (reqText: string) => {
+    const req = reqText.trim();
     if (!req || aiGenerating) return;
     const sensitive = containsSensitiveContent(req);
     if (sensitive.hit) {
       setAiError(`内容包含${sensitive.label ?? "违规"}描述，平台不支持生成这类工具`);
       return;
     }
-    setAiGenerating(true);
-    setAiOutput("");
+    const userMsg: AiChatMsg = { id: genMsgId(), role: "user", content: req };
+    const asstMsg: AiChatMsg = { id: genMsgId(), role: "assistant", content: "", streaming: true };
+    const nextMessages = [...aiMessages, userMsg, asstMsg];
+    setAiMessages(nextMessages);
     setAiError(null);
-    setAiDone(false);
+    setAiGenerating(true);
+
+    const history = nextMessages
+      .filter((m) => m.role === "user" || (m.role === "assistant" && m.content.trim()))
+      .map((m) => ({ role: m.role, content: m.content.slice(0, 8000) }));
+
+    const currentCode =
+      aiActiveVersion !== null && aiVersions[aiActiveVersion] && aiVersions[aiActiveVersion].code
+        ? aiVersions[aiActiveVersion].code
+        : code.trim()
+        ? code
+        : undefined;
+
     const controller = new AbortController();
     aiAbortRef.current = controller;
     let acc = "";
@@ -447,21 +546,20 @@ function CreatePageInner() {
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: req }),
+        body: JSON.stringify({ messages: history, currentCode }),
         signal: controller.signal,
       });
       if (!res.ok) {
         let msg = "AI 生成失败，请稍后重试";
-        try {
-          const j = await res.json();
-          if (j && typeof j.error === "string") msg = j.error;
-        } catch { /* ignore */ }
+        try { const j = await res.json(); if (j && typeof j.error === "string") msg = j.error; } catch { /* ignore */ }
         setAiError(msg);
+        setAiMessages((prev) => prev.filter((m) => m.id !== asstMsg.id));
         setAiGenerating(false);
         return;
       }
       if (!res.body) {
         setAiError("AI 服务无响应，请稍后重试");
+        setAiMessages((prev) => prev.filter((m) => m.id !== asstMsg.id));
         setAiGenerating(false);
         return;
       }
@@ -474,7 +572,9 @@ function CreatePageInner() {
         if (!chunkAcc) return;
         acc += chunkAcc;
         chunkAcc = "";
-        setAiOutput(acc);
+        setAiMessages((prev) =>
+          prev.map((m) => (m.id === asstMsg.id ? { ...m, content: acc } : m))
+        );
       };
       while (!doneReading) {
         const { done, value } = await reader.read();
@@ -487,68 +587,81 @@ function CreatePageInner() {
           for (const line of event.split("\n")) {
             if (!line.startsWith("data:")) continue;
             const data = line.slice(5).trim();
-            if (data === "[DONE]") {
-              doneReading = true;
-              break;
-            }
+            if (data === "[DONE]") { doneReading = true; break; }
             try {
               const j = JSON.parse(data);
               const delta = j?.choices?.[0]?.delta?.content;
               if (typeof delta === "string" && delta) chunkAcc += delta;
-            } catch { /* ignore partial json */ }
+            } catch { /* ignore */ }
           }
           if (doneReading) break;
         }
         flush();
       }
       flush();
+      setAiMessages((prev) =>
+        prev.map((m) => (m.id === asstMsg.id ? { ...m, content: acc, streaming: false } : m))
+      );
       setAiGenerating(false);
-      setAiDone(true);
-      if (!acc.trim()) setAiError("AI 没有返回内容，请重新生成");
+
+      if (acc.trim()) {
+        const html = extractHtmlFromAiOutput(acc);
+        if (html) {
+          const sensitive2 = containsSensitiveContent(html);
+          if (sensitive2.hit) {
+            setAiError(`生成结果包含${sensitive2.label ?? "违规"}描述，已拦截，请换个描述重新生成`);
+          } else {
+            const ver: AiVersion = { id: "v" + Date.now().toString(36), label: "V" + (aiVersions.length + 1), code: html };
+            setAiVersions((prev) => [...prev, ver]);
+            setAiActiveVersion(aiVersions.length);
+            toast.success(`已生成 ${ver.label}，点版本按钮载入编辑器`);
+          }
+        }
+      } else {
+        setAiError("AI 没有返回内容，请重试");
+      }
     } catch (err) {
       const aborted = err instanceof DOMException && err.name === "AbortError";
+      setAiMessages((prev) => prev.map((m) => (m.id === asstMsg.id ? { ...m, streaming: false } : m)));
       setAiGenerating(false);
       if (!aborted) setAiError("AI 生成失败，请检查网络后重试");
     }
-  }, [aiPrompt, aiGenerating]);
+  }, [aiMessages, aiVersions, aiActiveVersion, code, aiGenerating, toast]);
+
+  const handleAiSend = useCallback(() => {
+    const t = aiInput.trim();
+    if (!t) return;
+    setAiInput("");
+    runAiSend(t);
+  }, [aiInput, runAiSend]);
+
+  const handleAiNewVersion = useCallback(() => {
+    if (aiGenerating) return;
+    runAiSend("请基于当前这个工具，再生成一个不同风格或布局的版本，核心功能保持不变，输出完整代码");
+  }, [runAiSend, aiGenerating]);
 
   const handleAiStop = useCallback(() => {
     aiAbortRef.current?.abort();
   }, []);
 
-  const handleAiRegenerate = useCallback(() => {
-    handleAiGenerate();
-  }, [handleAiGenerate]);
-
-  const handleAiFill = useCallback(() => {
-    const html = extractHtmlFromAiOutput(aiOutput);
-    if (!html) {
-      toast.error("未检测到完整 HTML，请重新生成或手动复制");
-      return;
-    }
-    const sensitive = containsSensitiveContent(html);
-    if (sensitive.hit) {
-      toast.error(`生成内容包含${sensitive.label ?? "违规"}描述，无法填入编辑器`);
-      return;
-    }
-    setCode(html);
+  const handleAiFillVersion = useCallback((ver: AiVersion) => {
+    if (!ver || !ver.code) return;
+    setCode(ver.code);
     setPromptExpanded(false);
     setMobileTab("editor");
     editorRef.current?.focus();
-    toast.success("已填入编辑器，右侧预览已更新");
-  }, [aiOutput, setCode, toast]);
+    toast.success(`已载入 ${ver.label} 完整代码，可直接修改`);
+  }, [setCode, toast]);
 
-  const handleAiCopy = useCallback(() => {
-    const html = extractHtmlFromAiOutput(aiOutput);
-    if (!html) {
-      toast.error("未检测到完整 HTML");
-      return;
-    }
-    copyAndAnimate(html, (ok) => {
-      if (ok) toast.success("代码已复制，可粘贴到别处");
-    });
-  }, [aiOutput, copyAndAnimate, toast]);
-
+  const handleAiClear = useCallback(() => {
+    if (aiGenerating) aiAbortRef.current?.abort();
+    setAiMessages([]);
+    setAiVersions([]);
+    setAiActiveVersion(null);
+    setAiError(null);
+    try { localStorage.removeItem(aiChatKey); } catch { /* ignore */ }
+    toast.success("对话已清空");
+  }, [aiGenerating, aiChatKey, toast]);
   // --- Publish handler ---
   const handlePublish = async () => {
     if (!user) return;
@@ -934,97 +1047,141 @@ function CreatePageInner() {
           {/* AI Prompt Helper */}
           <div className={`flex-shrink-0 border-t border-gray-700 transition-all duration-300 overflow-y-auto ${promptExpanded ? "max-h-[min(760px,80vh)]" : "max-h-0"}`}>
             <div className="px-3 lg:px-4 py-3 space-y-3">
-              {/* AI 直接生成 */}
+                            {/* AI 对话生成 */}
               <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3">
                 <div className="flex items-center justify-between mb-2 gap-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-base">✨</span>
-                    <span className="text-xs lg:text-sm font-medium text-gray-100">直接用 AI 生成</span>
+                    <span className="text-base">💬</span>
+                    <span className="text-xs lg:text-sm font-medium text-gray-100">和 AI 对话生成工具</span>
                   </div>
-                  <span className="text-[10px] text-gray-500">内置 DeepSeek · 免复制粘贴</span>
-                </div>
-                <textarea
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  disabled={aiGenerating}
-                  rows={2}
-                  className="w-full min-h-[72px] bg-gray-800/80 border border-gray-700 rounded-lg p-2.5 text-xs lg:text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-indigo-500 resize-none"
-                  placeholder="描述你想做的工具，例如：做一个纪念日记录器，能添加重要日子、显示倒数天数，数据要保存下来…"
-                  aria-label="AI 需求描述"
-                />
-                <div className="flex items-center gap-2 mt-2">
-                  {aiGenerating ? (
+                  <div className="flex items-center gap-1.5">
+                    {aiMessages.length > 0 && (
+                      <button
+                        onClick={handleAiClear}
+                        className="min-h-[28px] px-2 py-1 text-[10px] text-gray-400 hover:text-rose-300 transition-colors"
+                        style={{ touchAction: "manipulation" }}
+                      >
+                        清空对话
+                      </button>
+                    )}
+                    <span className="text-[10px] text-gray-500 hidden sm:inline">内置 DeepSeek</span>
                     <button
-                      onClick={handleAiStop}
-                      className="min-h-[44px] px-4 py-2 text-sm font-medium bg-rose-600 text-white rounded-lg hover:bg-rose-500 active:scale-95 transition-all flex items-center gap-1.5"
-                      style={{ touchAction: "manipulation" }}
+                      onClick={() => setPromptExpanded(false)}
+                      className="text-gray-500 hover:text-gray-300 text-lg leading-none px-1"
+                      aria-label="收起 AI 对话"
                     >
-                      ⏹ 停止生成
+                      ×
                     </button>
-                  ) : (
-                    <button
-                      onClick={handleAiGenerate}
-                      disabled={!aiPrompt.trim()}
-                      className="min-h-[44px] px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
-                      style={{ touchAction: "manipulation" }}
-                    >
-                      ✨ 开始生成
-                    </button>
-                  )}
-                  {!aiGenerating && aiDone && (
-                    <button
-                      onClick={handleAiRegenerate}
-                      className="min-h-[44px] px-3 py-2 text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-lg hover:bg-indigo-500/20 active:scale-95 transition-all"
-                      style={{ touchAction: "manipulation" }}
-                    >
-                      ↻ 重新生成
-                    </button>
-                  )}
-                </div>
-                {aiError && (
-                  <div className="mt-2 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
-                    {aiError}
                   </div>
-                )}
-                {aiOutput && (
-                  <div className="mt-2">
-                    <div className="flex items-center justify-between mb-1 gap-2">
-                      <span className="text-[11px] text-gray-400">
-                        {aiGenerating ? "正在生成…" : aiDone ? "生成完成" : "生成中…"}
-                      </span>
-                      {aiDone && (
-                        <button
-                          onClick={handleAiFill}
-                          className="min-h-[36px] px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 active:scale-95 transition-all"
-                          style={{ touchAction: "manipulation" }}
-                        >
-                          填入编辑器
-                        </button>
-                      )}
-                    </div>
-                    <pre className="max-h-[240px] overflow-y-auto text-[10px] lg:text-xs text-gray-300 bg-gray-900/90 rounded-lg p-3 border border-gray-700/50 whitespace-pre-wrap break-all">
-                      {aiOutput}
-                    </pre>
-                    {aiDone && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <button
-                          onClick={handleAiCopy}
-                          className="min-h-[36px] px-3 py-1.5 text-xs font-medium text-gray-200 bg-gray-700/60 border border-gray-600 rounded-lg hover:bg-gray-600 active:scale-95 transition-all"
-                          style={{ touchAction: "manipulation" }}
-                        >
-                          复制代码
-                        </button>
-                        <span className="text-[10px] text-gray-500">填入后可在右侧预览，保存快照即可发布</span>
-                      </div>
+                </div>
+
+                {aiVersions.length > 0 && (
+                  <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "thin" }}>
+                    <span className="text-[10px] text-gray-500 flex-shrink-0">版本</span>
+                    {aiVersions.map((v, idx) => (
+                      <button
+                        key={v.id}
+                        onClick={() => handleAiFillVersion(v)}
+                        title="载入编辑器，查看/修改完整代码"
+                        className={`flex-shrink-0 min-h-[32px] px-2.5 py-1 text-xs font-medium rounded-full border transition-all ${
+                          aiActiveVersion === idx
+                            ? "bg-emerald-600 text-white border-emerald-500"
+                            : "bg-gray-800/70 text-gray-300 border-gray-600 hover:bg-gray-700"
+                        }`}
+                        style={{ touchAction: "manipulation" }}
+                      >
+                        {v.label}
+                      </button>
+                    ))}
+                    {!aiGenerating && (
+                      <button
+                        onClick={handleAiNewVersion}
+                        className="flex-shrink-0 min-h-[32px] px-2.5 py-1 text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-full hover:bg-indigo-500/20 transition-all"
+                        style={{ touchAction: "manipulation" }}
+                      >
+                        ＋ 换个版本
+                      </button>
                     )}
                   </div>
                 )}
+
+                <div ref={aiChatScrollRef} className="space-y-2 max-h-[280px] overflow-y-auto pr-1 mb-2">
+                  {aiMessages.length === 0 && (
+                    <div className="text-[11px] text-gray-400 bg-gray-800/40 rounded-lg px-3 py-2 leading-relaxed">
+                      描述你想做的工具，AI 会直接生成可运行的代码版本。生成后点上方版本按钮（V1、V2…）即可载入完整代码查看/修改，也可以继续对话调整：「换个配色」「加个历史记录」「再生成一个更简约的版本」…
+                    </div>
+                  )}
+                  {aiMessages.map((m) => (
+                    <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+                      <div
+                        className={`max-w-[88%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${
+                          m.role === "user"
+                            ? "bg-indigo-600 text-white rounded-br-sm"
+                            : "bg-gray-800/80 text-gray-200 border border-gray-700/50 rounded-bl-sm"
+                        }`}
+                      >
+                        {m.content || (m.streaming ? "思考中…" : "")}
+                        {m.streaming && (
+                          <span className="inline-block w-1.5 h-3.5 ml-1 align-middle bg-indigo-300 animate-pulse" />
+                        )}
+                        {!m.streaming && m.role === "assistant" && extractHtmlFromAiOutput(m.content) && (
+                          <div className="mt-1.5 text-[10px] text-emerald-300">✅ 已生成代码版本，点上方版本按钮载入编辑器</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {aiError && (
+                  <div className="mb-2 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+                    {aiError}
+                  </div>
+                )}
+
+                <div className="flex items-end gap-2">
+                  <textarea
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    disabled={aiGenerating}
+                    rows={2}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleAiSend();
+                      }
+                    }}
+                    className="flex-1 min-h-[44px] max-h-[96px] bg-gray-800/80 border border-gray-700 rounded-lg p-2.5 text-xs lg:text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-indigo-500 resize-none"
+                    placeholder="描述需求或修改意见，例如：做一个纪念日记录器，能添加重要日子、显示倒数天数…"
+                    aria-label="AI 对话输入"
+                  />
+                  {aiGenerating ? (
+                    <button
+                      onClick={handleAiStop}
+                      className="flex-shrink-0 min-h-[44px] px-4 py-2 text-sm font-medium bg-rose-600 text-white rounded-lg hover:bg-rose-500 active:scale-95 transition-all"
+                      style={{ touchAction: "manipulation" }}
+                    >
+                      ⏹ 停止
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleAiSend}
+                      disabled={!aiInput.trim()}
+                      className="flex-shrink-0 min-h-[44px] px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ touchAction: "manipulation" }}
+                    >
+                      发送
+                    </button>
+                  )}
+                </div>
+                <div className="mt-1.5 text-[10px] text-gray-500 leading-relaxed">
+                  需要服务器/网络等沙盒外能力时，AI 会说明原因并给出可运行的替代方案
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-base">📘</span>
                   <span className="text-xs lg:text-sm font-medium text-gray-300">
-                    不知道怎么让 AI 写？复制这段提示词
+                    想用外部 AI（ChatGPT/Kimi 等）？复制这段提示词
                   </span>
                 </div>
                 <button
@@ -1091,8 +1248,8 @@ function CreatePageInner() {
               onClick={() => setPromptExpanded(true)}
               className="flex-shrink-0 flex items-center justify-center gap-1.5 w-full py-2 text-[11px] lg:text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 transition-colors border-t border-gray-700/50"
             >
-              <span>📘</span>
-              <span>不知道怎么让 AI 写？复制这段提示词</span>
+              <span>💬</span>
+              <span>和 AI 对话生成工具（免复制粘贴）</span>
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
