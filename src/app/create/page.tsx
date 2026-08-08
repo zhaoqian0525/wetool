@@ -208,6 +208,7 @@ interface AiVersion {
   id: string;
   label: string;
   code: string;
+  desc?: string;
 }
 // --- Helpers ---
 
@@ -513,7 +514,7 @@ function CreatePageInner() {
     if (el) el.scrollTop = el.scrollHeight;
   }, [aiMessages]);
 
-  const runAiSend = useCallback(async (reqText: string) => {
+    const runAiSend = useCallback(async (reqText: string, versionDesc?: string) => {
     const req = reqText.trim();
     if (!req || aiGenerating) return;
     const sensitive = containsSensitiveContent(req);
@@ -611,10 +612,11 @@ function CreatePageInner() {
           if (sensitive2.hit) {
             setAiError(`生成结果包含${sensitive2.label ?? "违规"}描述，已拦截，请换个描述重新生成`);
           } else {
-            const ver: AiVersion = { id: "v" + Date.now().toString(36), label: "V" + (aiVersions.length + 1), code: html };
+            const ver: AiVersion = { id: "v" + Date.now().toString(36), label: "V" + (aiVersions.length + 1), code: html, desc: versionDesc ?? (req.replace(/^(请)?(帮我)?(做一个|做|来一个)?/i, "").slice(0, 8) || "新版本") };
             setAiVersions((prev) => [...prev, ver]);
             setAiActiveVersion(aiVersions.length);
-            toast.success(`已生成 ${ver.label}，点版本按钮载入编辑器`);
+            setCode(html);
+            toast.success(`已生成 ${ver.label}，代码已自动填入编辑器，可点「预览」查看效果`);
           }
         }
       } else {
@@ -637,7 +639,7 @@ function CreatePageInner() {
 
   const handleAiNewVersion = useCallback(() => {
     if (aiGenerating) return;
-    runAiSend("请基于当前这个工具，再生成一个不同风格或布局的版本，核心功能保持不变，输出完整代码");
+    runAiSend("请基于当前这个工具，再生成一个不同风格或布局的版本，核心功能保持不变，输出完整代码", "换个风格");
   }, [runAiSend, aiGenerating]);
 
   const handleAiStop = useCallback(() => {
@@ -1091,6 +1093,7 @@ function CreatePageInner() {
                         style={{ touchAction: "manipulation" }}
                       >
                         {v.label}
+                        {v.desc && <span className="ml-1 opacity-75">·{v.desc}</span>}
                       </button>
                     ))}
                     {!aiGenerating && (
@@ -1108,7 +1111,32 @@ function CreatePageInner() {
                 <div ref={aiChatScrollRef} className="space-y-2 max-h-[280px] overflow-y-auto pr-1 mb-2">
                   {aiMessages.length === 0 && (
                     <div className="text-[11px] text-gray-400 bg-gray-800/40 rounded-lg px-3 py-2 leading-relaxed">
-                      描述你想做的工具，AI 会直接生成可运行的代码版本。生成后点上方版本按钮（V1、V2…）即可载入完整代码查看/修改，也可以继续对话调整：「换个配色」「加个历史记录」「再生成一个更简约的版本」…
+                      描述你想做的工具，AI 会直接生成可运行的代码并自动填入编辑器；可以继续对话调整：「换个配色」「加个历史记录」「再生成一个更简约的版本」…
+                    </div>
+                  )}
+                  {aiMessages.length === 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        "纪念日记录器",
+                        "喝水打卡",
+                        "倒计时器",
+                        "记账本",
+                        "随机点名",
+                        "BMI 计算器",
+                      ].map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => {
+                            const t = `帮我做一个${s}，界面简洁好用，手机适配，数据用 localStorage 保存`;
+                            setAiInput(t);
+                            runAiSend(t);
+                          }}
+                          className="min-h-[32px] px-3 py-1 text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-full hover:bg-indigo-500/20 active:scale-95 transition-all"
+                          style={{ touchAction: "manipulation" }}
+                        >
+                          {s}
+                        </button>
+                      ))}
                     </div>
                   )}
                   {aiMessages.map((m) => (
@@ -1125,7 +1153,7 @@ function CreatePageInner() {
                           <span className="inline-block w-1.5 h-3.5 ml-1 align-middle bg-indigo-300 animate-pulse" />
                         )}
                         {!m.streaming && m.role === "assistant" && extractHtmlFromAiOutput(m.content) && (
-                          <div className="mt-1.5 text-[10px] text-emerald-300">✅ 已生成代码版本，点上方版本按钮载入编辑器</div>
+                          <div className="mt-1.5 text-[10px] text-emerald-300">✅ 代码已自动填入编辑器，点版本按钮可切换</div>
                         )}
                       </div>
                     </div>

@@ -92,11 +92,24 @@ export function containsSensitiveContent(text: string): SensitiveCheckResult {
   return { hit: false };
 }
 
-/** 从 AI 输出中提取完整 HTML：优先取 ```html 代码块，找不到时若整段像 HTML 则原样返回 */
+/** 从 AI 输出中提取完整 HTML：优先取 ```html/``` 代码块；无代码块时截取 <!DOCTYPE/<html> 到 </html> 的文档部分，避免混入回复文字 */
 export function extractHtmlFromAiOutput(text: string): string {
   const t = (text || "").trim();
-  const fence = t.match(/```html\s*([\s\S]*?)\s*```/i);
+  if (!t) return "";
+  // 1) 代码块：```html ... ```（大小写不敏感）或 ``` ... ```
+  const fence = t.match(/```(?:html)?\s*([\s\S]*?)```/i);
   if (fence && fence[1] && fence[1].trim()) return fence[1].trim();
-  if (/<!DOCTYPE/i.test(t) || /<html[\s>]/i.test(t)) return t;
+  // 2) 无代码块：从 <!DOCTYPE 或 <html 截取到最后一个 </html>，去掉前后说明文字
+  let docStart = t.search(/<!DOCTYPE[\s>]/i);
+  if (docStart < 0) docStart = t.search(/<html[\s>]/i);
+  if (docStart >= 0) {
+    const closeIdx = t.lastIndexOf("</html>");
+    if (closeIdx >= docStart) return t.slice(docStart, closeIdx + 7).trim();
+    const rest = t.slice(docStart);
+    if (/<body[\s>]/i.test(rest) || /<head[\s>]/i.test(rest)) return rest.trim();
+    return "";
+  }
+  // 3) 整段看起来就是 HTML
+  if (/<body[\s>]/i.test(t) || /<head[\s>]/i.test(t) || /<style[\s>]/i.test(t) || /<script[\s>]/i.test(t)) return t;
   return "";
 }
