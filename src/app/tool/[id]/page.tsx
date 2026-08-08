@@ -18,6 +18,7 @@ import { getLsSnapshot, setLsSnapshot } from "@/lib/toolStateBridge";
 import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } from "@/components/CoverPicker";
 import { captureCover, generateCustomCoverBlob, uploadCoverToStorage } from "@/lib/cover";
 import { getSupabase } from "@/lib/supabase";
+import ToolInstallButton from "@/components/ToolInstallButton";
 
 const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
 function getToolEmoji(tool: Tool): string {
@@ -84,6 +85,20 @@ export default function ToolDetailPage() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  // v1.8.8 PWA 单工具入口：从主屏幕打开（?app=1 或 standalone）直接全屏使用
+  const [appMode, setAppMode] = useState(false);
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search);
+      if (q.get("app") === "1" || window.matchMedia("(display-mode: standalone)").matches) {
+        setAppMode(true);
+        setFullscreen(true);
+      }
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // 全屏滚动保持：进入前记录预览滚动位置，退出后恢复，避免全屏滑动影响预览界面
   const fullscreenScrollRef = useRef<number | null>(null);
   const enterFullscreen = useCallback(async () => {
@@ -768,7 +783,7 @@ export default function ToolDetailPage() {
                 </button>
               </>
             ) : (
-              <Link href="/auth" className="inline-flex items-center gap-1 h-8 px-2.5 bg-white text-gray-400 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50">
+              <Link href={`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`} className="inline-flex items-center gap-1 h-8 px-2.5 bg-white text-gray-400 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50">
                 登录
               </Link>
             )}
@@ -779,6 +794,7 @@ export default function ToolDetailPage() {
             >
               {shareCopied ? "✓ 已复制" : "🔗"}
             </button>
+            <ToolInstallButton compact />
             <button
               onClick={enterFullscreen}
               className="inline-flex items-center gap-1 h-8 px-2.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 active:scale-95 transition-all"
@@ -821,11 +837,11 @@ export default function ToolDetailPage() {
                 {!docReady && <IframeSkeleton />}
                 {fullscreen && (
                   <button
-                    onClick={exitFullscreen}
+                    onClick={appMode ? () => { window.location.href = "/"; } : exitFullscreen}
                     style={{ touchAction: "manipulation" }}
                     className="absolute top-3 right-3 z-30 flex items-center gap-1 px-3 py-1.5 bg-gray-800/80 text-white text-xs rounded-full hover:bg-gray-700 active:scale-95 transition-all shadow border border-white/10"
                   >
-                    退出全屏
+                    {appMode ? "🏠 返回广场" : "退出全屏"}
                   </button>
                 )}
                 {docReady && (
@@ -941,7 +957,7 @@ export default function ToolDetailPage() {
           ) : (
             <div className="bg-gray-50 rounded-2xl p-5 mb-6 text-center">
               <p className="text-sm text-gray-500">
-                <Link href="/auth" className="text-indigo-600 hover:underline font-medium">登录</Link>后即可发表评价
+                <Link href={`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`} className="text-indigo-600 hover:underline font-medium">登录</Link>后即可发表评价
               </p>
             </div>
           )}

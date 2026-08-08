@@ -72,6 +72,12 @@ function AuthForm() {
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
+  // v1.8.8 登录成功后跳回来源页（如从主屏幕打开的工具页）
+  const redirectTo = (() => {
+    const r = searchParams.get("redirect");
+    return r && r.startsWith("/") && !r.startsWith("//") ? r : "/";
+  })();
+
   // 冷却倒计时
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -93,7 +99,7 @@ function AuthForm() {
   // 已登录——跳转首页
   useEffect(() => {
     if (user && !loading) {
-      router.replace("/");
+      router.replace(redirectTo);
     }
   }, [user, loading, router]);
 
@@ -156,7 +162,7 @@ function AuthForm() {
           setConfirmPassword("");
         } else {
           // 无需验证——直接跳转首页（AuthProvider 的 onAuthStateChange 会触发）
-          router.push("/");
+          router.push(redirectTo);
         }
         return;
       }
@@ -164,7 +170,7 @@ function AuthForm() {
       // ---- 登录成功 ----
       if (tab === "login") {
         if (result.data?.user) {
-          router.push("/");
+          router.push(redirectTo);
         } else {
           // 理论上不应发生
           setError("登录异常，请重试");

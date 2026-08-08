@@ -67,6 +67,19 @@ export async function generateMetadata({
   };
 }
 
-export default function ToolLayout({ children }: { children: React.ReactNode }) {
-  return children;
+export default async function ToolLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  return (
+    <>
+      {/* v1.8.8 每个工具注入独立 PWA manifest，支持添加到主屏幕后打开即全屏 */}
+      <link rel="manifest" href={`/tool/${id}/manifest.webmanifest`} />
+      {children}
+    </>
+  );
 }
