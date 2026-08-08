@@ -1,6 +1,6 @@
 {
-  "version": "1.7.2",
+  "version": "1.8.0",
   "buildDate": "2026-08-08",
-  "buildTimestamp": "2026-08-08T02:30:00+08:00",
-  "description": "品牌资产落地（ROADMAP 11.1）：新增 WewooLogo 组件（渐变/单色版），导航/页脚/登录页接入品牌 Logo，favicon/PWA 图标/OG 分享图全部替换为品牌标志，引导页与空状态点缀。"
+  "buildTimestamp": "2026-08-08T11:09:00+08:00",
+  "description": "内置 AI 生成（v1.8.0）：创作页「直接用 AI 生成」输入需求即流式生成 HTML，一键填入编辑器；服务端 DeepSeek 流式 API + 敏感词过滤 + 沙盒合规系统提示词。"
 }

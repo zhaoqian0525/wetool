@@ -10,7 +10,7 @@
 
 - **域名**：https://we-woo.net
 - **GitHub**：https://github.com/zhaoqian0525/wetool
-- **当前版本**：v1.4.1（见 version.json）
+- **当前版本**：v1.8.0（见 version.json）
 - **文件根目录**：`D:\Workbuddy\We-woo`
 
 ---
@@ -50,6 +50,14 @@
 
 **Service Role Key 用途**：DELETE API（`src/app/api/tools/[id]/route.ts`）用来绕过 RLS 删除工具。代码层已做权限验证。
 
+### DeepSeek（内置 AI 生成，v1.8）
+
+| Key 名称 | 值 |
+|---|---|
+| **API Key（服务端专用）** | `sk-ccd30dcc0512452195e0152a3e1f4bf6` |
+| **接口** | `https://api.deepseek.com/chat/completions`（model: `deepseek-chat`，SSE 流式） |
+
+> 使用位置：`src/app/api/ai/generate/route.ts`（服务端 Route Handler）。`DEEPSEEK_API_KEY` 配置在 `.env.local`，**禁止**加 `NEXT_PUBLIC_` 前缀，否则会泄漏到客户端 bundle。Vercel 生产环境需在项目 Settings → Environment Variables 手动添加同名变量。
 ### GitHub
 
 | Key 名称 | 值 |

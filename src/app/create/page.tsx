@@ -16,7 +16,7 @@ import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
 import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } from "@/components/CoverPicker";
 import { captureCover, generateCustomCoverBlob, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
-import { AI_PROMPT_TEMPLATE, aiPrompts } from "@/lib/aiPrompts";
+import { AI_PROMPT_TEMPLATE, aiPrompts, containsSensitiveContent, extractHtmlFromAiOutput } from "@/lib/aiPrompts";
 import { getLsSnapshot } from "@/lib/toolStateBridge";
 
 // --- Constants ---
@@ -289,6 +289,11 @@ function CreatePageInner() {
   // AI prompt helper
   const [promptExpanded, setPromptExpanded] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiOutput, setAiOutput] = useState("");
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiDone, setAiDone] = useState(false);
 
   const debouncedCode = useDebounce(code, 500);
   const debouncedCodeRef = useRef(debouncedCode);
@@ -419,6 +424,130 @@ function CreatePageInner() {
       if (ok) toast.success("提示词已复制，去 AI 对话里粘贴吧");
     });
   }, [copyAndAnimate, toast]);
+
+  // --- AI 直接生成 ---
+  const aiAbortRef = useRef<AbortController | null>(null);
+
+  const handleAiGenerate = useCallback(async () => {
+    const req = aiPrompt.trim();
+    if (!req || aiGenerating) return;
+    const sensitive = containsSensitiveContent(req);
+    if (sensitive.hit) {
+      setAiError(`内容包含${sensitive.label ?? "违规"}描述，平台不支持生成这类工具`);
+      return;
+    }
+    setAiGenerating(true);
+    setAiOutput("");
+    setAiError(null);
+    setAiDone(false);
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
+    let acc = "";
+    try {
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: req }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        let msg = "AI 生成失败，请稍后重试";
+        try {
+          const j = await res.json();
+          if (j && typeof j.error === "string") msg = j.error;
+        } catch { /* ignore */ }
+        setAiError(msg);
+        setAiGenerating(false);
+        return;
+      }
+      if (!res.body) {
+        setAiError("AI 服务无响应，请稍后重试");
+        setAiGenerating(false);
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buf = "";
+      let chunkAcc = "";
+      let doneReading = false;
+      const flush = () => {
+        if (!chunkAcc) return;
+        acc += chunkAcc;
+        chunkAcc = "";
+        setAiOutput(acc);
+      };
+      while (!doneReading) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let sep;
+        while ((sep = buf.indexOf("\n\n")) >= 0) {
+          const event = buf.slice(0, sep);
+          buf = buf.slice(sep + 2);
+          for (const line of event.split("\n")) {
+            if (!line.startsWith("data:")) continue;
+            const data = line.slice(5).trim();
+            if (data === "[DONE]") {
+              doneReading = true;
+              break;
+            }
+            try {
+              const j = JSON.parse(data);
+              const delta = j?.choices?.[0]?.delta?.content;
+              if (typeof delta === "string" && delta) chunkAcc += delta;
+            } catch { /* ignore partial json */ }
+          }
+          if (doneReading) break;
+        }
+        flush();
+      }
+      flush();
+      setAiGenerating(false);
+      setAiDone(true);
+      if (!acc.trim()) setAiError("AI 没有返回内容，请重新生成");
+    } catch (err) {
+      const aborted = err instanceof DOMException && err.name === "AbortError";
+      setAiGenerating(false);
+      if (!aborted) setAiError("AI 生成失败，请检查网络后重试");
+    }
+  }, [aiPrompt, aiGenerating]);
+
+  const handleAiStop = useCallback(() => {
+    aiAbortRef.current?.abort();
+  }, []);
+
+  const handleAiRegenerate = useCallback(() => {
+    handleAiGenerate();
+  }, [handleAiGenerate]);
+
+  const handleAiFill = useCallback(() => {
+    const html = extractHtmlFromAiOutput(aiOutput);
+    if (!html) {
+      toast.error("未检测到完整 HTML，请重新生成或手动复制");
+      return;
+    }
+    const sensitive = containsSensitiveContent(html);
+    if (sensitive.hit) {
+      toast.error(`生成内容包含${sensitive.label ?? "违规"}描述，无法填入编辑器`);
+      return;
+    }
+    setCode(html);
+    setPromptExpanded(false);
+    setMobileTab("editor");
+    editorRef.current?.focus();
+    toast.success("已填入编辑器，右侧预览已更新");
+  }, [aiOutput, setCode, toast]);
+
+  const handleAiCopy = useCallback(() => {
+    const html = extractHtmlFromAiOutput(aiOutput);
+    if (!html) {
+      toast.error("未检测到完整 HTML");
+      return;
+    }
+    copyAndAnimate(html, (ok) => {
+      if (ok) toast.success("代码已复制，可粘贴到别处");
+    });
+  }, [aiOutput, copyAndAnimate, toast]);
 
   // --- Publish handler ---
   const handlePublish = async () => {
@@ -803,8 +932,94 @@ function CreatePageInner() {
           />
 
           {/* AI Prompt Helper */}
-          <div className={`flex-shrink-0 border-t border-gray-700 transition-all duration-300 overflow-hidden ${promptExpanded ? "max-h-[720px]" : "max-h-0"}`}>
+          <div className={`flex-shrink-0 border-t border-gray-700 transition-all duration-300 overflow-y-auto ${promptExpanded ? "max-h-[min(760px,80vh)]" : "max-h-0"}`}>
             <div className="px-3 lg:px-4 py-3 space-y-3">
+              {/* AI 直接生成 */}
+              <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3">
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">✨</span>
+                    <span className="text-xs lg:text-sm font-medium text-gray-100">直接用 AI 生成</span>
+                  </div>
+                  <span className="text-[10px] text-gray-500">内置 DeepSeek · 免复制粘贴</span>
+                </div>
+                <textarea
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  disabled={aiGenerating}
+                  rows={2}
+                  className="w-full min-h-[72px] bg-gray-800/80 border border-gray-700 rounded-lg p-2.5 text-xs lg:text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-indigo-500 resize-none"
+                  placeholder="描述你想做的工具，例如：做一个纪念日记录器，能添加重要日子、显示倒数天数，数据要保存下来…"
+                  aria-label="AI 需求描述"
+                />
+                <div className="flex items-center gap-2 mt-2">
+                  {aiGenerating ? (
+                    <button
+                      onClick={handleAiStop}
+                      className="min-h-[44px] px-4 py-2 text-sm font-medium bg-rose-600 text-white rounded-lg hover:bg-rose-500 active:scale-95 transition-all flex items-center gap-1.5"
+                      style={{ touchAction: "manipulation" }}
+                    >
+                      ⏹ 停止生成
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleAiGenerate}
+                      disabled={!aiPrompt.trim()}
+                      className="min-h-[44px] px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                      style={{ touchAction: "manipulation" }}
+                    >
+                      ✨ 开始生成
+                    </button>
+                  )}
+                  {!aiGenerating && aiDone && (
+                    <button
+                      onClick={handleAiRegenerate}
+                      className="min-h-[44px] px-3 py-2 text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-lg hover:bg-indigo-500/20 active:scale-95 transition-all"
+                      style={{ touchAction: "manipulation" }}
+                    >
+                      ↻ 重新生成
+                    </button>
+                  )}
+                </div>
+                {aiError && (
+                  <div className="mt-2 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+                    {aiError}
+                  </div>
+                )}
+                {aiOutput && (
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between mb-1 gap-2">
+                      <span className="text-[11px] text-gray-400">
+                        {aiGenerating ? "正在生成…" : aiDone ? "生成完成" : "生成中…"}
+                      </span>
+                      {aiDone && (
+                        <button
+                          onClick={handleAiFill}
+                          className="min-h-[36px] px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 active:scale-95 transition-all"
+                          style={{ touchAction: "manipulation" }}
+                        >
+                          填入编辑器
+                        </button>
+                      )}
+                    </div>
+                    <pre className="max-h-[240px] overflow-y-auto text-[10px] lg:text-xs text-gray-300 bg-gray-900/90 rounded-lg p-3 border border-gray-700/50 whitespace-pre-wrap break-all">
+                      {aiOutput}
+                    </pre>
+                    {aiDone && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={handleAiCopy}
+                          className="min-h-[36px] px-3 py-1.5 text-xs font-medium text-gray-200 bg-gray-700/60 border border-gray-600 rounded-lg hover:bg-gray-600 active:scale-95 transition-all"
+                          style={{ touchAction: "manipulation" }}
+                        >
+                          复制代码
+                        </button>
+                        <span className="text-[10px] text-gray-500">填入后可在右侧预览，保存快照即可发布</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-base">📘</span>

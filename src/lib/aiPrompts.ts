@@ -52,3 +52,46 @@ export const aiPrompts: AiPromptExample[] = [
       "帮我写一个简单的记账本：可以添加收入和支出（金额+备注），显示总余额和最近的账单列表，可以删除单条记录；用 localStorage 保存账目，刷新不丢。界面简洁、适配 375px 手机，按钮至少 44px。完全自包含、不使用网络请求。把完整代码放在 ```html 代码块里。",
   },
 ];
+
+
+/** DeepSeek 内置 AI 生成的系统提示词：强制沙盒合规白名单 + 安全红线 */
+export const AI_SYSTEM_PROMPT = `你是微坞 WeWoo 平台（we-woo.net）的 AI 工具生成助手。用户会描述一个想要的小工具，你需要输出一个完整、独立、可直接运行的单文件 HTML 应用。硬性要求：
+1. 移动端优先，适配 375px 宽度，按钮和输入框至少 44px；界面简洁现代、配色柔和，有清晰标题和操作提示。
+2. 完全自包含：不引用外部 CDN、字体或图片，不使用网络请求（fetch/XHR）、cookie、弹窗、跳转、外部链接。
+3. 需要记住用户数据时（打卡记录、游戏进度、表单内容等）用 localStorage 保存和读取；平台会自动持久化，刷新页面、切换全屏、下次进入都能恢复。
+4. 用户输入无效数据时给出友好提示，不要直接报错；代码要精简可靠，能直接运行。
+5. 只输出一个完整 HTML 文件，把全部代码放在 \`\`\`html 代码块里输出，不要输出多余解释文字。
+安全红线（遇到直接拒绝并说明原因）：不生成赌博、色情、诈骗、恶意程序/病毒、破解外挂、侵犯隐私窃取数据等违法或违规内容；不生成需要服务器、数据库、登录注册才能使用的功能（平台沙盒不支持）；不生成诱导分享、裂变拉新、虚假宣传类内容。`;
+
+/** 敏感内容检测：返回命中的分类，未命中则 hit=false */
+export interface SensitiveCheckResult {
+  hit: boolean;
+  label?: string;
+}
+
+const SENSITIVE_RULES: { label: string; words: string[] }[] = [
+  { label: "赌博相关", words: ["赌博", "赌场", "博彩", "时时彩", "六合彩", "澳门赌场", "开奖预测", "彩票预测", "下注平台"] },
+  { label: "成人内容", words: ["色情", "情色", "裸聊", "成人视频", "黄色网站", "色情网站", "av网站"] },
+  { label: "诈骗内容", words: ["诈骗", "刷单返利", "杀猪盘", "裸贷", "虚假中奖", "贷款套现", "传销拉人"] },
+  { label: "恶意程序", words: ["木马", "勒索软件", "挖矿脚本", "盗号", "钓鱼网站", "黑客攻击", "入侵服务器", "肉鸡"] },
+  { label: "破解外挂", words: ["游戏外挂", "破解版下载", "刷钻", "外挂脚本"] },
+];
+
+export function containsSensitiveContent(text: string): SensitiveCheckResult {
+  const t = (text || "").toLowerCase();
+  for (const rule of SENSITIVE_RULES) {
+    for (const w of rule.words) {
+      if (t.includes(w.toLowerCase())) return { hit: true, label: rule.label };
+    }
+  }
+  return { hit: false };
+}
+
+/** 从 AI 输出中提取完整 HTML：优先取 ```html 代码块，找不到时若整段像 HTML 则原样返回 */
+export function extractHtmlFromAiOutput(text: string): string {
+  const t = (text || "").trim();
+  const fence = t.match(/```html\s*([\s\S]*?)\s*```/i);
+  if (fence && fence[1] && fence[1].trim()) return fence[1].trim();
+  if (/<!DOCTYPE/i.test(t) || /<html[\s>]/i.test(t)) return t;
+  return "";
+}
