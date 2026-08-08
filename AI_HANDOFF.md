@@ -10,7 +10,7 @@
 
 - **域名**：https://we-woo.net
 - **GitHub**：https://github.com/zhaoqian0525/wetool
-- **当前版本**：v1.8.6（见 version.json）
+- **当前版本**：v1.8.7（见 version.json）
 - **文件根目录**：`D:\Workbuddy\We-woo`
 
 ---
@@ -273,9 +273,9 @@ git push https://YOUR_GITHUB_TOKEN@github.com/zhaoqian0525/wetool.git main
 
 ### AI 生成（DeepSeek v4）
 - 模型：`deepseek-v4-flash`（环境变量 AI_MODEL 可覆盖），必须保持低价档，禁止切到 pro
-- v4 系列默认开启思考模式：思考（reasoning_content）会先耗尽 max_tokens（默认 6000），导致正文 content 为空、前端报「AI 没有返回内容」
-- 已修复（v1.8.5）：请求体显式带 `thinking: { type: "disabled" }`；若未来换非推理模型需移除该参数
-- 若未来重新启用思考，必须同步调大 AI_MAX_TOKENS（如 16000）并让前端展示 reasoning_content 作为「思考中」状态
+- 已关闭思考模式（v1.8.5）：请求体显式 `thinking: { type: "disabled" }`；换非推理模型需移除该参数
+- 长度限制（v1.8.7）：max_tokens 默认 16000、currentCode 上限 32000 字符、上下文护栏 48000 字符；长代码（3 万字）完整生成约 40-60 秒属正常
+- 若 Vercel 设置了 AI_MAX_TOKENS，注意同步调整，否则覆盖默认值
 
 ### DELETE API
 - `src/app/api/tools/[id]/route.ts` 使用 service_role key 绕过 RLS

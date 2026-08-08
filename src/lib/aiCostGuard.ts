@@ -12,9 +12,9 @@ export interface AiUsage {
 }
 
 // ===== 可调参数（环境变量可覆盖） =====
-export const MAX_CODE_LENGTH = 24000; // currentCode 上限（原 60000，大幅压缩输入）
-export const MAX_TOKENS = Number(process.env.AI_MAX_TOKENS ?? 6000); // 输出上限
-export const MAX_CONTEXT_CHARS = 36000; // 上游 system+history 总字符护栏
+export const MAX_CODE_LENGTH = 32000; // currentCode 上限（v1.8.7 放松：适配 3 万字长工具改编）
+export const MAX_TOKENS = Number(process.env.AI_MAX_TOKENS ?? 16000); // 输出上限（v1.8.7 放松：3 万字 HTML 约需 7k+ token）
+export const MAX_CONTEXT_CHARS = 48000; // 上游 system+history 总字符护栏（v1.8.7 放松）
 export const RATE_MIN = Number(process.env.AI_RATE_MIN ?? 8); // 每 IP 每分钟请求上限
 export const RATE_DAY = Number(process.env.AI_RATE_DAY ?? 120); // 每 IP 每天请求上限
 export const MIN_BALANCE_CNY = 1.0; // 余额低于该值（元）拒绝生成

@@ -979,7 +979,7 @@ function CreatePageInner() {
               代码
             </button>
             <button
-              onClick={() => { setPreviewLsSeed(readPreviewSeed()); setMobileTab("preview"); }}
+              onClick={() => { setPreviewLsSeed(readPreviewSeed()); setFullscreenPreview(true); }}
               className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${mobileTab === "preview" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}
             >
               <span className="text-base leading-none">👁</span>
