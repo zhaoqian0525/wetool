@@ -1,6 +1,6 @@
 {
-  "version": "1.8.3",
+  "version": "1.8.4",
   "buildDate": "2026-08-08",
-  "buildTimestamp": "2026-08-08T16:57:00+08:00",
-  "description": "紧急安全与成本修复（v1.8.3）：移除随公开仓库泄漏的 DeepSeek 与 Supabase 密钥并给出轮换指引；AI 请求上下文压缩（不再重发历史完整代码）、每 IP 限流、余额保护与用量日志，防止 API 被刷烧钱。"
+  "buildTimestamp": "2026-08-08T17:02:00+08:00",
+  "description": "AI 模型成本优化（v1.8.4）：网站 AI 生成显式使用 deepseek-v4-flash 低价模型（可用 AI_MODEL 覆盖），用量日志记录模型名，杜绝误用高价 pro。"
 }

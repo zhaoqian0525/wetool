@@ -16,6 +16,9 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+// AI 模型：默认 flash（便宜档），可用环境变量 AI_MODEL 覆盖；严禁在生产切到 pro
+const AI_MODEL = process.env.AI_MODEL ?? "deepseek-v4-flash";
+
 const MAX_HISTORY = 24; // 客户端消息条数上限
 const MAX_PROMPT_LENGTH = 8000; // 单次 prompt 上限
 
@@ -51,10 +54,11 @@ function withUsageCapture(
   });
 }
 
-function logUsage(ip: string, usage: AiUsage | null, codeChars: number, promptChars: number) {
+function logUsage(ip: string, usage: AiUsage | null, codeChars: number, promptChars: number, model: string) {
   const row = {
     ts: new Date().toISOString(),
     ip,
+    model,
     codeChars,
     promptChars,
     promptTokens: usage?.promptTokens ?? null,
@@ -67,7 +71,7 @@ function logUsage(ip: string, usage: AiUsage | null, codeChars: number, promptCh
 /**
  * POST /api/ai/generate
  * Body: { messages?: {role,content}[], prompt?: string, currentCode?: string }
- * 将需求/对话发送给 DeepSeek（deepseek-chat），以 SSE 流式返回生成的 HTML。
+ * 将需求/对话发送给 DeepSeek（默认 deepseek-v4-flash），以 SSE 流式返回生成的 HTML。
  * 服务端持有 DEEPSEEK_API_KEY，绝不进入客户端 bundle。
  */
 export async function POST(request: NextRequest) {
@@ -182,7 +186,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
+        model: AI_MODEL,
         messages: upstreamMessages,
         stream: true,
         max_tokens: MAX_TOKENS,
@@ -214,7 +218,7 @@ export async function POST(request: NextRequest) {
 
   // 透传 DeepSeek 的 SSE 流，同时捕获 usage 记账
   const reader = upstream.body.getReader();
-  const stream = withUsageCapture(reader, (u) => logUsage(ip, u, currentCode.length, promptChars));
+  const stream = withUsageCapture(reader, (u) => logUsage(ip, u, currentCode.length, promptChars, AI_MODEL));
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream; charset=utf-8",
