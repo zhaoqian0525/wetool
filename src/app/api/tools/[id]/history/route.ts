@@ -78,7 +78,10 @@ export async function DELETE(
   if (!ctx) return unauthorizedResponse();
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://cvacrykzcppiflmvwwfe.supabase.co";
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2YWNyeWt6Y3BwaWZsbXZ3d2ZlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTAxMzQ1NCwiZXhwIjoyMTAwNTg5NDU0fQ.2_Z78V-JYZyLHDHgrFXkGSh5y4YGwuradhYNlij1KtI";
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  if (!key) {
+    return NextResponse.json({ error: "服务端密钥未配置（SUPABASE_SERVICE_ROLE_KEY）" }, { status: 500 });
+  }
   const supabase = createClient(url, key);
 
   const q = request.nextUrl;

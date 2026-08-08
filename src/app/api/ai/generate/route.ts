@@ -1,17 +1,67 @@
 import { NextRequest } from "next/server";
 import { AI_SYSTEM_PROMPT, containsSensitiveContent } from "@/lib/aiPrompts";
+import {
+  ChatItem,
+  AiUsage,
+  MAX_TOKENS,
+  MAX_CONTEXT_CHARS,
+  MIN_BALANCE_CNY,
+  checkRateLimit,
+  getBalanceCny,
+  extractUsageFromSseTail,
+  compactHistory,
+  buildSystem,
+} from "@/lib/aiCostGuard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const MAX_HISTORY = 24;
-const MAX_PROMPT_LENGTH = 8000;
-const MAX_CODE_LENGTH = 60000;
-const MAX_TOKENS = 8192;
+const MAX_HISTORY = 24; // 客户端消息条数上限
+const MAX_PROMPT_LENGTH = 8000; // 单次 prompt 上限
 
-interface ChatItem {
-  role: "user" | "assistant";
-  content: string;
+/** 包装上游 SSE 流：原样透传，同时捕获最后一个 chunk 的 usage 用于记账 */
+function withUsageCapture(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  onEnd: (usage: AiUsage | null) => void
+): ReadableStream<Uint8Array> {
+  let tail = "";
+  let usage: AiUsage | null = null;
+  const decoder = new TextDecoder("utf-8");
+  return new ReadableStream({
+    async pull(controller) {
+      try {
+        const { done, value } = await reader.read();
+        if (done) {
+          const u = extractUsageFromSseTail(tail) ?? usage;
+          onEnd(u);
+          controller.close();
+          return;
+        }
+        tail = (tail + decoder.decode(value, { stream: true })).slice(-4096);
+        const u = extractUsageFromSseTail(tail);
+        if (u) usage = u;
+        controller.enqueue(value);
+      } catch (e) {
+        controller.error(e);
+      }
+    },
+    cancel() {
+      reader.cancel().catch(() => {});
+    },
+  });
+}
+
+function logUsage(ip: string, usage: AiUsage | null, codeChars: number, promptChars: number) {
+  const row = {
+    ts: new Date().toISOString(),
+    ip,
+    codeChars,
+    promptChars,
+    promptTokens: usage?.promptTokens ?? null,
+    completionTokens: usage?.completionTokens ?? null,
+    totalTokens: usage?.totalTokens ?? null,
+  };
+  console.log("[ai-usage]", JSON.stringify(row));
 }
 
 /**
@@ -26,6 +76,20 @@ export async function POST(request: NextRequest) {
     return new Response(JSON.stringify({ error: "AI 服务尚未配置，请稍后再试" }), {
       status: 500,
       headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
+  }
+
+  // 速率限制（按 IP）
+  const fwd = request.headers.get("x-forwarded-for");
+  const ip = fwd ? fwd.split(",")[0].trim() : "unknown";
+  const rl = checkRateLimit(ip);
+  if (!rl.ok) {
+    return new Response(JSON.stringify({ error: "请求太频繁，请稍后再试" }), {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Retry-After": String(rl.retryAfterSec ?? 60),
+      },
     });
   }
 
@@ -81,20 +145,33 @@ export async function POST(request: NextRequest) {
   // 当前代码上下文（改编/修改时携带）
   const currentCode =
     typeof body?.currentCode === "string" && body.currentCode.trim()
-      ? body.currentCode.trim().slice(0, MAX_CODE_LENGTH)
+      ? body.currentCode.trim()
       : "";
-  let system = AI_SYSTEM_PROMPT;
-  if (currentCode) {
-    system +=
-      "\n\n当前已有工具代码（用户可能要求在此基础上修改；无论是否修改，都必须输出完整的新 HTML 文件，而不是片段或 diff）：\n```html\n" +
-      currentCode +
-      "\n```";
+  const promptChars = (history.at(-1)?.content ?? prompt).length;
+
+  // 余额保护：低于阈值直接拒绝，防止余额被刷到负数
+  const balance = await getBalanceCny(apiKey);
+  if (balance != null && balance < MIN_BALANCE_CNY) {
+    return new Response(JSON.stringify({ error: "AI 生成额度即将用尽，请稍后再试" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
   }
 
-  const upstreamMessages = [
+  // 压缩上下文：只保留用户需求 + 当前代码，不再重发历史完整 HTML
+  const compacted = compactHistory(history);
+  const system = buildSystem(currentCode, AI_SYSTEM_PROMPT);
+  const upstreamMessages: { role: "system" | "user"; content: string }[] = [
     { role: "system", content: system },
-    ...(history.length > 0 ? history : [{ role: "user", content: prompt }]),
+    ...(compacted.length > 0 ? compacted : [{ role: "user" as const, content: prompt }]),
   ];
+
+  // 总字符护栏：超出时丢弃更早的用户消息
+  let total = upstreamMessages.reduce((s, m) => s + m.content.length, 0);
+  while (total > MAX_CONTEXT_CHARS && upstreamMessages.length > 1) {
+    const removed = upstreamMessages.splice(1, 1)[0];
+    total -= removed.content.length;
+  }
 
   let upstream: Response;
   try {
@@ -110,6 +187,7 @@ export async function POST(request: NextRequest) {
         stream: true,
         max_tokens: MAX_TOKENS,
         temperature: 0.6,
+        stream_options: { include_usage: true },
       }),
     });
   } catch {
@@ -134,8 +212,10 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // 透传 DeepSeek 的 SSE 流
-  return new Response(upstream.body, {
+  // 透传 DeepSeek 的 SSE 流，同时捕获 usage 记账
+  const reader = upstream.body.getReader();
+  const stream = withUsageCapture(reader, (u) => logUsage(ip, u, currentCode.length, promptChars));
+  return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",

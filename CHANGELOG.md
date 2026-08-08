@@ -1,3 +1,16 @@
+## [1.8.3] - 2026-08-08
+
+### Security（紧急）
+- 移除随公开仓库泄漏的密钥：AI_HANDOFF.md 曾明文包含 DeepSeek API Key 与 Supabase Service Role Key，现已全部移除并改为占位符 + 轮换指引
+- `src/app/api/tools/[id]/route.ts`、`history/route.ts` 删除硬编码的 service_role key 兜底，改为必须从 `SUPABASE_SERVICE_ROLE_KEY` 环境变量读取，缺失时明确报错
+- 请立即轮换密钥：DeepSeek 控制台重新生成 API Key、Supabase Dashboard 轮换 service_role key，并同步更新 `.env.local` 与 Vercel 环境变量（`DEEPSEEK_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY`）
+
+### Changed（AI 成本控制，防止烧钱）
+- 请求上下文压缩：多轮对话不再重发历史里的完整 HTML，只保留最近 8 条用户需求（每条 ≤1000 字符）+ 当前代码（≤24000 字符），单次请求输入 token 大幅下降
+- 输出 token 上限可配置（`AI_MAX_TOKENS`，默认 6000）
+- 每 IP 速率限制（默认 8 次/分钟、120 次/天，可用 `AI_RATE_MIN` / `AI_RATE_DAY` 调整），超限返回 429
+- 余额保护：生成前查询 DeepSeek 余额（5 分钟缓存），低于 ¥1 拒绝生成
+- 用量记账：每次生成把 prompt/completion token 数写入服务端日志（`[ai-usage]`），可在 Vercel Logs 查看实际消耗
 ## [1.8.2] - 2026-08-08
 
 ### Fixed

@@ -10,7 +10,7 @@
 
 - **域名**：https://we-woo.net
 - **GitHub**：https://github.com/zhaoqian0525/wetool
-- **当前版本**：v1.8.2（见 version.json）
+- **当前版本**：v1.8.3（见 version.json）
 - **文件根目录**：`D:\Workbuddy\We-woo`
 
 ---
@@ -46,7 +46,7 @@
 |---|---|
 | **URL** | `https://cvacrykzcppiflmvwwfe.supabase.co` |
 | **Anon Key（公开）** | `sb_publishable_HedSPsepnDWtvd3IuQhlWw_JPeVevVu` |
-| **Service Role Key（保密，仅服务端）** | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2YWNyeWt6Y3BwaWZsbXZ3d2ZlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTAxMzQ1NCwiZXhwIjoyMTAwNTg5NDU0fQ.2_Z78V-JYZyLHDHgrFXkGSh5y4YGwuradhYNlij1KtI` |
+| **Service Role Key（保密，仅服务端）** | `service_role_xxxx（v1.8.3 已从仓库移除，请到 Supabase Dashboard 轮换并配置环境变量）` |
 
 **Service Role Key 用途**：DELETE API（`src/app/api/tools/[id]/route.ts`）用来绕过 RLS 删除工具。代码层已做权限验证。
 
@@ -54,10 +54,12 @@
 
 | Key 名称 | 值 |
 |---|---|
-| **API Key（服务端专用）** | `sk-ccd30dcc0512452195e0152a3e1f4bf6` |
+| **API Key（服务端专用）** | `sk-xxxx（v1.8.3 已从仓库移除，请到 DeepSeek 控制台重新生成）` |
 | **接口** | `https://api.deepseek.com/chat/completions`（model: `deepseek-chat`，SSE 流式） |
 
 > 使用位置：`src/app/api/ai/generate/route.ts`（服务端 Route Handler）。`DEEPSEEK_API_KEY` 配置在 `.env.local`，**禁止**加 `NEXT_PUBLIC_` 前缀，否则会泄漏到客户端 bundle。Vercel 生产环境需在项目 Settings → Environment Variables 手动添加同名变量。
+>
+> **⚠️ v1.8.3 安全修复：本文件曾明文包含 DeepSeek API Key 与 Supabase Service Role Key 并随公开仓库泄漏，已移除。请立即在 DeepSeek 控制台重新生成 API Key、在 Supabase Dashboard 轮换 service_role key，并把新值更新到 `.env.local` 与 Vercel 环境变量。任何密钥严禁写入本文件或任何提交到仓库的文件。**
 ### GitHub
 
 | Key 名称 | 值 |
