@@ -583,11 +583,15 @@ function setMockViewCounts(counts: Record<string, number>) {
 
 export async function fetchViewCounts(toolIds: string[]): Promise<Record<string, number>> {
   if (toolIds.length === 0) return {};
+  const counts: Record<string, number> = {};
   const supabase = await getSupabaseClient();
   if (supabase) {
-    // 分批查询避免 URL 过长 + 空数组导致 PostgREST 400
-    const counts: Record<string, number> = {};
-    const chunks = chunkArray(toolIds, 100);
+    // 仅查询 UUID 工具（数据库 tools 表 id 为 uuid 类型）；内置工具（"1".."18"）等
+    // 非 UUID id 混入会触发 PostgREST 400，统一走下方 mock 兜底
+    const uuidIds = toolIds.filter((id) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+    );
+    const chunks = chunkArray(uuidIds, 100);
     for (const chunk of chunks) {
       const result = await queryWithTimeout(
         supabase.from("tools").select("id, view_count").in("id", chunk)
@@ -599,14 +603,13 @@ export async function fetchViewCounts(toolIds: string[]): Promise<Record<string,
         }
       }
     }
-    if (Object.keys(counts).length > 0) return counts;
   }
+  // mock 兜底：内置工具 + 本地工具 + 数据库查不到的行
   const mockCounts = getMockViewCounts();
-  const result2: Record<string, number> = {};
   for (const id of toolIds) {
-    result2[id] = mockCounts[id] ?? 0;
+    if (counts[id] === undefined) counts[id] = mockCounts[id] ?? 0;
   }
-  return result2;
+  return counts;
 }
 
 export async function incrementToolView(toolId: string): Promise<void> {

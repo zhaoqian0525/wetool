@@ -78,13 +78,37 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  // 加载最近使用的工具
+  // 加载最近使用的工具（缓存优先：先同步显示上次数据，再后台刷新替换，避免比其他区块晚 1-2 秒）
   useEffect(() => {
     if (!user) { setRecentTools([]); return; }
+    let cancelled = false;
+    const cacheKey = "wewoo-recent-" + user.id;
+    // 先同步渲染缓存，保证与首页其他区块同时出现
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) {
+        const cached = JSON.parse(raw);
+        if (cached && Array.isArray(cached.tools)) {
+          setRecentTools(cached.tools);
+        }
+      }
+    } catch {
+      // 缓存解析失败，忽略
+    }
     authedFetch(`/api/user/recent-tools`)
       .then((r) => r.json())
-      .then((data) => setRecentTools(data.tools || []))
-      .catch(() => setRecentTools([]));
+      .then((data) => {
+        if (cancelled) return;
+        const tools = data.tools || [];
+        setRecentTools(tools);
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), tools }));
+        } catch {
+          // 缓存写入失败（如隐私模式），忽略
+        }
+      })
+      .catch(() => { if (!cancelled) setRecentTools([]); });
+    return () => { cancelled = true; };
   }, [user]);
 
   // 加载收藏的工具
