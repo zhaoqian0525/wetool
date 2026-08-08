@@ -1,3 +1,10 @@
+## [1.8.5] - 2026-08-08
+
+### Fixed（紧急）
+- 修复 AI 生成无内容：deepseek-v4-flash 默认开启思考模式（reasoning_content），思考 token 会耗尽 max_tokens（6000），导致正文 content 为空、前端报「AI 没有返回内容，请重试」
+- 请求体对 v4 系模型显式发送 `thinking: { type: "disabled" }` 关闭思考，正文直接输出完整 HTML，不再被截断
+- 附带收益：单次生成 completion token 从 6000+（全烧在思考上）降至约 2300，速度更快、更省钱
+
 ## [1.8.4] - 2026-08-08
 
 ### Changed

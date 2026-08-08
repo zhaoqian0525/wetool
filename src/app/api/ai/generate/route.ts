@@ -192,6 +192,8 @@ export async function POST(request: NextRequest) {
         max_tokens: MAX_TOKENS,
         temperature: 0.6,
         stream_options: { include_usage: true },
+        // v1.8.5: deepseek-v4 系列默认开启思考模式，会耗尽 max_tokens 导致正文为空，这里显式关闭思考
+        ...(AI_MODEL.includes("v4") ? { thinking: { type: "disabled" } } : {}),
       }),
     });
   } catch {

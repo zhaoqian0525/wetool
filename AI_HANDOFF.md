@@ -10,7 +10,7 @@
 
 - **域名**：https://we-woo.net
 - **GitHub**：https://github.com/zhaoqian0525/wetool
-- **当前版本**：v1.8.4（见 version.json）
+- **当前版本**：v1.8.5（见 version.json）
 - **文件根目录**：`D:\Workbuddy\We-woo`
 
 ---
@@ -270,6 +270,12 @@ git push https://YOUR_GITHUB_TOKEN@github.com/zhaoqian0525/wetool.git main
 ### Service Worker
 - `public/sw.js` — 只缓存静态资源，不缓存页面（防止页面不刷新的 bug）
 - 注册：`src/components/ServiceWorkerRegister.tsx`
+
+### AI 生成（DeepSeek v4）
+- 模型：`deepseek-v4-flash`（环境变量 AI_MODEL 可覆盖），必须保持低价档，禁止切到 pro
+- v4 系列默认开启思考模式：思考（reasoning_content）会先耗尽 max_tokens（默认 6000），导致正文 content 为空、前端报「AI 没有返回内容」
+- 已修复（v1.8.5）：请求体显式带 `thinking: { type: "disabled" }`；若未来换非推理模型需移除该参数
+- 若未来重新启用思考，必须同步调大 AI_MAX_TOKENS（如 16000）并让前端展示 reasoning_content 作为「思考中」状态
 
 ### DELETE API
 - `src/app/api/tools/[id]/route.ts` 使用 service_role key 绕过 RLS
