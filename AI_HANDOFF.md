@@ -296,6 +296,11 @@ git push https://YOUR_GITHUB_TOKEN@github.com/zhaoqian0525/wetool.git main
 - 工具插入 Supabase → 封面生成 → cover_url 更新
 - 如果平台 URL 内的 "工具未找到"标签栏标题 → `layout.tsx` 的 `generateMetadata` 可能只查了 MOCK_TOOLS
 
+### 版本发布通知（v1.8.7 起默认执行）
+- **每个版本发布推送后，默认发送邮件通知用户**（用户已确认，无需再问）
+- 收件人：`1015790590@qq.com`；发件人：`2425066932@qq.com`（SMTP smtp.qq.com:465，授权码见 `.workbuddy/send-v183-mail.py`）
+- 写法：复制 `.workbuddy/send-vXXX-mail.py` 改标题/正文即可，正文用 HTML 表格列出改动点
+
 ---
 
 ## 10. 当前状态
