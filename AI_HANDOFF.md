@@ -10,7 +10,7 @@
 
 - **域名**：https://we-woo.net
 - **GitHub**：https://github.com/zhaoqian0525/wetool
-- **当前版本**：v1.8.5（见 version.json）
+- **当前版本**：v1.8.6（见 version.json）
 - **文件根目录**：`D:\Workbuddy\We-woo`
 
 ---
@@ -280,6 +280,13 @@ git push https://YOUR_GITHUB_TOKEN@github.com/zhaoqian0525/wetool.git main
 ### DELETE API
 - `src/app/api/tools/[id]/route.ts` 使用 service_role key 绕过 RLS
 - 代码层验证 `author_id === userId`
+
+### 创作页布局（v1.8.6）
+- 移动端三 tab：对话 / 代码 / 预览（state: mobileTab）
+- 桌面宽屏三栏同时显示：AI Chat Panel（src/app/create/page.tsx 内联，非独立组件）+ 编辑器 + 预览
+- 改编（/create?source_tool_id=X）进入时自动清空历史对话，只保留「已加载工具」消息；对话持久化 key: wewoo-ai-chat-{userId}
+- 外部提示词（AI_PROMPT_TEMPLATE / aiPrompts）在对话面板底部默认折叠，state: externalPromptOpen
+- 安装提示组件：src/components/InstallPrompt.tsx（beforeinstallprompt + iOS 引导）
 
 ### 工具内数据持久化
 - 通过 `window.postMessage` 与 iframe 通信（`type: "WEWOO_SAVED"` 等）

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ToastProvider } from "@/components/ToastProvider";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import InstallPrompt from "@/components/InstallPrompt";
 import Footer from "@/components/Footer";
 import "./globals.css";
 
@@ -94,6 +95,7 @@ export default function RootLayout({
           </AuthProvider>
         </ToastProvider>
         <ServiceWorkerRegister />
+        <InstallPrompt />
       </body>
     </html>
   );

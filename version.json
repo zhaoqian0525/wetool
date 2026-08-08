@@ -1,6 +1,6 @@
 {
-  "version": "1.8.5",
+  "version": "1.8.6",
   "buildDate": "2026-08-08",
-  "buildTimestamp": "2026-08-08T17:34:01+08:00",
-  "description": "AI 生成空白紧急修复（v1.8.5）：deepseek-v4-flash 默认开启思考模式，思考 token 耗尽 max_tokens 导致正文为空；现显式关闭思考（thinking:{type:disabled}），正文直接输出完整 HTML，单次消耗 token 从 6000+ 降至约 2300，更快更省。"
+  "buildTimestamp": "2026-08-08T17:59:32+08:00",
+  "description": "创作体验重构（v1.8.6）：创作页移动端改为「对话/代码/预览」三 tab 切换、桌面宽屏三栏同时显示；改编工具自动开启新对话隔离历史记录；外部提示词默认折叠；新增安装到主屏幕提示（PWA 引导）。"
 }

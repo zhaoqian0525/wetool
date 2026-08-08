@@ -297,10 +297,10 @@ function CreatePageInner() {
   const [fullscreenPreview, setFullscreenPreview] = useState(false);
 
   // Mobile editor/preview tab（移动端切换用）
-  const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor");
+  const [mobileTab, setMobileTab] = useState<"chat" | "code" | "preview">("chat");
 
   // AI prompt helper
-  const [promptExpanded, setPromptExpanded] = useState(false);
+  const [externalPromptOpen, setExternalPromptOpen] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<AiChatMsg[]>([]);
@@ -330,27 +330,30 @@ function CreatePageInner() {
     if (saved.length > 0) setVersions(saved);
   }, []);
 
-  // Load source tool
+  // Load source tool（v1.8.6：改编 = 全新对话，清掉历史对话，避免混入上一个工具的记录）
   useEffect(() => {
     if (sourceLoaded) return;
     if (!sourceToolIdParam) return;
+    try {
+      localStorage.removeItem("wewoo-ai-chat" + (user?.id ? "-" + user.id : ""));
+    } catch {
+      /* ignore */
+    }
+    setAiMessages([]);
+    setAiVersions([]);
+    setAiActiveVersion(null);
     fetchToolById(sourceToolIdParam).then((tool) => {
       if (tool) {
         setSourceToolId(tool.id);
         setSourceToolTitle(tool.title);
         if (tool.code) setCode(tool.code);
-        setPromptExpanded(true);
-        setAiMessages((prev) =>
-          prev.length === 0
-            ? [
-                {
-                  id: genMsgId(),
-                  role: "assistant",
-                  content: `已加载工具「${tool.title ?? "改编源"}」的代码。直接告诉我你想怎么改，我会生成新版完整代码，例如：「换一套配色」「加一个功能」「改成上下布局」。`,
-                },
-              ]
-            : prev
-        );
+        setAiMessages([
+          {
+            id: genMsgId(),
+            role: "assistant",
+            content: `已加载工具「${tool.title ?? "改编源"}」的代码。直接告诉我你想怎么改，我会生成新版完整代码，例如：「换一套配色」「加一个功能」「改成上下布局」。`,
+          },
+        ]);
       }
       toast.info("已加载改编源，可直接用对话修改");
       setSourceLoaded(true);
@@ -498,15 +501,7 @@ function CreatePageInner() {
   }, [aiMessages, aiVersions, aiActiveVersion]);
 
   // 首次进入且无历史对话时自动展开（对话优先）
-  useEffect(() => {
-    const t = setTimeout(() => {
-      let hasChat = false;
-      try { hasChat = !!localStorage.getItem(aiChatKey); } catch { /* ignore */ }
-      if (!hasChat && !promptExpanded) setPromptExpanded(true);
-    }, 300);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
 
   // 消息更新时自动滚动到底部
   useEffect(() => {
@@ -616,6 +611,7 @@ function CreatePageInner() {
             setAiVersions((prev) => [...prev, ver]);
             setAiActiveVersion(aiVersions.length);
             setCode(html);
+            setMobileTab("code");
             toast.success(`已生成 ${ver.label}，代码已自动填入编辑器，可点「预览」查看效果`);
           }
         }
@@ -649,8 +645,8 @@ function CreatePageInner() {
   const handleAiFillVersion = useCallback((ver: AiVersion) => {
     if (!ver || !ver.code) return;
     setCode(ver.code);
-    setPromptExpanded(false);
-    setMobileTab("editor");
+    setExternalPromptOpen(false);
+    setMobileTab("code");
     editorRef.current?.focus();
     toast.success(`已载入 ${ver.label} 完整代码，可直接修改`);
   }, [setCode, toast]);
@@ -965,117 +961,63 @@ function CreatePageInner() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 pb-14 lg:pb-0">
         {/* 移动端：编辑/预览切换 */}
+                {/* 移动端：对话 / 代码 / 预览 三 tab（v1.8.6） */}
         <div className="lg:hidden flex-shrink-0 flex items-center justify-center px-3 py-2 bg-gray-200 border-b border-gray-300">
-          <div className="flex bg-gray-900/5 rounded-xl p-1 w-full max-w-[260px]">
+          <div className="flex bg-gray-900/5 rounded-xl p-1 w-full max-w-[320px]">
             <button
-              onClick={() => setMobileTab("editor")}
-              className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${
-                mobileTab === "editor"
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-gray-500"
-              }`}
+              onClick={() => setMobileTab("chat")}
+              className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${mobileTab === "chat" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              编辑
+              <span className="text-base leading-none">💬</span>
+              对话
             </button>
             <button
-              onClick={() => { setPreviewLsSeed(readPreviewSeed()); setMobileTab("preview"); setFullscreenPreview(true); }}
-              className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${
-                mobileTab === "preview"
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-gray-500"
-              }`}
+              onClick={() => setMobileTab("code")}
+              className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${mobileTab === "code" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
+              <span className="text-base leading-none">📝</span>
+              代码
+            </button>
+            <button
+              onClick={() => { setPreviewLsSeed(readPreviewSeed()); setMobileTab("preview"); }}
+              className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${mobileTab === "preview" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}
+            >
+              <span className="text-base leading-none">👁</span>
               预览
             </button>
           </div>
         </div>
-        {/* === Editor Panel === */}
-        <div className={`flex-1 flex flex-col min-h-0 bg-gray-900 lg:w-1/2 ${mobileTab === "preview" ? "hidden lg:flex" : ""}`}>
-          <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-800 border-b border-gray-700">
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1.5">
-                <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-red-500/80" />
-                <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-yellow-500/80" />
-                <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-green-500/80" />
-              </div>
-              <span className="text-xs text-gray-400 ml-1.5">HTML</span>
+        {/* === AI Chat Panel（桌面左栏 / 移动端对话 tab）=== */}
+        <div className={`flex-1 flex flex-col min-h-0 bg-gray-900 lg:w-[33%] ${mobileTab === "chat" ? "flex" : "hidden"} lg:flex`}>
+          <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-2 bg-gray-800 border-b border-gray-700">
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">💬</span>
+              <span className="text-xs lg:text-sm font-medium text-gray-100">和 AI 对话生成工具</span>
+              <span className="text-[10px] text-gray-500 hidden sm:inline">内置 DeepSeek</span>
             </div>
-            <div className="flex items-center gap-2 lg:gap-3">
-              <Link
-                href="/guide"
-                target="_blank"
-                className="text-[10px] lg:text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
-              >
-                <svg className="w-3 h-3 lg:w-3.5 lg:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-                教程
-              </Link>
+            <div className="flex items-center gap-1.5">
+              {aiMessages.length > 0 && (
+                <button
+                  onClick={handleAiClear}
+                  className="min-h-[28px] px-2 py-1 text-[10px] text-gray-400 hover:text-rose-300 transition-colors"
+                  style={{ touchAction: "manipulation" }}
+                >
+                  清空对话
+                </button>
+              )}
               <button
-                onClick={() => { setCode(""); editorRef.current?.focus(); }}
-                className="text-[10px] lg:text-xs text-gray-500 hover:text-red-400 transition-colors flex items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center"
-                title="清空编辑器"
-                aria-label="清空编辑器"
+                onClick={handleAiClear}
+                className="min-h-[28px] px-2 py-1 text-[10px] text-indigo-300 hover:text-indigo-200 transition-colors"
+                style={{ touchAction: "manipulation" }}
               >
-                <svg className="w-3 h-3 lg:w-3.5 lg:h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                <span className="hidden sm:inline">清空</span>
+                ＋ 新建对话
               </button>
-              <span className="text-[10px] lg:text-xs text-gray-500 hidden sm:inline">Ctrl+S 保存快照</span>
-              <span className="text-[10px] lg:text-xs text-gray-500">{code.length.toLocaleString()} 字符</span>
             </div>
           </div>
-
-          <textarea
-            ref={editorRef}
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex-1 w-full bg-gray-900 text-gray-100 font-mono text-sm lg:text-sm leading-relaxed p-3 lg:p-4 resize-none outline-none"
-            style={{ tabSize: 2, MozTabSize: 2, fontSize: "16px" }}
-            spellCheck={false}
-            placeholder={"把代码粘贴到这里 👉\n\n没代码？点右上角「试试示例」\n或者点这里看教程 → "}
-            aria-label="代码编辑器"
-          />
-
-          {/* AI Prompt Helper */}
-          <div className={`flex-shrink-0 border-t border-gray-700 transition-all duration-300 overflow-y-auto ${promptExpanded ? "max-h-[min(760px,80vh)]" : "max-h-0"}`}>
-            <div className="px-3 lg:px-4 py-3 space-y-3">
-                            {/* AI 对话生成 */}
+          <div className="flex-1 overflow-y-auto px-3 lg:px-4 py-3 space-y-3">
+{/* AI 对话生成 */}
               <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3">
-                <div className="flex items-center justify-between mb-2 gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-base">💬</span>
-                    <span className="text-xs lg:text-sm font-medium text-gray-100">和 AI 对话生成工具</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {aiMessages.length > 0 && (
-                      <button
-                        onClick={handleAiClear}
-                        className="min-h-[28px] px-2 py-1 text-[10px] text-gray-400 hover:text-rose-300 transition-colors"
-                        style={{ touchAction: "manipulation" }}
-                      >
-                        清空对话
-                      </button>
-                    )}
-                    <span className="text-[10px] text-gray-500 hidden sm:inline">内置 DeepSeek</span>
-                    <button
-                      onClick={() => setPromptExpanded(false)}
-                      className="text-gray-500 hover:text-gray-300 text-lg leading-none px-1"
-                      aria-label="收起 AI 对话"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
+                
 
                 {aiVersions.length > 0 && (
                   <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "thin" }}>
@@ -1205,22 +1147,22 @@ function CreatePageInner() {
                   需要服务器/网络等沙盒外能力时，AI 会说明原因并给出可运行的替代方案
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">📘</span>
-                  <span className="text-xs lg:text-sm font-medium text-gray-300">
-                    想用外部 AI（ChatGPT/Kimi 等）？复制这段提示词
-                  </span>
-                </div>
-                <button
-                  onClick={() => setPromptExpanded(false)}
-                  className="text-gray-500 hover:text-gray-300 text-lg leading-none px-1"
-                  aria-label="收起提示"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="relative">
+              
+            {/* 外部提示词折叠（v1.8.6：默认收起，点击展开） */}
+            <div className="rounded-xl border border-gray-700/50 bg-gray-800/40 overflow-hidden">
+              <button
+                onClick={() => setExternalPromptOpen((v) => !v)}
+                className="w-full flex items-center justify-between px-3 py-2.5 min-h-[44px]"
+                style={{ touchAction: "manipulation" }}
+              >
+                <span className="flex items-center gap-1.5 text-xs lg:text-sm font-medium text-gray-300">
+                  <span className="text-base">📘</span> 想用外部 AI（ChatGPT/Kimi 等）？复制这段提示词
+                </span>
+                <svg className={`w-3.5 h-3.5 text-gray-500 transition-transform ${externalPromptOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {externalPromptOpen && (
+                <div className="px-3 pb-3 space-y-3">
+<div className="relative">
                 <pre className="text-[11px] lg:text-xs text-gray-400 bg-gray-800/80 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap leading-relaxed border border-gray-700/50">
 {AI_PROMPT_TEMPLATE}</pre>
                 <button
@@ -1267,22 +1209,61 @@ function CreatePageInner() {
                   ))}
                 </div>
               </div>
+
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+{/* === Editor Panel === */}
+        <div className={`flex-1 flex flex-col min-h-0 bg-gray-900 lg:w-[34%] ${mobileTab === "code" ? "flex" : "hidden"} lg:flex`}>
+          <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-800 border-b border-gray-700">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-red-500/80" />
+                <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-yellow-500/80" />
+                <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-green-500/80" />
+              </div>
+              <span className="text-xs text-gray-400 ml-1.5">HTML</span>
+            </div>
+            <div className="flex items-center gap-2 lg:gap-3">
+              <Link
+                href="/guide"
+                target="_blank"
+                className="text-[10px] lg:text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
+              >
+                <svg className="w-3 h-3 lg:w-3.5 lg:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                教程
+              </Link>
+              <button
+                onClick={() => { setCode(""); editorRef.current?.focus(); }}
+                className="text-[10px] lg:text-xs text-gray-500 hover:text-red-400 transition-colors flex items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center"
+                title="清空编辑器"
+                aria-label="清空编辑器"
+              >
+                <svg className="w-3 h-3 lg:w-3.5 lg:h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span className="hidden sm:inline">清空</span>
+              </button>
+              <span className="text-[10px] lg:text-xs text-gray-500 hidden sm:inline">Ctrl+S 保存快照</span>
+              <span className="text-[10px] lg:text-xs text-gray-500">{code.length.toLocaleString()} 字符</span>
             </div>
           </div>
 
-          {/* Collapsed toggle */}
-          {!promptExpanded && (
-            <button
-              onClick={() => setPromptExpanded(true)}
-              className="flex-shrink-0 flex items-center justify-center gap-1.5 w-full py-2 text-[11px] lg:text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 transition-colors border-t border-gray-700/50"
-            >
-              <span>💬</span>
-              <span>和 AI 对话生成工具（免复制粘贴）</span>
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          )}
+          <textarea
+            ref={editorRef}
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="flex-1 w-full bg-gray-900 text-gray-100 font-mono text-sm lg:text-sm leading-relaxed p-3 lg:p-4 resize-none outline-none"
+            style={{ tabSize: 2, MozTabSize: 2, fontSize: "16px" }}
+            spellCheck={false}
+            placeholder={"把代码粘贴到这里 👉\n\n没代码？点右上角「试试示例」\n或者点这里看教程 → "}
+            aria-label="代码编辑器"
+          />
 
           {versions.length > 0 && (
             <div className="flex-shrink-0 border-t border-gray-700">
@@ -1339,9 +1320,9 @@ function CreatePageInner() {
         </div>
 
         {/* === Preview Panel === */}
-        <div className={`flex-1 flex flex-col items-center justify-center bg-gray-200 p-3 lg:p-4 min-h-0 lg:w-1/2 ${mobileTab === "editor" ? "hidden lg:flex" : ""}`}>
+        <div className={`flex-1 flex flex-col items-center justify-center bg-gray-200 p-3 lg:p-4 min-h-0 lg:w-[33%] ${mobileTab === "preview" ? "flex" : "hidden"} lg:flex`}>
           <div className="relative flex flex-col items-center flex-1 w-full justify-center">
-            <div className="hidden lg:flex flex-col items-center">
+            <div className="flex flex-col items-center">
               <WechatGuide>
                 <div
                   className="relative bg-gray-800 rounded-[36px] p-3 shadow-2xl"
@@ -1367,17 +1348,12 @@ function CreatePageInner() {
               <p className="mt-4 text-xs text-gray-400 text-center">手机预览 · 375 × 667</p>
             </div>
 
-                        <div className="lg:hidden flex flex-col items-center justify-center w-full flex-1 min-h-0 gap-3 text-gray-500">
-              <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              <p className="text-sm">预览已切换为全屏模式</p>
+                                    <div className="lg:hidden flex flex-col items-center justify-center w-full flex-1 min-h-0 gap-3 text-gray-500">
               <button
                 onClick={() => { setPreviewLsSeed(readPreviewSeed()); setFullscreenPreview(true); }}
                 className="mt-1 min-h-[44px] flex items-center justify-center gap-1.5 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
               >
-                重新打开全屏预览
+                ⛶ 全屏预览
               </button>
             </div>
           </div>
@@ -1391,7 +1367,7 @@ function CreatePageInner() {
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-2 bg-black/60 backdrop-blur-sm z-10 transition-opacity duration-500" id="previewBar">
             <span className="text-sm text-white/80">预览工具效果</span>
             <button
-              onClick={() => { setFullscreenPreview(false); setMobileTab("editor"); }}
+              onClick={() => { setFullscreenPreview(false); setMobileTab("code"); }}
               className="min-h-[36px] px-4 text-sm text-white bg-white/20 rounded-lg hover:bg-white/30"
             >
               退出预览
