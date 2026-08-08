@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
+import { WewooMark } from "@/components/WewooLogo";
 
 /** 将 Supabase 错误信息映射为中文友好提示 */
 function mapAuthError(msg: string): string {
@@ -182,7 +183,8 @@ function AuthForm() {
     <div className="min-h-screen bg-gray-50 flex flex-col pb-20 lg:pb-0">
       {/* 顶部导航 */}
       <header className="h-12 sm:h-14 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center px-4 flex-shrink-0">
-        <Link href="/" className="text-base sm:text-lg font-bold text-indigo-600">
+        <Link href="/" className="flex items-center gap-1.5 text-base sm:text-lg font-bold text-indigo-600">
+          <WewooMark className="w-6 h-6" />
           微坞
         </Link>
       </header>
@@ -191,6 +193,7 @@ function AuthForm() {
         <div className="w-full max-w-sm">
           {/* 标题 */}
           <div className="text-center mb-8">
+            <WewooMark className="w-12 h-12 mx-auto mb-3" />
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
               {tab === "login" ? "欢迎回来" : "加入微坞"}
             </h1>

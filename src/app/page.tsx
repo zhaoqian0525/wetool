@@ -9,6 +9,7 @@ import { fetchTools, loadToolsCacheSync, fetchViewCounts, fetchToolsByUser, fetc
 import { authedFetch } from "@/lib/api-client";
 import versionInfo from "../../version.json";
 import { getToolEmoji } from "@/lib/constants";
+import { WewooMark } from "@/components/WewooLogo";
 
 // ---- Constants ----
 
@@ -543,9 +544,7 @@ function EmptyState({ category, search }: { category: string; search: string }) 
       {/* Illustration */}
       <div className="relative mb-6">
         <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center shadow-inner">
-          <svg className="w-12 h-12 sm:w-14 sm:h-14 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
+          <WewooMark className="w-12 h-12 sm:w-14 sm:h-14" />
         </div>
         {/* Floating sparkles */}
         <div className="absolute -top-1 -right-1 text-lg animate-bounce" style={{ animationDuration: "1.5s" }}>✨</div>

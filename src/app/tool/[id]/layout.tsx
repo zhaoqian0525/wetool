@@ -54,11 +54,15 @@ export async function generateMetadata({
       title: `${title} | 微坞 WeWoo`,
       description: description || `${title} - 在线小工具`,
       siteName: "微坞 WeWoo",
+      images: [
+        { url: "/og.png", width: 1200, height: 630, alt: `${title} | 微坞 WeWoo` },
+      ],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title,
       description: description || "",
+      images: ["/og.png"],
     },
   };
 }

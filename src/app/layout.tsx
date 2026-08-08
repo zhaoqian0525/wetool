@@ -31,11 +31,15 @@ export const metadata: Metadata = {
     siteName: "微坞 WeWoo",
     title: "微坞 WeWoo - AI小工具分享社区",
     description: "像发朋友圈一样分享你做的 AI 小工具，别人点开链接就能直接使用。",
+    images: [
+      { url: "/og.png", width: 1200, height: 630, alt: "微坞 WeWoo - AI小工具分享社区" },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "微坞 WeWoo - AI小工具分享社区",
     description: "像发朋友圈一样分享你做的 AI 小工具，别人点开链接就能直接使用。",
+    images: ["/og.png"],
   },
   robots: {
     index: true,

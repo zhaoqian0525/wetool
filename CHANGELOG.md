@@ -1,3 +1,17 @@
+## [1.7.2] - 2026-08-08
+
+### Added
+- 品牌资产落地（ROADMAP 11.1，A 阶段）：
+  - 新增 `src/components/WewooLogo.tsx`：渐变版 `WewooMark` + 单色版 `WewooMonoMark`，几何来自品牌规范（靛蓝→紫渐变 #5046E5→#8B5CF6 + 白色 W + 节点青圆点 #22D3EE）
+  - 导航栏（桌面/移动）、页脚、登录页接入品牌 Logo
+  - favicon 替换为品牌图标（app/icon.png 64px）、新增 apple-icon.png（180px）、PWA 图标 icon-192/512 与 maskable 版全部换成品牌标志
+  - 新增 OG 分享图 `public/og.png`（1200×630：墨黑底 + 品牌标志 + 标语），首页与工具详情页 openGraph / twitter 元数据接入
+  - 引导页 Hero 与首页空状态加入品牌标志点缀
+
+### Changed
+- 移除默认 favicon.ico（由 app/icon.png 自动提供）
+
+---
 ## [1.7.1] - 2026-08-08
 
 ### Fixed

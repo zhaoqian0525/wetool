@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import versionInfo from "../../version.json";
+import { WewooMark } from "@/components/WewooLogo";
 
 export default function Footer() {
   return (
@@ -9,6 +10,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
+            <WewooMark className="w-6 h-6" />
             <span className="text-lg font-bold text-indigo-600">微坞</span>
             <span className="text-sm text-gray-400">WeWoo · AI小工具分享社区</span>
           </div>

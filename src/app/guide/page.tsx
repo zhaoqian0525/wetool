@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { GUIDE_REQ_TEXT, aiPrompts } from "@/lib/aiPrompts";
+import { WewooMark } from "@/components/WewooLogo";
 
 const steps = [
   {
@@ -81,6 +82,9 @@ export default function GuidePage() {
           <div className="absolute bottom-10 right-20 w-60 h-60 bg-purple-300 rounded-full blur-3xl" />
         </div>
         <div className="relative max-w-3xl mx-auto px-4 py-16 lg:py-20 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
+            <WewooMark className="w-10 h-10" />
+          </div>
           <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1.5 mb-6">
             <span className="text-sm">📖 新手教程</span>
           </div>

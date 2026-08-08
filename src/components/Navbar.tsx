@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { WewooMark } from "@/components/WewooLogo";
 
 interface NavbarProps {
   /** Extra content to render between the logo and the auth section (desktop only) */
@@ -93,11 +94,11 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
     <header className="hidden lg:block sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* Left: Logo */}
-        <div className="flex items-center gap-3">
-          <Link
+        <div className="flex items-center gap-3">          <Link
             href="/"
-            className="text-lg font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+            className="flex items-center gap-2 text-lg font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
           >
+            <WewooMark className="w-7 h-7" />
             微坞
           </Link>
           {children}
@@ -203,20 +204,20 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
   /* ======== Mobile Top Bar (create page only) ======== */
   const mobileTopBar =
     pathname === "/create" ? (
-      <header className="lg:hidden flex items-center justify-between h-12 px-4 bg-white border-b border-gray-200 flex-shrink-0">
-        <Link href="/" className="text-base font-bold text-indigo-600">
-          微坞
-        </Link>
+      <header className="lg:hidden flex items-center justify-between h-12 px-4 bg-white border-b border-gray-200 flex-shrink-0">          <Link href="/" className="flex items-center gap-1.5 text-base font-bold text-indigo-600">
+            <WewooMark className="w-6 h-6" />
+            微坞
+          </Link>
         <div className="flex items-center gap-1.5">
           {mobileActions}
         </div>
       </header>
     ) : (
       /* ======== Mobile Top Bar (all other pages) ======== */
-      <header className="lg:hidden flex items-center justify-between h-12 px-4 bg-white border-b border-gray-200 flex-shrink-0">
-        <Link href="/" className="text-base font-bold text-indigo-600">
-          微坞
-        </Link>
+      <header className="lg:hidden flex items-center justify-between h-12 px-4 bg-white border-b border-gray-200 flex-shrink-0">          <Link href="/" className="flex items-center gap-1.5 text-base font-bold text-indigo-600">
+            <WewooMark className="w-6 h-6" />
+            微坞
+          </Link>
         <div className="flex items-center gap-2">
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
