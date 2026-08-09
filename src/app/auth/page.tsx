@@ -251,7 +251,7 @@ function AuthForm() {
           )}
 
           {/* 页签切换 */}
-          <div className="flex border border-gray-200 rounded-xl mb-6 bg-white p-1">
+          <div className="flex panel mb-6 p-1">
             <button
               onClick={() => {
                 setTab("login");
@@ -296,7 +296,7 @@ function AuthForm() {
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder="怎么称呼你"
                   maxLength={20}
-                  className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5] transition-shadow"
+                  className="input-base min-h-[48px]"
                   style={{ fontSize: "16px" }}
                   disabled={submitting || !configured}
                   autoComplete="name"
@@ -313,7 +313,7 @@ function AuthForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
-                className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5] transition-shadow"
+                className="input-base min-h-[48px]"
                 style={{ fontSize: "16px" }}
                 disabled={submitting || !configured}
                 autoComplete="email"
@@ -331,7 +331,7 @@ function AuthForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="至少 6 个字符"
-                className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5] transition-shadow"
+                className="input-base min-h-[48px]"
                 style={{ fontSize: "16px" }}
                 disabled={submitting || !configured}
                 autoComplete={tab === "login" ? "current-password" : "new-password"}
@@ -350,7 +350,7 @@ function AuthForm() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="再次输入密码"
-                  className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5] transition-shadow"
+                  className="input-base min-h-[48px]"
                   style={{ fontSize: "16px" }}
                   disabled={submitting || !configured}
                   autoComplete="new-password"

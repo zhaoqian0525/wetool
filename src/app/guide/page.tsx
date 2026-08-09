@@ -167,7 +167,7 @@ export default function GuidePage() {
                   </div>
                   <div className="space-y-3">
                     {aiPrompts.map((p) => (
-                      <div key={p.label} className="bg-white rounded-xl border border-gray-200 p-4">
+                      <div key={p.label} className="panel p-4">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
                             {p.label}
@@ -247,7 +247,7 @@ export default function GuidePage() {
         <div className="mt-16">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">常见问题</h2>
           <div className="space-y-4">
-            <details className="bg-white rounded-xl border border-gray-200 p-5 group">
+            <details className="panel p-5 group">
               <summary className="font-medium text-gray-800 cursor-pointer flex items-center justify-between">
                 <span>我完全不会编程，真的能做吗？</span>
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
@@ -256,7 +256,7 @@ export default function GuidePage() {
                 当然可以！你只需要告诉 AI 你想要什么工具，AI 会帮你写出全部代码。你只要把代码复制粘贴到微坞就行了。就像让厨师做菜，你只需要点菜，不用自己炒。
               </p>
             </details>
-            <details className="bg-white rounded-xl border border-gray-200 p-5 group">
+            <details className="panel p-5 group">
               <summary className="font-medium text-gray-800 cursor-pointer flex items-center justify-between">
                 <span>用哪个 AI 比较好？</span>
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
@@ -265,7 +265,7 @@ export default function GuidePage() {
                 推荐用 ChatGPT、Kimi、豆包、文心一言、通义千问等任意一个都可以。免费版就够用了。关键是把你的需求说清楚，比如"帮我做一个 XXX，要好看，适配手机"。
               </p>
             </details>
-            <details className="bg-white rounded-xl border border-gray-200 p-5 group">
+            <details className="panel p-5 group">
               <summary className="font-medium text-gray-800 cursor-pointer flex items-center justify-between">
                 <span>发布需要注册账号吗？</span>
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
@@ -274,7 +274,7 @@ export default function GuidePage() {
                 是的，发布工具需要先登录。注册很简单，用邮箱就行。不登录也可以在编辑器里写代码和预览，只是不能发布到广场分享给别人。
               </p>
             </details>
-            <details className="bg-white rounded-xl border border-gray-200 p-5 group">
+            <details className="panel p-5 group">
               <summary className="font-medium text-gray-800 cursor-pointer flex items-center justify-between">
                 <span>代码粘贴进去后预览是空白的？</span>
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
@@ -283,7 +283,7 @@ export default function GuidePage() {
                 可能是代码不完整或者有错误。可以回到 AI 那里，让它检查一下代码。也可以先试试点「试试示例」按钮，加载一个能用的示例代码看看效果，确保编辑器正常工作。
               </p>
             </details>
-            <details className="bg-white rounded-xl border border-gray-200 p-5 group">
+            <details className="panel p-5 group">
               <summary className="font-medium text-gray-800 cursor-pointer flex items-center justify-between">
                 <span>可以修改别人发布的工具吗？</span>
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
@@ -292,7 +292,7 @@ export default function GuidePage() {
                 可以！在任意工具详情页点「改编」按钮，就会把别人的代码复制到你的编辑器里，你可以随便修改后发布自己的版本。这是微坞的特色功能 —— 大家互相学习、互相改进。
               </p>
             </details>
-            <details className="bg-white rounded-xl border border-gray-200 p-5 group">
+            <details className="panel p-5 group">
               <summary className="font-medium text-gray-800 cursor-pointer flex items-center justify-between">
                 <span>发布的工具别人怎么看到？</span>
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
@@ -301,7 +301,7 @@ export default function GuidePage() {
                 发布后工具会出现在首页广场，所有人都能看到。你也可以把生成的链接或二维码分享给朋友，他们在手机上直接打开就能用，不需要安装任何东西。
               </p>
             </details>
-            <details className="bg-white rounded-xl border border-gray-200 p-5 group">
+            <details className="panel p-5 group">
               <summary className="font-medium text-gray-800 cursor-pointer flex items-center justify-between">
                 <span>工具能记住用户的数据吗？比如打卡记录、游戏进度</span>
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>

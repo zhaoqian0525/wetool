@@ -6,6 +6,20 @@
 
 ---
 
+## [1.12.0] - 2026-08-09
+
+### Added（P2 设计系统深化·第一批）
+- 设计 token 完整落地：圆角阶梯（12/20/35px）、文字层级（--text-1/2/3）、背景层级（--bg-card/--bg-soft）、页面宽度（--page-width）、补 --brand-200，青色点缀 #22D3EE 唯一来源 --accent-cyan（Logo 去掉硬编码）
+- 语义工具类：panel（卡片）、btn-secondary（白底靛蓝描边）、btn-ghost（弱操作）、btn-danger（删除）、input-base（输入框统一）、radius-sm/md/lg、text-secondary/text-muted、bg-soft、page-width
+- 组件化：新增 src/components/ui.tsx（Modal 统一遮罩/卡片/进出场动画 + Badge 语义徽章）
+
+### Changed
+- 6 处弹窗接入统一 Modal：新手引导、安装主屏幕引导、发布工具、发布成功卡片、更换封面、删除确认（行为零变化，遮罩/圆角/动画统一）
+- 分类/状态/下载型徽章接入 Badge 组件（首页下载标、工具详情分类/刚刚发布/可见性）
+- 高频卡片组合改 panel、示例/教程按钮改 btn-secondary、登录/发布输入框改 input-base、弹窗次按钮改 btn-ghost/btn-danger
+
+---
+
 ## [1.11.1] - 2026-08-09
 
 ### Fixed

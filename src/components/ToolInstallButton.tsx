@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Modal } from "@/components/ui";
 
 /**
  * v1.9.1 工具页「添加到主屏幕」按钮
@@ -92,14 +93,7 @@ export default function ToolInstallButton({ compact = false }: { compact?: boole
       </button>
 
       {guideOpen && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-          onClick={() => setGuideOpen(false)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <Modal open maxWidth="max-w-sm" z="z-[70]" onClose={() => setGuideOpen(false)} cardClassName="p-5">
             <h3 className="text-base font-bold text-gray-900 mb-2">📲 把这个工具加到主屏幕</h3>
 
             {guideIosBrowser && (
@@ -143,13 +137,12 @@ export default function ToolInstallButton({ compact = false }: { compact?: boole
 
             <button
               onClick={() => setGuideOpen(false)}
-              className="w-full min-h-[44px] bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-xl transition-colors"
+              className="w-full btn-ghost"
               style={{ touchAction: "manipulation" }}
             >
               我知道了
             </button>
-          </div>
-        </div>
+        </Modal>
       )}
     </>
   );

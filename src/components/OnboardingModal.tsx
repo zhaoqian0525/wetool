@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Modal } from "@/components/ui";
 
 const GUIDE_SEEN_KEY = "wewoo-guide-seen";
 
@@ -75,8 +76,7 @@ export default function OnboardingModal() {
   const isLast = step === slides.length - 1;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
+    <Modal open={show} maxWidth="max-w-md" z="z-[60]" cardClassName="rounded-3xl">
         {/* Slide visual */}
         <div className={`bg-gradient-to-br ${slide.color} p-8 text-center relative`}>
           <button
@@ -138,7 +138,6 @@ export default function OnboardingModal() {
             </Link>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

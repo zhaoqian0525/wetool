@@ -67,7 +67,7 @@ export default function CleanupPage() {
         )}
 
         {tools.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+          <div className="panel p-8 text-center">
             <p className="text-3xl mb-2">✨</p>
             <p className="text-sm text-gray-400">没有需要清理的本地数据</p>
             <Link href="/" className="inline-block mt-4 text-xs text-indigo-600 hover:underline">返回首页</Link>
@@ -77,7 +77,7 @@ export default function CleanupPage() {
             <p className="text-sm text-gray-600 mb-4">找到 {tools.length} 个本地工具（仅存在于此浏览器）：</p>
             <div className="space-y-3 mb-6">
               {tools.map((t) => (
-                <div key={t.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between">
+                <div key={t.id} className="panel p-4 flex items-center justify-between">
                   <div>
                     <p className="font-medium text-gray-800 text-sm">{t.title || "未命名"}</p>
                     <p className="text-xs text-gray-400">@{t.author || "匿名"} · {t.category || "未分类"} · {t.visibility || "公开"}</p>

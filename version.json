@@ -1,6 +1,6 @@
 {
-  "version": "1.11.1",
+  "version": "1.12.0",
   "buildDate": "2026-08-09",
-  "buildTimestamp": "2026-08-09T20:45:00.000+08:00",
-  "description": "v1.11.1 稳定修复：根治手机端 12 秒误报「语法错误」（READY 确认按 iframe 实例记忆 + PING 补收 + onLoad 兜底，重试真正重建 iframe 重新计时）；创作页顶部按钮样式统一（教程改图标+文字，示例/教程统一白底靛蓝描边次级样式）。"
+  "buildTimestamp": "2026-08-09T22:30:00.000+08:00",
+  "description": "v1.12.0 P2 设计系统深化（第一批）：token 完整落地（圆角 12/20/35、文字层级、背景层级、页面宽度、青色点缀去硬编码）+ 语义工具类（panel/btn-secondary/btn-ghost/btn-danger/input-base）+ 组件化（Modal 统一 6 处弹窗、Badge 统一分类/状态徽章）。暗色模式排 v1.12.1。"
 }

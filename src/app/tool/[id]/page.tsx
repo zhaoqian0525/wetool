@@ -21,6 +21,7 @@ import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } 
 import { captureCover, generateCustomCoverBlob, uploadCoverToStorage } from "@/lib/cover";
 import { getSupabase } from "@/lib/supabase";
 import ToolInstallButton from "@/components/ToolInstallButton";
+import { Modal, Badge } from "@/components/ui";
 
 
 export default function ToolDetailPage() {
@@ -669,24 +670,19 @@ export default function ToolDetailPage() {
               {tool.title}
             </h1>
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              <span className="inline-block text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                {tool.category}
-              </span>
+              <Badge>{tool.category}</Badge>
               {isJustPublished && (
-                <span className="inline-block text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full animate-pulse">
-                  刚刚发布
-                </span>
+                <Badge tone="green" className="animate-pulse">刚刚发布</Badge>
               )}
               {/* 可见性徽章（仅作者可见） */}
               {isAuthor && (
                 <div className="relative group">
-                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full cursor-pointer ${
-                    toolVisibility === "public" ? "text-green-700 bg-green-100" :
-                    toolVisibility === "unlisted" ? "text-amber-700 bg-amber-100" :
-                    "text-red-700 bg-red-100"
-                  }`}>
+                  <Badge
+                    tone={toolVisibility === "public" ? "green" : toolVisibility === "unlisted" ? "amber" : "red"}
+                    className="cursor-pointer"
+                  >
                     {toolVisibility === "public" ? "公开" : toolVisibility === "unlisted" ? "未列出" : "私密"}
-                  </span>
+                  </Badge>
                   {/* 下拉菜单 */}
                   <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-30 hidden group-hover:block min-w-[120px]">
                     <button onClick={() => handleChangeVisibility("public")} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
@@ -1107,8 +1103,7 @@ export default function ToolDetailPage() {
     />
     {/* 更换封面对话框（仅作者） */}
     {coverEditOpen && (
-      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto">
+      <Modal open maxWidth="max-w-sm" cardClassName="p-6 max-h-[90vh] overflow-y-auto">
           <h3 className="text-base font-semibold text-gray-900 mb-1">更换封面</h3>
           <p className="text-xs text-gray-500 mb-4">封面会显示在首页广场、分享卡片和最近使用里</p>
           <CoverPicker value={coverChoice} onChange={setCoverChoice} disabled={coverSaving} />
@@ -1116,14 +1111,14 @@ export default function ToolDetailPage() {
             <button
               onClick={() => setCoverEditOpen(false)}
               disabled={coverSaving}
-              className="flex-1 min-h-[44px] py-2.5 text-sm text-gray-500 hover:bg-gray-50 rounded-xl transition-colors disabled:opacity-40"
+              className="flex-1 btn-ghost disabled:opacity-40"
             >
               取消
             </button>
             <button
               onClick={handleSaveCover}
               disabled={coverSaving}
-              className="flex-1 min-h-[44px] py-2.5 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              className="flex-1 min-h-[44px] btn-primary disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
               {coverSaving ? (
                 <>
@@ -1135,13 +1130,11 @@ export default function ToolDetailPage() {
               )}
             </button>
           </div>
-        </div>
-      </div>
+      </Modal>
     )}
     {/* 删除确认对话框 */}
     {deleteOpen && (
-      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-6 max-w-xs w-full text-center">
+      <Modal open maxWidth="max-w-xs" cardClassName="p-6 text-center">
           <div className="text-3xl mb-3">⚠️</div>
           <h3 className="text-base font-semibold text-gray-900 mb-1">确认删除</h3>
           <p className="text-sm text-gray-500 mb-4">
@@ -1151,14 +1144,14 @@ export default function ToolDetailPage() {
             <button
               onClick={() => setDeleteOpen(false)}
               disabled={deleting}
-              className="flex-1 min-h-[44px] text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 disabled:opacity-40"
+              className="flex-1 btn-ghost disabled:opacity-40"
             >
               取消
             </button>
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="flex-1 min-h-[44px] text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-40 flex items-center justify-center gap-1.5"
+              className="flex-1 btn-danger disabled:opacity-40 flex items-center justify-center gap-1.5"
             >
               {deleting ? (
                 <>
@@ -1170,8 +1163,7 @@ export default function ToolDetailPage() {
               )}
             </button>
           </div>
-        </div>
-      </div>
+      </Modal>
     )}
 
     </ToolPageErrorBoundary>

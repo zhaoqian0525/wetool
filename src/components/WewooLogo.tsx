@@ -25,7 +25,7 @@ export function WewooMark({ className = "w-6 h-6" }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="80" cy="43" r="11" fill="#22D3EE" />
+      <circle cx="80" cy="43" r="11" fill="var(--accent-cyan)" />
     </svg>
   );
 }

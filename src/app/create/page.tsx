@@ -18,6 +18,7 @@ import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } 
 import { captureCover, generateCustomCoverBlob, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
 import { AI_PROMPT_TEMPLATE, aiPrompts, containsSensitiveContent, extractHtmlFromAiOutput } from "@/lib/aiPrompts";
 import { getLsSnapshot } from "@/lib/toolStateBridge";
+import { Modal } from "@/components/ui";
 
 // --- Constants ---
 
@@ -845,7 +846,7 @@ function CreatePageInner() {
     <>
       <button
         onClick={() => { setPreviewLsSeed(readPreviewSeed()); setCode(TEMPLATE_CODE); toast.info("已填入示例工具"); }}
-        className="min-w-[44px] min-h-[44px] flex items-center justify-center px-2.5 py-1 text-xs rounded-lg font-medium text-indigo-600 bg-white border border-indigo-200 hover:bg-indigo-50 active:scale-95 transition-all"
+        className="btn-secondary"
       >
         示例
       </button>
@@ -854,7 +855,7 @@ function CreatePageInner() {
         target="_blank"
         title="教程"
         aria-label="教程"
-        className="min-w-[44px] min-h-[44px] flex items-center justify-center gap-1 px-2.5 py-1 text-xs rounded-lg font-medium text-indigo-600 bg-white border border-indigo-200 hover:bg-indigo-50 active:scale-95 transition-all"
+        className="btn-secondary"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -1418,8 +1419,7 @@ function CreatePageInner() {
 
       {/* Publish Modal */}
       {publishOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
+        <Modal open maxWidth="max-w-md" cardClassName="max-h-[90vh] flex flex-col">
             <div className="p-5 lg:p-6 overflow-y-auto">
               <h2 className="text-lg font-bold text-gray-900 mb-4">发布工具</h2>
 
@@ -1430,7 +1430,7 @@ function CreatePageInner() {
                     value={publishTitle}
                     onChange={(e) => setPublishTitle(e.target.value)}
                     placeholder="给你的工具取个名字"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5]"
+                    className="input-base"
                     style={{ fontSize: "16px" }}
                     autoFocus
                     disabled={publishing}
@@ -1443,7 +1443,7 @@ function CreatePageInner() {
                     value={publishDesc}
                     onChange={(e) => setPublishDesc(e.target.value)}
                     placeholder="简单说说这个工具能做什么"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5]"
+                    className="input-base"
                     style={{ fontSize: "16px" }}
                     disabled={publishing}
                   />
@@ -1454,7 +1454,7 @@ function CreatePageInner() {
                   <select
                     value={publishCategory}
                     onChange={(e) => setPublishCategory(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5] bg-white"
+                    className="input-base"
                     style={{ fontSize: "16px" }}
                     disabled={publishing}
                   >
@@ -1572,7 +1572,7 @@ function CreatePageInner() {
             <div className="flex border-t border-gray-100 flex-shrink-0">
               <button
                 onClick={() => { if (!publishing) setPublishOpen(false); }}
-                className="flex-1 min-h-[48px] py-3 text-base text-gray-500 hover:bg-gray-50 transition-colors font-medium disabled:opacity-40"
+                className="flex-1 btn-ghost min-h-[48px] text-base disabled:opacity-40"
                 disabled={publishing}
               >
                 取消
@@ -1585,8 +1585,7 @@ function CreatePageInner() {
                 {publishBtnText}
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Share Card Modal */}
@@ -1638,8 +1637,7 @@ function ShareCard({
     : "";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300">
+    <Modal open maxWidth="max-w-sm">
         <div className="h-1.5 brand-gradient" />
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -1752,7 +1750,6 @@ function ShareCard({
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

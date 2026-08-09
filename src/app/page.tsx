@@ -10,6 +10,7 @@ import { authedFetch } from "@/lib/api-client";
 import versionInfo from "../../version.json";
 import { getToolEmoji } from "@/lib/constants";
 import { WewooMark } from "@/components/WewooLogo";
+import { Badge } from "@/components/ui";
 
 // ---- Constants ----
 
@@ -501,9 +502,9 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
         <h3 className="flex items-center gap-1 text-[15px] font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
           <span className="truncate">{tool.title}</span>
           {tool.isDownloadable && (
-            <span className="flex-shrink-0 text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+            <Badge tone="amber" className="flex-shrink-0 text-[10px] px-1.5 py-0.5 border border-amber-200">
               💻 下载
-            </span>
+            </Badge>
           )}
         </h3>
         <div className="flex items-center justify-between gap-2 mt-1.5">
