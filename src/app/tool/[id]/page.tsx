@@ -78,6 +78,10 @@ export default function ToolDetailPage() {
   // 🔥 iframe 加载状态 — 显示骨架屏直到 iframe onLoad 触发
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
+  // v1.11.1: 重试计数（重建 iframe 重新计时）；READY 确认按 iframe 实例记忆，
+  // 修复 iOS Safari 上一次性 READY 消息早于监听器挂载而丢失导致的 12 秒误报「语法错误」
+  const [retryNonce, setRetryNonce] = useState(0);
+  const readyRef = useRef<Record<string, boolean>>({});
   const [fullscreen, setFullscreen] = useState(false);
   // v1.9 修复：仅单工具 PWA 入口（?app=1）自动全屏；
   // 全站 PWA 入口（standalone 但无 ?app=1）正常显示详情页，不再自动全屏
@@ -305,6 +309,9 @@ export default function ToolDetailPage() {
   const { srcDoc: previewSrcDoc, blobUrl: previewBlobUrl, sandbox: blobSandbox } = useBlobSrcDoc(tool?.code ?? "", lsSeed);
   // srcDoc 就绪后才挂载 iframe，避免先以空文档挂载再重建（导致空白闪烁/二次加载）
   const docReady = !!previewSrcDoc;
+  // 当前 iframe 实例标识：srcDoc/blobUrl 变化或手动重试都会重建 iframe，
+  // READY/onLoad 确认按此标识记忆，避免旧实例的确认被新实例误用
+  const iframeInstanceKey = `${tool?.id ?? "empty"}:${isWechat ? previewBlobUrl : previewSrcDoc}:r${retryNonce}`;
   // 加载已保存的状态
   useEffect(() => {
     if (!tool?.id) return; // 等待工具数据加载完成
@@ -362,10 +369,13 @@ export default function ToolDetailPage() {
   useEffect(() => {
     // v1.9.11: 计时器仅在 iframe 真正挂载后启动（docReady && stateLoaded），
     // 避免登录用户状态请求慢时 iframe 尚未挂载、12s 后误报「语法错误」。
+    // v1.11.1: READY 确认改为按 iframe 实例记忆（readyRef[iframeInstanceKey]），
+    // 一次性 READY 消息早于监听器挂载时（iOS Safari srcdoc 同步加载）不再导致误报；
+    // 监听器挂载后主动 PING iframe 补收 READY，onLoad 作为兜底确认。
     if (!previewBlobUrl || !tool || !docReady || !stateLoaded) { setIframeError(false); return; }
     setIframeError(false);
     let errorTimer: ReturnType<typeof setTimeout>;
-    let readyConfirmed = false;
+    const instanceKey = iframeInstanceKey;
 
     // 保存状态到 Supabase（合并 _ls 快照，避免 localStorage 数据被覆盖）
     const saveState = (state: Record<string, unknown>) => {
@@ -390,7 +400,7 @@ export default function ToolDetailPage() {
 
       switch (type) {
         case "WEWOO_READY":
-          readyConfirmed = true;
+          readyRef.current[instanceKey] = true;
           // 注入已保存的状态（含 localStorage 快照，刷新/全屏后恢复）
           {
             const ls = getLsSnapshot(tool?.id ?? "");
@@ -456,20 +466,36 @@ export default function ToolDetailPage() {
     }
     window.addEventListener("message", onMessage);
 
+    // 主动 PING：若 iframe 已运行但 READY 早于本监听器发出，可立即补收确认
+    let pingTimer: ReturnType<typeof setTimeout> | null = null;
+    const ping = (attempt: number) => {
+      if (readyRef.current[instanceKey]) return;
+      const f = document.getElementById("tool-iframe") as HTMLIFrameElement | null;
+      if (f?.contentWindow) {
+        try { f.contentWindow.postMessage({ type: "WEWOO_PING" }, "*"); } catch { /* ignore */ }
+      }
+      if (attempt < 4) pingTimer = setTimeout(() => ping(attempt + 1), 1000);
+    };
+    ping(0);
+
     errorTimer = setTimeout(() => {
-      if (!readyConfirmed) setIframeError(true);
+      if (!readyRef.current[instanceKey]) setIframeError(true);
     }, 12000);
 
     return () => {
       window.removeEventListener("message", onMessage);
       clearTimeout(errorTimer);
+      if (pingTimer) clearTimeout(pingTimer);
     };
-  }, [previewBlobUrl, tool?.id, docReady, stateLoaded]);
+  }, [previewBlobUrl, tool?.id, docReady, stateLoaded, iframeInstanceKey]);
 
   // v1.9.11: 误报「语法错误」后手动重新加载 iframe
+  // v1.11.1: 重试时清空 READY 确认并重建 iframe（key 变化），让错误检测重新计时
   const handleRetryIframe = useCallback(() => {
     setIframeError(false);
     setIframeLoaded(false);
+    readyRef.current = {};
+    setRetryNonce((n) => n + 1);
   }, []);
 
   // 清空工具使用记录/状态
@@ -875,12 +901,16 @@ export default function ToolDetailPage() {
                 {docReady && (
                   <iframe
                     id="tool-iframe"
-                    key={`${tool?.id ?? "empty"}:${isWechat ? previewBlobUrl : previewSrcDoc}`}
+                    key={iframeInstanceKey}
                     {...(isWechat ? { src: previewBlobUrl } : { srcDoc: previewSrcDoc })}
                     title={tool.title}
                     className="absolute inset-0 w-full h-full border-0"
                     sandbox={blobSandbox}
-                    onLoad={() => setIframeLoaded(true)}
+                    onLoad={() => {
+                      setIframeLoaded(true);
+                      // v1.11.1: onLoad 作为 READY 的兜底确认（页面已加载执行即可视为正常）
+                      readyRef.current[iframeInstanceKey] = true;
+                    }}
                     onError={() => setIframeError(true)}
                     style={{ opacity: 1 }}
                   />

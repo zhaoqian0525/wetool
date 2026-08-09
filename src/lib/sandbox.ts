@@ -294,6 +294,11 @@ const STORAGE_API = `<script>
   }
   window.addEventListener('message', function(e) {
     if (!e.data) return;
+    // v1.11.1: 父页面监听器可能晚于本 iframe 的一次性 READY 挂载（iOS Safari srcdoc 同步加载），
+    // 收到 WEWOO_PING 时补发 READY，避免 12 秒误报「语法错误」
+    if (e.data.type === 'WEWOO_PING') {
+      try { window.parent.postMessage({ type: 'WEWOO_READY' }, '*'); } catch(_) {}
+    }
     // 回调匹配（父页面响应，带 _id；loadState 的 WEWOO_STATE_INJECT 回复也带 _id）
     if (e.data._id !== undefined) {
       var cb = _callbacks[e.data._id];
