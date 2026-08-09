@@ -347,9 +347,7 @@ export default function HomePage() {
                   {/* 标题 */}
                   <div className="p-2">
                     <h3 className="text-xs font-medium text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
-                      {String(t.title || "").length > 8
-                        ? String(t.title).slice(0, 8) + "…"
-                        : String(t.title || "")}
+                      {String(t.title || "")}
                     </h3>
                   </div>
                 </Link>
@@ -440,8 +438,8 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
       href={`/tool/${tool.id}`}
       className="group card-hover-float block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
     >
-      {/* Thumbnail: cover_url > gradient placeholder */}
-      <div className="relative aspect-[4/3] flex flex-col items-center justify-center overflow-hidden">
+      {/* Thumbnail: 纯净封面，不叠加任何徽章（v1.9.2） */}
+      <div className="relative aspect-[4/3] overflow-hidden">
         {tool.coverUrl ? (
           <Image
             src={tool.coverUrl}
@@ -452,47 +450,37 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
             loading="lazy"
           />
         ) : (
-          <>
-            {/* Gradient background placeholder — 无 cover 时显示 */}
-            <div className="absolute inset-0" style={{ background: tool.thumbnailGradient }} />
-            {/* Large emoji icon */}
-            <span className="relative z-10 text-3xl sm:text-4xl mb-1.5 drop-shadow-lg group-hover:scale-110 transition-transform duration-200">
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ background: tool.thumbnailGradient }}
+          >
+            <span className="text-4xl sm:text-5xl drop-shadow-lg group-hover:scale-110 transition-transform duration-200">
               {emoji}
             </span>
-            {/* Title */}
-            <span className="relative z-10 text-white font-bold text-xs sm:text-sm text-center drop-shadow-md line-clamp-2 px-3">
-              {tool.title}
+          </div>
+        )}
+      </div>
+
+      {/* Card body：信息集中在下方，分层清晰 */}
+      <div className="p-3">
+        <h3 className="flex items-center gap-1 text-[15px] font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+          <span className="truncate">{tool.title}</span>
+          {tool.isDownloadable && (
+            <span className="flex-shrink-0 text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+              💻 下载
             </span>
-          </>
-        )}
-        {/* Category badge */}
-        <span className="absolute top-2 right-2 z-10 bg-black/40 text-white text-[11px] px-2.5 py-0.5 rounded-full font-medium">
-          {tool.category}
-        </span>
-        {/* 下载型标签 */}
-        {tool.isDownloadable && (
-          <span className="absolute top-2 left-2 z-10 bg-black/40 text-white text-[11px] px-2.5 py-0.5 rounded-full">
-            💻 下载型
-          </span>
-        )}
-        {/* Stats badges */}
-        <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1">
+          )}
+        </h3>
+        <div className="flex items-center justify-between gap-2 mt-1.5">
+          <p className="text-xs text-gray-500 truncate">@{tool.author}</p>
           {viewCount !== undefined && viewCount > 0 && (
-            <span className="flex items-center gap-0.5 bg-black/40 text-white text-[11px] px-2 py-0.5 rounded-full">
+            <span className="flex-shrink-0 text-[11px] text-gray-400 flex items-center gap-0.5">
               👁 {viewCount > 999 ? (viewCount / 1000).toFixed(1) + "k" : viewCount}
             </span>
           )}
         </div>
-      </div>
-
-      {/* Card body */}
-      <div className="p-3">
-        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
-          {tool.title}
-        </h3>
-        <p className="text-xs text-gray-500 mt-0.5 truncate">@{tool.author}</p>
         {tool.description && (
-          <p className="text-xs text-gray-600 mt-1.5 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
             {tool.description}
           </p>
         )}
