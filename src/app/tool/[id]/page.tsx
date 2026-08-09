@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
@@ -677,7 +678,7 @@ export default function ToolDetailPage() {
           )}
           <div className="flex items-center gap-2 text-[13px] text-gray-500 flex-wrap">
             {tool.authorId ? (
-              <Link href={`/user/${tool.authorId}`} className="text-indigo-600 hover:underline font-medium">
+              <Link href={`/user/${tool.authorId}`} className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0">
                 @{tool.author}
               </Link>
             ) : (
@@ -698,7 +699,7 @@ export default function ToolDetailPage() {
                   ✨ 改编自
                   <Link
                     href={`/tool/${tool.sourceTool.id}`}
-                    className="text-indigo-600 hover:underline font-medium"
+                    className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0"
                   >
                     《{tool.sourceTool.title}》
                   </Link>
@@ -903,8 +904,21 @@ export default function ToolDetailPage() {
                   href={`/tool/${rt.id}`}
                   className="group card-hover-float block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
                 >
-                  <div className="relative aspect-[4/3] flex items-center justify-center overflow-hidden" style={{ background: rt.thumbnailGradient }}>
-                    <span className="text-3xl drop-shadow-lg">{getToolEmoji(rt)}</span>
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    {rt.coverUrl ? (
+                      <Image
+                        src={rt.coverUrl}
+                        alt={rt.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 25vw"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center" style={{ background: rt.thumbnailGradient }}>
+                        <span className="text-3xl drop-shadow-lg group-hover:scale-110 transition-transform duration-200">{getToolEmoji(rt)}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="p-2">
                     <p className="text-xs font-medium text-gray-700 group-hover:text-indigo-600 truncate">{rt.title}</p>
@@ -980,7 +994,7 @@ export default function ToolDetailPage() {
           ) : (
             <div className="bg-gray-50 rounded-2xl p-5 mb-6 text-center">
               <p className="text-sm text-gray-500">
-                <Link href={`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`} className="text-indigo-600 hover:underline font-medium">登录</Link>后即可发表评价
+                <Link href={`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`} className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0">登录</Link>后即可发表评价
               </p>
             </div>
           )}

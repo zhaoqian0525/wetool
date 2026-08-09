@@ -3,6 +3,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { ToastProvider } from "@/components/ToastProvider";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import InstallPrompt from "@/components/InstallPrompt";
+import SiteManifestLink from "@/components/SiteManifestLink";
 import Footer from "@/components/Footer";
 import "./globals.css";
 
@@ -88,6 +89,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-gray-50 text-gray-900 min-h-screen">
+        <SiteManifestLink />
         <ToastProvider>
           <AuthProvider>
             {children}

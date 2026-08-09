@@ -992,8 +992,8 @@ function CreatePageInner() {
           <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-2 bg-gray-50 border-b border-gray-200">
             <div className="flex items-center gap-1.5">
               <span className="text-base">💬</span>
-              <span className="text-xs lg:text-sm font-medium text-gray-800">和 AI 对话生成工具</span>
-              <span className="text-[10px] text-gray-500 hidden sm:inline">内置 DeepSeek</span>
+              <span className="text-sm font-medium text-gray-800">和 AI 对话生成工具</span>
+              <span className="text-xs text-gray-400 hidden sm:inline">内置 DeepSeek</span>
             </div>
             <div className="flex items-center gap-1.5">
               {aiMessages.length > 0 && (
@@ -1021,7 +1021,7 @@ function CreatePageInner() {
 
                 {aiVersions.length > 0 && (
                   <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "thin" }}>
-                    <span className="text-[10px] text-gray-500 flex-shrink-0">版本</span>
+                    <span className="text-xs text-gray-500 flex-shrink-0">版本</span>
                     {aiVersions.map((v, idx) => (
                       <button
                         key={v.id}
@@ -1052,7 +1052,7 @@ function CreatePageInner() {
 
                 <div ref={aiChatScrollRef} className="space-y-2 max-h-[280px] overflow-y-auto pr-1 mb-2">
                   {aiMessages.length === 0 && (
-                    <div className="text-[11px] text-gray-500 bg-gray-100 rounded-lg px-3 py-2 leading-relaxed">
+                    <div className="text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2 leading-relaxed">
                       描述你想做的工具，AI 会直接生成可运行的代码并自动填入编辑器；可以继续对话调整：「换个配色」「加个历史记录」「再生成一个更简约的版本」…
                     </div>
                   )}
@@ -1084,7 +1084,7 @@ function CreatePageInner() {
                   {aiMessages.map((m) => (
                     <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
                       <div
-                        className={`max-w-[88%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${
+                        className={`max-w-[88%] rounded-xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words ${
                           m.role === "user"
                             ? "bg-indigo-600 text-white rounded-br-sm"
                             : "bg-white text-gray-700 border border-gray-200 rounded-bl-sm"
@@ -1095,7 +1095,7 @@ function CreatePageInner() {
                           <span className="inline-block w-1.5 h-3.5 ml-1 align-middle bg-indigo-500 animate-pulse" />
                         )}
                         {!m.streaming && m.role === "assistant" && extractHtmlFromAiOutput(m.content) && (
-                          <div className="mt-1.5 text-[10px] text-emerald-600">✅ 代码已自动填入编辑器，点版本按钮可切换</div>
+                          <div className="mt-1.5 text-xs text-emerald-600">✅ 代码已自动填入编辑器，点版本按钮可切换</div>
                         )}
                       </div>
                     </div>
@@ -1120,7 +1120,7 @@ function CreatePageInner() {
                         handleAiSend();
                       }
                     }}
-                    className="flex-1 min-h-[44px] max-h-[96px] bg-white border border-gray-200 rounded-lg p-2.5 text-xs lg:text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 resize-none"
+                    className="flex-1 min-h-[44px] max-h-[96px] bg-white border border-gray-200 rounded-lg p-2.5 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 resize-none"
                     placeholder="描述需求或修改意见，例如：做一个纪念日记录器，能添加重要日子、显示倒数天数…"
                     aria-label="AI 对话输入"
                   />
@@ -1143,7 +1143,7 @@ function CreatePageInner() {
                     </button>
                   )}
                 </div>
-                <div className="mt-1.5 text-[10px] text-gray-500 leading-relaxed">
+                <div className="mt-1.5 text-xs text-gray-400 leading-relaxed">
                   需要服务器/网络等沙盒外能力时，AI 会说明原因并给出可运行的替代方案
                 </div>
               </div>
@@ -1155,7 +1155,7 @@ function CreatePageInner() {
                 className="w-full flex items-center justify-between px-3 py-2.5 min-h-[44px]"
                 style={{ touchAction: "manipulation" }}
               >
-                <span className="flex items-center gap-1.5 text-xs lg:text-sm font-medium text-gray-700">
+                <span className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
                   <span className="text-base">📘</span> 想用外部 AI（ChatGPT/Kimi 等）？复制这段提示词
                 </span>
                 <svg className={`w-3.5 h-3.5 text-gray-500 transition-transform ${externalPromptOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -1163,7 +1163,7 @@ function CreatePageInner() {
               {externalPromptOpen && (
                 <div className="px-3 pb-3 space-y-3">
 <div className="relative">
-                <pre className="text-[11px] lg:text-xs text-gray-500 bg-gray-100 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap leading-relaxed border border-gray-200">
+                <pre className="text-xs text-gray-500 bg-gray-100 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap leading-relaxed border border-gray-200">
 {AI_PROMPT_TEMPLATE}</pre>
                 <button
                   onClick={handleCopyPrompt}
@@ -1189,7 +1189,7 @@ function CreatePageInner() {
               </div>
               {/* 示例提示词：点一下复制，照着改就能用 */}
               <div>
-                <div className="mb-1.5 text-[11px] lg:text-xs font-medium text-gray-500">
+                <div className="mb-1.5 text-xs font-medium text-gray-500">
                   ✨ 示例提示词（点一下复制，照着改就能用）
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -1230,7 +1230,7 @@ function CreatePageInner() {
               <Link
                 href="/guide"
                 target="_blank"
-                className="text-[10px] lg:text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
               >
                 <svg className="w-3 h-3 lg:w-3.5 lg:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -1248,8 +1248,8 @@ function CreatePageInner() {
                 </svg>
                 <span className="hidden sm:inline">清空</span>
               </button>
-              <span className="text-[10px] lg:text-xs text-gray-500 hidden sm:inline">Ctrl+S 保存快照</span>
-              <span className="text-[10px] lg:text-xs text-gray-500">{code.length.toLocaleString()} 字符</span>
+              <span className="text-xs text-gray-500 hidden sm:inline">Ctrl+S 保存快照</span>
+              <span className="text-xs text-gray-500">{code.length.toLocaleString()} 字符</span>
             </div>
           </div>
 
@@ -1269,7 +1269,7 @@ function CreatePageInner() {
             <div className="flex-shrink-0 border-t border-white/10">
               <div className="flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-[#0F1F38]/60">
                 <span className="text-[10px] lg:text-xs font-medium text-gray-400 uppercase tracking-wider">版本快照</span>
-                <span className="text-[10px] lg:text-xs text-gray-500">{versions.length} 个版本</span>
+                <span className="text-xs text-gray-500">{versions.length} 个版本</span>
               </div>
               <div ref={timelineRef} className="flex gap-2 px-3 lg:px-4 pb-2.5 lg:pb-3 overflow-x-auto" style={{ scrollbarWidth: "thin" }}>
                 {versions.map((v, idx) => (
@@ -1305,7 +1305,7 @@ function CreatePageInner() {
               <svg className="w-3 h-3 lg:w-3.5 lg:h-3.5 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-[10px] lg:text-xs text-gray-500">点击「保存快照」或按 Ctrl+S 保存当前版本</span>
+              <span className="text-xs text-gray-500">点击「保存快照」或按 Ctrl+S 保存当前版本</span>
             </div>
           )}
 
