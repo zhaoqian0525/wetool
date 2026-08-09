@@ -1189,6 +1189,7 @@ var GROUPS={
 var KEY="wewoo-unit-convert";
 function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
 var data=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
 var curGroup=data.group||"长度";
 var fromEl=document.getElementById("from"),toEl=document.getElementById("to"),valEl=document.getElementById("val");
 

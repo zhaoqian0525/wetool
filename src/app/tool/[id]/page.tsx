@@ -275,6 +275,11 @@ export default function ToolDetailPage() {
   // 🔥 iframe 状态持久化 — 接收 postMessage 并写 Supabase
   const [savedState, setSavedState] = useState<Record<string, unknown> | null>(null);
   const [stateLoaded, setStateLoaded] = useState(false);
+  // v1.9.8 修复：savedState/user 最新值走 ref，避免登录态/状态保存触发 iframe 就绪计时 effect 重跑而误报「语法错误」
+  const savedStateRef = useRef(savedState);
+  savedStateRef.current = savedState;
+  const userRef = useRef(user);
+  userRef.current = user;
   // 同步读取游客本地墓碑，作为 iframe 初始快照（登录用户以云端为准，见 lsSeed）
   const [guestLsSeed, setGuestLsSeed] = useState<Record<string, string> | null>(null);
   useEffect(() => {
@@ -364,7 +369,7 @@ export default function ToolDetailPage() {
 
     // 保存状态到 Supabase（合并 _ls 快照，避免 localStorage 数据被覆盖）
     const saveState = (state: Record<string, unknown>) => {
-      if (!user?.id || !tool?.id) return;
+      if (!userRef.current?.id || !tool?.id) return;
       const ls = getLsSnapshot(tool?.id ?? "");
       const merged = ls ? { ...state, _ls: ls } : state;
       authedFetch(`/api/tools/${tool.id}/state`, {
@@ -389,14 +394,14 @@ export default function ToolDetailPage() {
           // 注入已保存的状态（含 localStorage 快照，刷新/全屏后恢复）
           {
             const ls = getLsSnapshot(tool?.id ?? "");
-            if (savedState || ls) {
-              reply({ type: "WEWOO_STATE_INJECT", state: { ...(savedState || {}), ...(ls ? { _ls: ls } : {}) } });
+            if (savedStateRef.current || ls) {
+              reply({ type: "WEWOO_STATE_INJECT", state: { ...(savedStateRef.current || {}), ...(ls ? { _ls: ls } : {}) } });
             }
           }
           break;
         case "WEWOO_SAVE":
-          if (user && tool) {
-            const newState = { ...(savedState || {}), [key]: value };
+          if (userRef.current && tool) {
+            const newState = { ...(savedStateRef.current || {}), [key]: value };
             saveState(newState);
             // 回复确认
             reply({ type: "WEWOO_SAVED", _id, key, ok: true });
@@ -404,46 +409,46 @@ export default function ToolDetailPage() {
           break;
         case "WEWOO_LOAD":
           // 从已保存状态中读取
-          reply({ type: "WEWOO_LOADED", _id, key, value: savedState?.[key] ?? null });
+          reply({ type: "WEWOO_LOADED", _id, key, value: savedStateRef.current?.[key] ?? null });
           break;
         case "WEWOO_DRAFT_SAVE":
-          if (user && tool) {
+          if (userRef.current && tool) {
             let parsed: Record<string, unknown>;
             try { parsed = JSON.parse(data); } catch { break; }
-            saveState({ ...(savedState || {}), _draft: parsed });
+            saveState({ ...(savedStateRef.current || {}), _draft: parsed });
             reply({ type: "WEWOO_DRAFT_SAVED", _id, ok: true });
           }
           break;
         case "WEWOO_REMOVE":
-          if (user && tool && savedState) {
-            const newState = { ...savedState };
+          if (userRef.current && tool && savedStateRef.current) {
+            const newState = { ...savedStateRef.current };
             delete newState[key];
             saveState(newState);
           }
           break;
         case "WEWOO_CLEAR":
-          if (user && tool) saveState({});
+          if (userRef.current && tool) saveState({});
           break;
         case "WEWOO_LIST":
           reply({
             type: "WEWOO_LISTED",
             _id,
-            keys: savedState ? Object.keys(savedState).filter((k) => k !== "_draft") : [],
+            keys: savedStateRef.current ? Object.keys(savedStateRef.current).filter((k) => k !== "_draft") : [],
           });
           break;
         case "WEWOO_STATE_SAVE":
-          if (user && tool) {
+          if (userRef.current && tool) {
             let parsed: Record<string, unknown>;
             try { parsed = JSON.parse(data); } catch { break; }
-            saveState({ ...(savedState || {}), _draft: parsed });
+            saveState({ ...(savedStateRef.current || {}), _draft: parsed });
           }
           break;
         case "WEWOO_STATE_LOAD":
           // 返回已保存的完整状态（含 localStorage 快照）
           {
             const ls = getLsSnapshot(tool?.id ?? "");
-            if (savedState || ls) {
-              reply({ type: "WEWOO_STATE_INJECT", _id, state: { ...(savedState || {}), ...(ls ? { _ls: ls } : {}) } });
+            if (savedStateRef.current || ls) {
+              reply({ type: "WEWOO_STATE_INJECT", _id, state: { ...(savedStateRef.current || {}), ...(ls ? { _ls: ls } : {}) } });
             }
           }
           break;
@@ -459,7 +464,7 @@ export default function ToolDetailPage() {
       window.removeEventListener("message", onMessage);
       clearTimeout(errorTimer);
     };
-  }, [previewBlobUrl, tool?.id, user?.id, savedState]);
+  }, [previewBlobUrl, tool?.id]);
 
   // 清空工具使用记录/状态
   const handleClearState = useCallback(async () => {
