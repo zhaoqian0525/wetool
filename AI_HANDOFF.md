@@ -301,6 +301,13 @@ git push https://YOUR_GITHUB_TOKEN@github.com/zhaoqian0525/wetool.git main
 - 收件人：`1015790590@qq.com`；发件人：`2425066932@qq.com`（SMTP smtp.qq.com:465，授权码见 `.workbuddy/send-v183-mail.py`）
 - 写法：复制 `.workbuddy/send-vXXX-mail.py` 改标题/正文即可，正文用 HTML 表格列出改动点
 
+### 编码陷阱：PowerShell 写中文会乱码（2026-08-09 记录）
+- **根因**：Windows PowerShell 5.1 下 `@'...'@ | python -`（heredoc 管道）按系统代码页编码，中文全部变成 `?`，导致邮件正文乱码、version.json/CHANGELOG/ROADMAP/提交消息中文损坏
+- **症状**：v1.9.11、v1.10.0 邮件乱码；v1.6.1 CHANGELOG 段落和 v1.10.0 提交的文档中文全变 `?`
+- **正确写法**：用 `[System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))` 直接写文件（UTF-8 无 BOM），不要用 heredoc 管道传中文
+- **写后必须验证**：`Get-Content $path -Encoding UTF8 -Raw` 读回，确认没有 `?`、`�`（用 `[regex]::Matches($t, '\?')` 计数）
+- **邮件脚本已内置自检**：`.workbuddy/send-vXXX-mail.py` 发送前 assert 主题/发件人含「微坞」、正文无 `??`，乱码会直接报错而不是发出去
+
 ---
 
 ## 10. 当前状态

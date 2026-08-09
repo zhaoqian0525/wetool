@@ -184,7 +184,7 @@ body {
   }
 }
 
-/* --- v1.10 ??????? token --- */
+/* --- v1.10 品牌 token 工具类 --- */
 .bg-page { background-color: var(--bg-page); }
 .text-brand { color: var(--brand-500); }
 .text-brand-strong { color: var(--brand-600); }
