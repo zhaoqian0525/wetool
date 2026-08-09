@@ -527,20 +527,24 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
 // ---- Guide banner (first-time visitor) ----
 
 function GuideBanner() {
+  const { user } = useAuth();
   const [dismissed, setDismissed] = useState(false);
+
+  // 游客与登录用户分开记忆：登录后即使关过游客版提示，也能再看一次教程入口
+  const bannerKey = user ? "wewoo-guide-banner-dismissed-login" : "wewoo-guide-banner-dismissed";
 
   useEffect(() => {
     try {
-      const seen = localStorage.getItem("wewoo-guide-banner-dismissed");
+      const seen = localStorage.getItem(bannerKey);
       if (seen) setDismissed(true);
     } catch {
       // ignore
     }
-  }, []);
+  }, [bannerKey]);
 
   const dismiss = () => {
     try {
-      localStorage.setItem("wewoo-guide-banner-dismissed", "1");
+      localStorage.setItem(bannerKey, "1");
     } catch {
       // ignore
     }
@@ -556,8 +560,10 @@ function GuideBanner() {
           📖
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-800">第一次来？看看新手教程</p>
-          <p className="text-xs text-gray-500 mt-0.5 hidden sm:block">5 分钟学会做你的第一个小工具，不会编程也能做</p>
+          <p className="text-sm font-semibold text-gray-800">
+            {user ? "想不起来怎么做？看看新手教程" : "第一次来？看看新手教程"}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5 hidden sm:block">不会编程也能做，5 分钟上手，随时可以回来复习</p>
         </div>
         <Link
           href="/guide"
