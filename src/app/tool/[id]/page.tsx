@@ -626,47 +626,51 @@ export default function ToolDetailPage() {
       />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Tool Header */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <span className="inline-block text-xs font-medium text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
-              {tool.category}
-            </span>
-            {isJustPublished && (
-              <span className="inline-block text-xs font-medium text-green-700 bg-green-100 px-2.5 py-1 rounded-full animate-pulse">
-                刚刚发布
+        {/* Tool Header（v1.9.4 压缩：标题与徽章同行、描述两行截断、改编自并入 meta 行） */}
+        <div className="mb-5 sm:mb-6">
+          <div className="flex items-start justify-between gap-2 flex-wrap mb-1.5">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug flex-1 min-w-0">
+              {tool.title}
+            </h1>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="inline-block text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                {tool.category}
               </span>
-            )}
-            {/* 可见性徽章（仅作者可见） */}
-            {isAuthor && (
-              <div className="relative group">
-                <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full cursor-pointer ${
-                  toolVisibility === "public" ? "text-green-700 bg-green-100" :
-                  toolVisibility === "unlisted" ? "text-amber-700 bg-amber-100" :
-                  "text-red-700 bg-red-100"
-                }`}>
-                  {toolVisibility === "public" ? "公开" : toolVisibility === "unlisted" ? "未列出" : "私密"}
+              {isJustPublished && (
+                <span className="inline-block text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full animate-pulse">
+                  刚刚发布
                 </span>
-                {/* 下拉菜单 */}
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-30 hidden group-hover:block min-w-[120px]">
-                  <button onClick={() => handleChangeVisibility("public")} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-green-500" /> 公开
-                  </button>
-                  <button onClick={() => handleChangeVisibility("unlisted")} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" /> 未列出
-                  </button>
-                  <button onClick={() => handleChangeVisibility("private")} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500" /> 私密
-                  </button>
+              )}
+              {/* 可见性徽章（仅作者可见） */}
+              {isAuthor && (
+                <div className="relative group">
+                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full cursor-pointer ${
+                    toolVisibility === "public" ? "text-green-700 bg-green-100" :
+                    toolVisibility === "unlisted" ? "text-amber-700 bg-amber-100" :
+                    "text-red-700 bg-red-100"
+                  }`}>
+                    {toolVisibility === "public" ? "公开" : toolVisibility === "unlisted" ? "未列出" : "私密"}
+                  </span>
+                  {/* 下拉菜单 */}
+                  <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-30 hidden group-hover:block min-w-[120px]">
+                    <button onClick={() => handleChangeVisibility("public")} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500" /> 公开
+                    </button>
+                    <button onClick={() => handleChangeVisibility("unlisted")} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-amber-500" /> 未列出
+                    </button>
+                    <button onClick={() => handleChangeVisibility("private")} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-red-500" /> 私密
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{tool.title}</h1>
           {tool.description && (
-            <p className="text-sm text-gray-500 mb-4">{tool.description}</p>
+            <p className="text-sm text-gray-500 mb-2 line-clamp-2">{tool.description}</p>
           )}
-          <div className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+          <div className="flex items-center gap-2 text-[13px] text-gray-500 flex-wrap">
             {tool.authorId ? (
               <Link href={`/user/${tool.authorId}`} className="text-indigo-600 hover:underline font-medium">
                 @{tool.author}
@@ -682,22 +686,21 @@ export default function ToolDetailPage() {
                 <span className="flex items-center gap-0.5">👁 {viewCount}</span>
               </>
             )}
+            {tool.sourceTool && (
+              <>
+                <span className="text-gray-300">·</span>
+                <span className="flex items-center gap-1">
+                  ✨ 改编自
+                  <Link
+                    href={`/tool/${tool.sourceTool.id}`}
+                    className="text-indigo-600 hover:underline font-medium"
+                  >
+                    《{tool.sourceTool.title}》
+                  </Link>
+                </span>
+              </>
+            )}
           </div>
-
-          {/* Source tool chain */}
-          {tool.sourceTool && (
-            <div className="mt-2 flex items-center gap-1.5 text-sm text-gray-500">
-              <span>✨ 改编自</span>
-              <Link
-                href={`/tool/${tool.sourceTool.id}`}
-                className="text-indigo-600 hover:underline font-medium"
-              >
-                @{tool.sourceTool.author}
-              </Link>
-              <span>的</span>
-              <span className="text-gray-700">《{tool.sourceTool.title}》</span>
-            </div>
-          )}
         </div>
 
         {/* Preview & Actions */}

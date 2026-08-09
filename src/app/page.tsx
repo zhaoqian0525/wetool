@@ -223,13 +223,10 @@ export default function HomePage() {
 
       {/* Hero / Search / Category Filter */}
       <main>
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-3 sm:pb-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 sm:pt-7 pb-3 sm:pb-4">
+        <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
           发现实用小工具
         </h1>
-        <p className="text-xs sm:text-sm text-gray-500 mb-4">
-          像逛街一样，逛逛大家用 AI 做的好东西
-        </p>
 
         {/* Search bar */}
         <div className="relative mb-4">
@@ -326,7 +323,7 @@ export default function HomePage() {
       {!isSearching && (user ? (
         recentTools.length > 0 && (
           <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-4">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <span>🕐</span>最近使用
             </h2>
             {/* 横向滚动容器 */}
@@ -372,7 +369,7 @@ export default function HomePage() {
       {/* 我的工具 — 紧凑横向滚动（搜索时隐藏） */}
       {!isSearching && user && combinedMyTools.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-3">
-          <h2 className="text-xs font-semibold text-gray-500 mb-2">📦 我的工具 · {combinedMyTools.length} 个</h2>
+          <h2 className="text-xs font-semibold text-gray-500 mb-1.5">📦 我的工具 · {combinedMyTools.length} 个</h2>
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1"
                style={{scrollbarWidth:"none", msOverflowStyle:"none"}}>
             {combinedMyTools.map((t) => (
@@ -480,7 +477,7 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
           )}
         </div>
         {tool.description && (
-          <p className="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-gray-500 mt-1 line-clamp-1">
             {tool.description}
           </p>
         )}
