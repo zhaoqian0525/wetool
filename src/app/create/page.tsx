@@ -708,7 +708,7 @@ function CreatePageInner() {
           code: currentCode,
           thumbnail_gradient: gradient,
           author_id: user.id,
-          author: user.email?.split("@")[0] ?? "匿名",
+          author: user.user_metadata?.name || user.email?.split("@")[0] || "匿名",
           source_tool_id: sourceToolId || null,
           visibility: publishPublic,
           is_downloadable: publishDownloadable,

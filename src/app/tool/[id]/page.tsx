@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { getToolEmoji, CATEGORY_EMOJI } from "@/lib/constants";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
@@ -21,14 +22,6 @@ import { captureCover, generateCustomCoverBlob, uploadCoverToStorage } from "@/l
 import { getSupabase } from "@/lib/supabase";
 import ToolInstallButton from "@/components/ToolInstallButton";
 
-const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
-function getToolEmoji(tool: Tool): string {
-  const code = typeof tool.code === "string" ? tool.code : "";
-  const m = code.match(EMOJI_RE);
-  if (m) return m[0];
-  const cat: Record<string, string> = { "旅行": "✈️", "工程计算": "🔧", "生活": "🏡", "教育": "📚", "小游戏": "🎮" };
-  return cat[tool.category] || "🛠️";
-}
 
 export default function ToolDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -612,7 +605,6 @@ export default function ToolDetailPage() {
     );
   }
 
-  const categoryEmoji: Record<string, string> = { "旅行": "✈️", "工程计算": "🔧", "生活": "🏡", "教育": "📚", "小游戏": "🎮" };
 
   return (
     <ToolPageErrorBoundary>
@@ -886,7 +878,7 @@ export default function ToolDetailPage() {
             )
           ) : (
             <div className="flex-1 rounded-xl flex flex-col items-center justify-center p-8" style={{ background: tool.thumbnailGradient }}>
-              <span className="text-4xl mb-2">{categoryEmoji[tool.category] || "🛠️"}</span>
+              <span className="text-4xl mb-2">{CATEGORY_EMOJI[tool.category] || "🛠️"}</span>
               <span className="text-white font-bold">{tool.title}</span>
             </div>
           )}

@@ -67,6 +67,7 @@ function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [nickname, setNickname] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState(""); // 成功提示（如"请验证邮箱"）
   const [submitting, setSubmitting] = useState(false);
@@ -122,13 +123,17 @@ function AuthForm() {
       setError("密码至少需要 6 个字符");
       return;
     }
+    if (nickname.trim().length > 20) {
+      setError("昵称最多 20 个字符");
+      return;
+    }
 
     setSubmitting(true);
     try {
       const result =
         tab === "login"
           ? await signIn(email, password)
-          : await signUp(email, password);
+          : await signUp(email, password, nickname);
 
       // ---- 有错误 ----
       if (result.error) {
@@ -279,6 +284,25 @@ function AuthForm() {
 
           {/* 表单 */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {tab === "register" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor="nickname">
+                  昵称 <span className="text-gray-400 font-normal">（可选，展示给其他用户）</span>
+                </label>
+                <input
+                  id="nickname"
+                  type="text"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="怎么称呼你"
+                  maxLength={20}
+                  className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                  style={{ fontSize: "16px" }}
+                  disabled={submitting || !configured}
+                  autoComplete="name"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor="email">
                 邮箱

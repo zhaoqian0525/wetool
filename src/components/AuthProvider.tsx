@@ -24,7 +24,7 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   configured: boolean;
-  signUp: (email: string, password: string) => Promise<AuthResult>;
+  signUp: (email: string, password: string, nickname?: string) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 }
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [configured]);
 
-  const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+  const signUp = useCallback(async (email: string, password: string, nickname?: string): Promise<AuthResult> => {
     const client = getSupabase();
     if (!client) {
       return {
@@ -87,6 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         // 邮箱验证后重定向到 /auth/callback
         emailRedirectTo: getAuthRedirectTo(),
+        // v1.9.10 注册昵称：写入 user_metadata.name，主页/发布/评论统一展示
+        ...(nickname?.trim() ? { data: { name: nickname.trim() } } : {}),
       },
     });
 

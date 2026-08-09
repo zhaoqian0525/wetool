@@ -35,25 +35,24 @@ export default function UserPage() {
     }).catch(() => { setLoading(false); });
   }, [id]);
 
+  // v1.9.10 昵称展示：自己用昵称/邮箱前缀，他人用其最新工具的作者名
+  const displayName = isSelf
+    ? user?.user_metadata?.name || user?.email?.split("@")[0] || "我的主页"
+    : myTools[0]?.author || "微坞用户";
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* User header */}
+        {/* User header（v1.9.10 昵称优先） */}
         <div className="mb-8 text-center sm:text-left">
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-2xl mx-auto sm:mx-0 mb-3">
-            {(isSelf ? user?.email?.[0] : myTools[0]?.author?.[0])?.toUpperCase() || "?"}
+            {displayName[0]?.toUpperCase() || "微"}
           </div>
-          {isSelf ? (
-            <h1 className="text-xl font-bold text-gray-900">
-              {user?.email?.split("@")[0] || "我的主页"}
-            </h1>
-          ) : (
-            <h1 className="text-xl font-bold text-gray-900">
-              @{myTools[0]?.author || "微坞用户"} 的主页
-            </h1>
-          )}
+          <h1 className="text-xl font-bold text-gray-900">
+            {isSelf ? displayName : `@${displayName} 的主页`}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             已发布 {myTools.length} 个工具
           </p>
