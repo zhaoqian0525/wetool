@@ -666,34 +666,20 @@ export default function ToolDetailPage() {
           {tool.description && (
             <p className="text-sm text-gray-500 mb-4">{tool.description}</p>
           )}
-          <div className="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
-            <span>
-              by{" "}
-              {tool.authorId ? (
-                <Link href={`/user/${tool.authorId}`} className="text-indigo-600 hover:underline">
-                  @{tool.author}
-                </Link>
-              ) : (
-                `@${tool.author}`
-              )}
-            </span>
-            <span>·</span>
+          <div className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+            {tool.authorId ? (
+              <Link href={`/user/${tool.authorId}`} className="text-indigo-600 hover:underline font-medium">
+                @{tool.author}
+              </Link>
+            ) : (
+              <span>@{tool.author}</span>
+            )}
+            <span className="text-gray-300">·</span>
             <span>{new Date(tool.createdAt).toLocaleDateString("zh-CN")}</span>
             {viewCount > 0 && (
               <>
-                <span>·</span>
-                <span className="text-blue-400">👁 {viewCount} 次浏览</span>
-              </>
-            )}
-            {user && (
-              <>
-                <span>·</span>
-                <button
-                  onClick={() => setHistoryOpen(true)}
-                  className="text-gray-400 hover:text-indigo-600 transition-colors"
-                >
-                  📋 使用记录
-                </button>
+                <span className="text-gray-300">·</span>
+                <span className="flex items-center gap-0.5">👁 {viewCount}</span>
               </>
             )}
           </div>
@@ -741,8 +727,8 @@ export default function ToolDetailPage() {
           </div>
         ) : (
         <div className="flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
-          {/* Action bar — compact toolbar above iframe */}
-          <div className="flex items-center gap-1.5 pb-3 flex-wrap">
+          {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
+          <div className="flex items-center gap-2 pb-2.5 flex-wrap">
             {user ? (
               <>
                 <button
@@ -782,7 +768,7 @@ export default function ToolDetailPage() {
                     saved ? "bg-amber-50 text-amber-600 ring-1 ring-amber-200" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                   } ${saving ? "opacity-60" : ""}`}
                 >
-                  {saved ? "⭐" : "☆"}
+                  {saved ? "⭐" : "☆"}{saved ? " 已收藏" : " 收藏"}
                 </button>
               </>
             ) : (
@@ -790,19 +776,11 @@ export default function ToolDetailPage() {
                 登录
               </Link>
             )}
-            <span className="w-px h-5 bg-gray-200 mx-0.5" />
             <button
               onClick={handleShare}
               className="inline-flex items-center gap-1 h-11 px-3 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
             >
-              {shareCopied ? "✓ 已复制" : "🔗"}
-            </button>
-            <ToolInstallButton compact />
-            <button
-              onClick={enterFullscreen}
-              className="inline-flex items-center gap-1 h-11 px-3 brand-gradient text-white rounded-xl text-[13px] font-medium hover:opacity-90 active:scale-95 transition-all"
-            >
-              ⛶ 全屏
+              {shareCopied ? "✓ 已复制" : "🔗 分享"}
             </button>
             <Link
               href={`/create?source_tool_id=${tool.id}`}
@@ -810,23 +788,35 @@ export default function ToolDetailPage() {
             >
               ✨ 改编
             </Link>
-            {isAuthor && (
-              <>
-              <button
-                onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }}
-                className="inline-flex items-center gap-1 h-11 px-3 text-[13px] text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
-              >
-                🖼️ 换封面
-              </button>
-              <button
-                onClick={() => setDeleteOpen(true)}
-                className="inline-flex items-center gap-1 h-11 px-3 text-[13px] text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-              >
-                删除
-              </button>
-              </>
-            )}
+            <span className="flex-1" />
+            <button
+              onClick={enterFullscreen}
+              className="inline-flex items-center gap-1 h-11 px-3 brand-gradient text-white rounded-xl text-[13px] font-medium hover:opacity-90 active:scale-95 transition-all"
+            >
+              ⛶ 全屏
+            </button>
+            <ToolInstallButton compact />
           </div>
+          {/* 次要操作：使用记录 / 作者管理（v1.9.3 与主操作分离，降低视觉噪音） */}
+          {(user || isAuthor) && (
+            <div className="flex items-center gap-4 pb-3 text-xs text-gray-400">
+              {user && (
+                <button onClick={() => setHistoryOpen(true)} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
+                  📋 使用记录
+                </button>
+              )}
+              {isAuthor && (
+                <>
+                  <button onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
+                    🖼️ 换封面
+                  </button>
+                  <button onClick={() => setDeleteOpen(true)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
+                    删除
+                  </button>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Full-height iframe（等待状态加载完成后再挂载，确保启动快照已就绪） */}
           {stateLoaded && tool.code ? (
