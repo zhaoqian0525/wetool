@@ -309,6 +309,10 @@ export default function ToolDetailPage() {
   useEffect(() => {
     if (!tool?.id) return; // 等待工具数据加载完成
     if (!user?.id) { setStateLoaded(true); return; }
+    // v1.9.11: 状态接口慢/挂起时兜底放行，避免 iframe 迟迟无法挂载
+    let settled = false;
+    const forceLoad = setTimeout(() => { if (!settled) { settled = true; setStateLoaded(true); } }, 10000);
+    const finishLoad = () => { if (settled) return; settled = true; clearTimeout(forceLoad); setStateLoaded(true); };
     authedFetch(`/api/tools/${tool.id}/state`)
       .then((r) => r.json())
       .then((data) => {
@@ -332,9 +336,9 @@ export default function ToolDetailPage() {
           body: JSON.stringify({ state: openedState }),
         }).catch(() => {});
         setSavedState(openedState);
-        setStateLoaded(true);
+        finishLoad();
       })
-      .catch(() => setStateLoaded(true));
+      .catch(finishLoad);
   }, [tool?.id, user?.id]);
 
   // 状态加载完成后兜底注入一次（覆盖 READY 早于云端状态返回的情况）
@@ -356,7 +360,9 @@ export default function ToolDetailPage() {
 
   // 🔥 iframe 错误降级 + 消息处理
   useEffect(() => {
-    if (!previewBlobUrl || !tool) { setIframeError(false); return; }
+    // v1.9.11: 计时器仅在 iframe 真正挂载后启动（docReady && stateLoaded），
+    // 避免登录用户状态请求慢时 iframe 尚未挂载、12s 后误报「语法错误」。
+    if (!previewBlobUrl || !tool || !docReady || !stateLoaded) { setIframeError(false); return; }
     setIframeError(false);
     let errorTimer: ReturnType<typeof setTimeout>;
     let readyConfirmed = false;
@@ -458,7 +464,13 @@ export default function ToolDetailPage() {
       window.removeEventListener("message", onMessage);
       clearTimeout(errorTimer);
     };
-  }, [previewBlobUrl, tool?.id]);
+  }, [previewBlobUrl, tool?.id, docReady, stateLoaded]);
+
+  // v1.9.11: 误报「语法错误」后手动重新加载 iframe
+  const handleRetryIframe = useCallback(() => {
+    setIframeError(false);
+    setIframeLoaded(false);
+  }, []);
 
   // 清空工具使用记录/状态
   const handleClearState = useCallback(async () => {
@@ -822,7 +834,7 @@ export default function ToolDetailPage() {
           {/* Full-height iframe（等待状态加载完成后再挂载，确保启动快照已就绪） */}
           {stateLoaded && tool.code ? (
             iframeError ? (
-              <IframeErrorFallback />
+              <IframeErrorFallback onRetry={handleRetryIframe} />
             ) : (
             <WechatGuide toolUrl={`https://we-woo.net/tool/${id}`}>
               <div
@@ -1173,7 +1185,7 @@ function IframeSkeleton() {
 }
 
 // ---- Iframe 语法错误降级 UI ----
-function IframeErrorFallback() {
+function IframeErrorFallback({ onRetry }: { onRetry?: () => void }) {
   return (
     <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-6 sm:p-8 text-center">
       <div className="text-4xl mb-3">⚠️</div>
@@ -1183,6 +1195,14 @@ function IframeErrorFallback() {
       <p className="text-sm text-amber-600 max-w-xs mx-auto leading-relaxed">
         无法在移动端正常显示。请尝试在电脑浏览器打开，或联系创作者修复。
       </p>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          className="mt-4 px-4 py-2 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 active:scale-95 transition-all"
+        >
+          重新加载
+        </button>
+      )}
     </div>
   );
 }
