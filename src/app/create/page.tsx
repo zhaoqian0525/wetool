@@ -882,7 +882,7 @@ function CreatePageInner() {
       </button>
       <button
         onClick={handleCopyCode}
-        className="min-w-[44px] min-h-[44px] flex items-center px-3 py-1.5 text-sm bg-gray-700 text-gray-100 rounded-lg hover:bg-gray-600 transition-colors"
+        className="min-w-[44px] min-h-[44px] flex items-center px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors"
       >
         {copied ? "已复制 ✓" : "复制代码"}
       </button>
@@ -963,7 +963,7 @@ function CreatePageInner() {
         {/* 移动端：编辑/预览切换 */}
                 {/* 移动端：对话 / 代码 / 预览 三 tab（v1.8.6） */}
         <div className="lg:hidden flex-shrink-0 flex items-center justify-center px-3 py-2 bg-gray-200 border-b border-gray-300">
-          <div className="flex bg-gray-900/5 rounded-xl p-1 w-full max-w-[320px]">
+          <div className="flex bg-gray-100 rounded-xl p-1 w-full max-w-[320px]">
             <button
               onClick={() => setMobileTab("chat")}
               className={`flex-1 min-h-[44px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${mobileTab === "chat" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}
@@ -988,18 +988,18 @@ function CreatePageInner() {
           </div>
         </div>
         {/* === AI Chat Panel（桌面左栏 / 移动端对话 tab）=== */}
-        <div className={`flex-1 flex flex-col min-h-0 bg-gray-900 lg:w-[33%] ${mobileTab === "chat" ? "flex" : "hidden"} lg:flex`}>
-          <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-2 bg-gray-800 border-b border-gray-700">
+        <div className={`flex-1 flex flex-col min-h-0 bg-white lg:w-[33%] ${mobileTab === "chat" ? "flex" : "hidden"} lg:flex`}>
+          <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-2 bg-gray-50 border-b border-gray-200">
             <div className="flex items-center gap-1.5">
               <span className="text-base">💬</span>
-              <span className="text-xs lg:text-sm font-medium text-gray-100">和 AI 对话生成工具</span>
+              <span className="text-xs lg:text-sm font-medium text-gray-800">和 AI 对话生成工具</span>
               <span className="text-[10px] text-gray-500 hidden sm:inline">内置 DeepSeek</span>
             </div>
             <div className="flex items-center gap-1.5">
               {aiMessages.length > 0 && (
                 <button
                   onClick={handleAiClear}
-                  className="min-h-[40px] px-2.5 py-1 text-xs text-gray-400 hover:text-rose-300 transition-colors"
+                  className="min-h-[40px] px-2.5 py-1 text-xs text-gray-400 hover:text-rose-500 transition-colors"
                   style={{ touchAction: "manipulation" }}
                 >
                   清空对话
@@ -1007,7 +1007,7 @@ function CreatePageInner() {
               )}
               <button
                 onClick={handleAiClear}
-                className="min-h-[40px] px-2.5 py-1 text-xs text-indigo-300 hover:text-indigo-200 transition-colors"
+                className="min-h-[40px] px-2.5 py-1 text-xs text-indigo-600 hover:text-indigo-700 transition-colors"
                 style={{ touchAction: "manipulation" }}
               >
                 ＋ 新建对话
@@ -1030,7 +1030,7 @@ function CreatePageInner() {
                         className={`flex-shrink-0 min-h-[40px] px-3 py-1 text-xs font-medium rounded-full border transition-all ${
                           aiActiveVersion === idx
                             ? "bg-emerald-600 text-white border-emerald-500"
-                            : "bg-gray-800/70 text-gray-300 border-gray-600 hover:bg-gray-700"
+                            : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
                         }`}
                         style={{ touchAction: "manipulation" }}
                       >
@@ -1041,7 +1041,7 @@ function CreatePageInner() {
                     {!aiGenerating && (
                       <button
                         onClick={handleAiNewVersion}
-                        className="flex-shrink-0 min-h-[40px] px-3 py-1 text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-full hover:bg-indigo-500/20 transition-all"
+                        className="flex-shrink-0 min-h-[40px] px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full hover:bg-indigo-100 transition-all"
                         style={{ touchAction: "manipulation" }}
                       >
                         ＋ 换个版本
@@ -1052,7 +1052,7 @@ function CreatePageInner() {
 
                 <div ref={aiChatScrollRef} className="space-y-2 max-h-[280px] overflow-y-auto pr-1 mb-2">
                   {aiMessages.length === 0 && (
-                    <div className="text-[11px] text-gray-400 bg-gray-800/40 rounded-lg px-3 py-2 leading-relaxed">
+                    <div className="text-[11px] text-gray-500 bg-gray-100 rounded-lg px-3 py-2 leading-relaxed">
                       描述你想做的工具，AI 会直接生成可运行的代码并自动填入编辑器；可以继续对话调整：「换个配色」「加个历史记录」「再生成一个更简约的版本」…
                     </div>
                   )}
@@ -1073,7 +1073,7 @@ function CreatePageInner() {
                             setAiInput(t);
                             runAiSend(t);
                           }}
-                          className="min-h-[32px] px-3 py-1 text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-full hover:bg-indigo-500/20 active:scale-95 transition-all"
+                          className="min-h-[32px] px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full hover:bg-indigo-100 active:scale-95 transition-all"
                           style={{ touchAction: "manipulation" }}
                         >
                           {s}
@@ -1087,15 +1087,15 @@ function CreatePageInner() {
                         className={`max-w-[88%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${
                           m.role === "user"
                             ? "bg-indigo-600 text-white rounded-br-sm"
-                            : "bg-gray-800/80 text-gray-200 border border-gray-700/50 rounded-bl-sm"
+                            : "bg-white text-gray-700 border border-gray-200 rounded-bl-sm"
                         }`}
                       >
                         {m.content || (m.streaming ? "思考中…" : "")}
                         {m.streaming && (
-                          <span className="inline-block w-1.5 h-3.5 ml-1 align-middle bg-indigo-300 animate-pulse" />
+                          <span className="inline-block w-1.5 h-3.5 ml-1 align-middle bg-indigo-500 animate-pulse" />
                         )}
                         {!m.streaming && m.role === "assistant" && extractHtmlFromAiOutput(m.content) && (
-                          <div className="mt-1.5 text-[10px] text-emerald-300">✅ 代码已自动填入编辑器，点版本按钮可切换</div>
+                          <div className="mt-1.5 text-[10px] text-emerald-600">✅ 代码已自动填入编辑器，点版本按钮可切换</div>
                         )}
                       </div>
                     </div>
@@ -1103,7 +1103,7 @@ function CreatePageInner() {
                 </div>
 
                 {aiError && (
-                  <div className="mb-2 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+                  <div className="mb-2 text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
                     {aiError}
                   </div>
                 )}
@@ -1120,7 +1120,7 @@ function CreatePageInner() {
                         handleAiSend();
                       }
                     }}
-                    className="flex-1 min-h-[44px] max-h-[96px] bg-gray-800/80 border border-gray-700 rounded-lg p-2.5 text-xs lg:text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-indigo-500 resize-none"
+                    className="flex-1 min-h-[44px] max-h-[96px] bg-white border border-gray-200 rounded-lg p-2.5 text-xs lg:text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 resize-none"
                     placeholder="描述需求或修改意见，例如：做一个纪念日记录器，能添加重要日子、显示倒数天数…"
                     aria-label="AI 对话输入"
                   />
@@ -1149,13 +1149,13 @@ function CreatePageInner() {
               </div>
               
             {/* 外部提示词折叠（v1.8.6：默认收起，点击展开） */}
-            <div className="rounded-xl border border-gray-700/50 bg-gray-800/40 overflow-hidden">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 overflow-hidden">
               <button
                 onClick={() => setExternalPromptOpen((v) => !v)}
                 className="w-full flex items-center justify-between px-3 py-2.5 min-h-[44px]"
                 style={{ touchAction: "manipulation" }}
               >
-                <span className="flex items-center gap-1.5 text-xs lg:text-sm font-medium text-gray-300">
+                <span className="flex items-center gap-1.5 text-xs lg:text-sm font-medium text-gray-700">
                   <span className="text-base">📘</span> 想用外部 AI（ChatGPT/Kimi 等）？复制这段提示词
                 </span>
                 <svg className={`w-3.5 h-3.5 text-gray-500 transition-transform ${externalPromptOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -1163,7 +1163,7 @@ function CreatePageInner() {
               {externalPromptOpen && (
                 <div className="px-3 pb-3 space-y-3">
 <div className="relative">
-                <pre className="text-[11px] lg:text-xs text-gray-400 bg-gray-800/80 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap leading-relaxed border border-gray-700/50">
+                <pre className="text-[11px] lg:text-xs text-gray-500 bg-gray-100 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap leading-relaxed border border-gray-200">
 {AI_PROMPT_TEMPLATE}</pre>
                 <button
                   onClick={handleCopyPrompt}
@@ -1189,7 +1189,7 @@ function CreatePageInner() {
               </div>
               {/* 示例提示词：点一下复制，照着改就能用 */}
               <div>
-                <div className="mb-1.5 text-[11px] lg:text-xs font-medium text-gray-400">
+                <div className="mb-1.5 text-[11px] lg:text-xs font-medium text-gray-500">
                   ✨ 示例提示词（点一下复制，照着改就能用）
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -1201,7 +1201,7 @@ function CreatePageInner() {
                           if (ok) toast.success("已复制「" + p.label + "」提示词，去 AI 对话里粘贴吧");
                         })
                       }
-                      className="min-h-[36px] px-3 py-1.5 text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-full hover:bg-indigo-500/20 active:scale-95 transition-all"
+                      className="min-h-[36px] px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full hover:bg-indigo-100 active:scale-95 transition-all"
                       style={{ touchAction: "manipulation" }}
                     >
                       {p.label}
@@ -1216,8 +1216,8 @@ function CreatePageInner() {
           </div>
         </div>
 {/* === Editor Panel === */}
-        <div className={`flex-1 flex flex-col min-h-0 bg-gray-900 lg:w-[34%] ${mobileTab === "code" ? "flex" : "hidden"} lg:flex`}>
-          <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-800 border-b border-gray-700">
+        <div className={`flex-1 flex flex-col min-h-0 bg-[#0A1628] lg:w-[34%] ${mobileTab === "code" ? "flex" : "hidden"} lg:flex`}>
+          <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-[#0F1F38] border-b border-white/10">
             <div className="flex items-center gap-2">
               <div className="flex gap-1.5">
                 <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-red-500/80" />
@@ -1258,7 +1258,7 @@ function CreatePageInner() {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 w-full bg-gray-900 text-gray-100 font-mono text-sm lg:text-sm leading-relaxed p-3 lg:p-4 resize-none outline-none"
+            className="flex-1 w-full bg-[#0A1628] text-gray-100 font-mono text-sm lg:text-sm leading-relaxed p-3 lg:p-4 resize-none outline-none"
             style={{ tabSize: 2, MozTabSize: 2, fontSize: "16px" }}
             spellCheck={false}
             placeholder={"把代码粘贴到这里 👉\n\n没代码？点右上角「试试示例」\n或者点这里看教程 → "}
@@ -1266,8 +1266,8 @@ function CreatePageInner() {
           />
 
           {versions.length > 0 && (
-            <div className="flex-shrink-0 border-t border-gray-700">
-              <div className="flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-800/50">
+            <div className="flex-shrink-0 border-t border-white/10">
+              <div className="flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-[#0F1F38]/60">
                 <span className="text-[10px] lg:text-xs font-medium text-gray-400 uppercase tracking-wider">版本快照</span>
                 <span className="text-[10px] lg:text-xs text-gray-500">{versions.length} 个版本</span>
               </div>
@@ -1280,7 +1280,7 @@ function CreatePageInner() {
                     title={`恢复至 ${formatTime(v.timestamp)}`}
                   >
                     <div
-                      className="w-full aspect-[3/4] rounded-md border-2 border-gray-600 group-hover:border-indigo-400 transition-colors overflow-hidden relative"
+                      className="w-full aspect-[3/4] rounded-md border-2 border-white/15 group-hover:border-indigo-400 transition-colors overflow-hidden relative"
                       style={{ background: THUMBNAIL_GRADIENTS[v.gradientIndex] }}
                     >
                       <div className="absolute inset-0 flex flex-col items-center justify-center opacity-30">
@@ -1294,14 +1294,14 @@ function CreatePageInner() {
                   </button>
                 ))}
                 <div className="flex-shrink-0 flex items-center">
-                  <span className="text-[10px] lg:text-xs text-gray-600 whitespace-nowrap">← 向左滑动</span>
+                  <span className="text-[10px] lg:text-xs text-gray-400 whitespace-nowrap">← 向左滑动</span>
                 </div>
               </div>
             </div>
           )}
 
           {versions.length === 0 && (
-            <div className="flex-shrink-0 border-t border-gray-700 px-3 lg:px-4 py-2 flex items-center gap-2">
+            <div className="flex-shrink-0 border-t border-white/10 px-3 lg:px-4 py-2 flex items-center gap-2">
               <svg className="w-3 h-3 lg:w-3.5 lg:h-3.5 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>

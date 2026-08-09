@@ -10,7 +10,7 @@
 
 - **域名**：https://we-woo.net
 - **GitHub**：https://github.com/zhaoqian0525/wetool
-- **当前版本**：v1.9.5（见 version.json）
+- **当前版本**：v1.9.6（见 version.json）
 - **文件根目录**：`D:\Workbuddy\We-woo`
 
 ---

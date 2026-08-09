@@ -195,7 +195,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       <Navbar
-        title="发现实用小工具"
+        title="AI 工具广场"
         actions={
           <div className="flex items-center gap-2">
             <Link
@@ -221,7 +221,7 @@ export default function HomePage() {
       <main>
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4 pb-3 sm:pb-4">
         {/* 页面标题已移至导航栏 logo 旁，此处保留隐藏 h1 用于 SEO/无障碍 */}
-        <h1 className="sr-only">发现实用小工具</h1>
+        <h1 className="sr-only">AI 工具广场</h1>
 
         {/* Search bar */}
         <div className="relative mb-4">
