@@ -94,7 +94,8 @@ export async function generateDefaultCoverBlob(
   title: string,
   seed: number
 ): Promise<Blob> {
-  const [c1, c2] = GRADIENT_PAIRS[seed % GRADIENT_PAIRS.length];
+  // v1.9.7 品牌化：默认封面统一使用品牌渐变（#5046E5 → #8B5CF6）
+  const [c1, c2] = ["#5046e5", "#8b5cf6"];
 
   const canvas = document.createElement("canvas");
   canvas.width = COVER_WIDTH;
@@ -123,6 +124,36 @@ export async function generateDefaultCoverBlob(
   ctx.beginPath();
   ctx.roundRect(110, 400, 155, 48, 24);
   ctx.fill();
+
+  // 品牌 W 元素（装饰卡内居中，参考 Logo 几何，v1.9.7）
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.16)";
+  ctx.lineWidth = 22;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(122, 178);
+  ctx.lineTo(166, 292);
+  ctx.lineTo(188, 224);
+  ctx.lineTo(210, 292);
+  ctx.lineTo(254, 178);
+  ctx.stroke();
+  ctx.restore();
+
+  // 品牌 W 元素（装饰卡内居中，参考 Logo 几何，v1.9.7）
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.16)";
+  ctx.lineWidth = 22;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(122, 178);
+  ctx.lineTo(166, 292);
+  ctx.lineTo(188, 224);
+  ctx.lineTo(210, 292);
+  ctx.lineTo(254, 178);
+  ctx.stroke();
+  ctx.restore();
 
   // 标题
   ctx.fillStyle = "rgba(255,255,255,0.9)";

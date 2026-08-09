@@ -709,7 +709,7 @@ export default function ToolDetailPage() {
           <div className="bg-white rounded-2xl border-2 border-dashed border-indigo-200 p-6 sm:p-8 text-center">
             <div
               className="w-full h-40 sm:h-52 rounded-xl mb-5 flex items-center justify-center"
-              style={{ background: tool.thumbnailGradient || "linear-gradient(135deg,#4f46e5,#7c3aed)" }}
+              style={{ background: tool.thumbnailGradient || "linear-gradient(135deg,#5046e5,#8b5cf6)" }}
             >
               <span className="text-5xl select-none">💻</span>
             </div>

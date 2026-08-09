@@ -74,7 +74,7 @@ export default function UserPage() {
                 >
                   <div
                     className="aspect-[4/3] flex items-center justify-center"
-                    style={{ background: t.thumbnailGradient || "linear-gradient(135deg,#4f46e5,#7c3aed)" }}
+                    style={{ background: t.thumbnailGradient || "linear-gradient(135deg,#5046e5,#8b5cf6)" }}
                   >
                     <span className="text-2xl">{getToolEmoji(t)}</span>
                   </div>
@@ -122,7 +122,7 @@ export default function UserPage() {
                   >
                     <div
                       className="aspect-[4/3] flex items-center justify-center"
-                      style={{ background: t.thumbnailGradient || "linear-gradient(135deg,#4f46e5,#7c3aed)" }}
+                      style={{ background: t.thumbnailGradient || "linear-gradient(135deg,#5046e5,#8b5cf6)" }}
                     >
                       <span className="text-2xl">{getToolEmoji(t)}</span>
                     </div>

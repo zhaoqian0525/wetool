@@ -13,8 +13,6 @@ interface NavbarProps {
   actions?: React.ReactNode;
   /** Extra actions to show below the editor toolbar on mobile create page */
   mobileActions?: React.ReactNode;
-  /** Page title shown next to the logo on all screen sizes (optional) */
-  title?: string;
 }
 
 /* ---- SVG Icon Components ---- */
@@ -72,7 +70,7 @@ function useMobileTabs(userId: string | undefined) {
 
 /* ---- Component ---- */
 
-export default function Navbar({ children, actions, mobileActions, title }: NavbarProps) {
+export default function Navbar({ children, actions, mobileActions }: NavbarProps) {
   const pathname = usePathname();
   const { user, loading, configured, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -103,11 +101,6 @@ export default function Navbar({ children, actions, mobileActions, title }: Navb
             <WewooMark className="w-7 h-7" />
             微坞
           </Link>
-          {title && (
-            <span className="hidden sm:inline text-sm text-gray-500 font-medium border-l border-gray-200 pl-3">
-              {title}
-            </span>
-          )}
           {children}
         </div>
 
@@ -221,16 +214,10 @@ export default function Navbar({ children, actions, mobileActions, title }: Navb
       </header>
     ) : (
       /* ======== Mobile Top Bar (all other pages) ======== */
-      <header className="lg:hidden flex items-center justify-between h-12 px-4 bg-white border-b border-gray-200 flex-shrink-0">
-        <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
-          <Link href="/" className="flex items-center gap-1.5 text-base font-bold text-indigo-600 flex-shrink-0">
+      <header className="lg:hidden flex items-center justify-between h-12 px-4 bg-white border-b border-gray-200 flex-shrink-0">          <Link href="/" className="flex items-center gap-1.5 text-base font-bold text-indigo-600">
             <WewooMark className="w-6 h-6" />
             微坞
           </Link>
-          {title && (
-            <span className="text-sm text-gray-500 font-medium truncate">{title}</span>
-          )}
-        </div>
         <div className="flex items-center gap-2">
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, memo } from "react";
+import { useState, useEffect, useMemo, useRef, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
@@ -24,6 +24,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [sortBy, setSortBy] = useState<"latest" | "popular">("latest");
   const [myTools, setMyTools] = useState<Tool[]>([]);
   const [recentTools, setRecentTools] = useState<Array<Record<string, unknown>>>([]);
@@ -193,9 +195,13 @@ export default function HomePage() {
   }, [myTools, likedTools]);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
+    <div className="min-h-screen bg-[#F9F9FB] pb-20 lg:pb-0">
       <Navbar
-        title="AI 工具广场"
+        children={
+          <span className="hidden sm:inline text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+            AI 工具集市
+          </span>
+        }
         actions={
           <div className="flex items-center gap-2">
             <Link
@@ -219,32 +225,61 @@ export default function HomePage() {
 
       {/* Hero / Search / Category Filter */}
       <main>
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4 pb-3 sm:pb-4">
-        {/* 页面标题已移至导航栏 logo 旁，此处保留隐藏 h1 用于 SEO/无障碍 */}
-        <h1 className="sr-only">AI 工具广场</h1>
-
-        {/* Search bar */}
-        <div className="relative mb-4">
-          <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-          </svg>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜索工具名称、作者或描述..."
-            className="w-full pl-10 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-base focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50 transition-all"
-            style={{ fontSize: "16px" }}
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full"
-            >
-              ✕
-            </button>
-          )}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
+        {/* 标题行：大标题 + 搜索图标（v1.9.7） */}
+        <div className="flex items-center justify-between gap-3 mb-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-snug">AI 工具广场</h1>
+          <button
+            onClick={() => {
+              if (searchOpen) {
+                setSearch("");
+                setSearchOpen(false);
+              } else {
+                setSearchOpen(true);
+                setTimeout(() => searchRef.current?.focus(), 50);
+              }
+            }}
+            aria-label={searchOpen ? "关闭搜索" : "搜索工具"}
+            className={`min-w-[44px] min-h-[44px] flex-shrink-0 flex items-center justify-center rounded-full transition-all ${
+              searchOpen
+                ? "bg-indigo-50 text-indigo-600"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900"
+            }`}
+          >
+            {searchOpen ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>
+            )}
+          </button>
         </div>
 
+        {/* 搜索框：点击图标展开（v1.9.7 压缩） */}
+        {searchOpen && (
+          <div className="relative mt-2 mb-3 animate-in fade-in duration-200">
+            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+            </svg>
+            <input
+              ref={searchRef}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Escape") { setSearch(""); setSearchOpen(false); } }}
+              placeholder="搜索工具名称、作者或描述..."
+              className="w-full pl-10 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-base focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50 transition-all"
+              style={{ fontSize: "16px" }}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                aria-label="清空搜索"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        )}
       </section>
 
       {/* v1.9 PWA 全站入口登录状态提示（仅 standalone 且未登录） */}
@@ -295,7 +330,7 @@ export default function HomePage() {
                   {/* 封面：渐变背景 + emoji */}
                   <div
                     className="aspect-square flex items-center justify-center"
-                    style={{ background: String(t.thumbnailGradient || "linear-gradient(135deg, #4f46e5, #7c3aed)") }}
+                    style={{ background: String(t.thumbnailGradient || "linear-gradient(135deg, #5046e5, #8b5cf6)") }}
                   >
                     <span className="text-3xl sm:text-4xl">{getToolEmoji(t)}</span>
                   </div>
@@ -338,7 +373,7 @@ export default function HomePage() {
               >
                 <div
                   className="h-16 flex items-center justify-center"
-                  style={{ background: t.thumbnailGradient || "linear-gradient(135deg, #4f46e5, #7c3aed)" }}
+                  style={{ background: t.thumbnailGradient || "linear-gradient(135deg, #5046e5, #8b5cf6)" }}
                 >
                   <span className="text-xl">{getToolEmoji(t)}</span>
                 </div>
