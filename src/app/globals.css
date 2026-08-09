@@ -3,11 +3,41 @@
 :root {
   --phone-width: 375px;
   --phone-height: 667px;
+
+  /* v1.9 品牌设计 token（品牌系统：#5046E5→#8B5CF6 渐变 / 节点青 #22D3EE / 墨黑 #0A1628） */
+  --brand-50: #eef2ff;
+  --brand-100: #e0e7ff;
+  --brand-500: #5046e5;
+  --brand-600: #4338ca;
+  --brand-700: #3730a3;
+  --brand-gradient: linear-gradient(135deg, #5046e5, #8b5cf6);
+  --accent-cyan: #22d3ee;
+  --ink: #0a1628;
+  --radius-card: 20px;
+  --shadow-card: 0 4px 16px rgba(10, 22, 40, 0.08);
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* v1.9 品牌渐变工具类 */
+.brand-gradient {
+  background-image: linear-gradient(135deg, #5046e5, #8b5cf6);
+}
+
+/* v1.9 移动端字号规范：正文 15px 起步，避免过小 */
+@media (max-width: 1023px) {
+  body {
+    font-size: 15px;
+  }
+  h1 {
+    font-size: 22px;
+  }
+  h2 {
+    font-size: 18px;
+  }
 }
 
 /* Mobile safe-area bottom spacer for fixed bottom bars */

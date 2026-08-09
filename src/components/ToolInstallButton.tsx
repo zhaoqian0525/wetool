@@ -52,7 +52,7 @@ export default function ToolInstallButton({ compact = false }: { compact?: boole
           }
         }}
         style={{ touchAction: "manipulation" }}
-        className={`${compact ? "h-8 px-2.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-50" : "min-h-[44px] px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200"} flex items-center gap-1.5 text-xs font-medium text-gray-600 transition-colors`}
+        className={`${compact ? "h-11 px-3 rounded-xl bg-white border border-gray-200 hover:bg-gray-50" : "min-h-[44px] px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200"} flex items-center gap-1.5 text-xs font-medium text-gray-600 transition-colors`}
         title="添加到手机主屏幕，像 App 一样打开"
       >
         <span className="text-base leading-none">📲</span>

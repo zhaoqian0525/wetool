@@ -85,12 +85,13 @@ export default function ToolDetailPage() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  // v1.8.8 PWA 单工具入口：从主屏幕打开（?app=1 或 standalone）直接全屏使用
+  // v1.9 修复：仅单工具 PWA 入口（?app=1）自动全屏；
+  // 全站 PWA 入口（standalone 但无 ?app=1）正常显示详情页，不再自动全屏
   const [appMode, setAppMode] = useState(false);
   useEffect(() => {
     try {
       const q = new URLSearchParams(window.location.search);
-      if (q.get("app") === "1" || window.matchMedia("(display-mode: standalone)").matches) {
+      if (q.get("app") === "1") {
         setAppMode(true);
         setFullscreen(true);
       }
@@ -756,8 +757,8 @@ export default function ToolDetailPage() {
                     } finally { setLiking(false); }
                   }}
                   disabled={liking}
-                  className={`inline-flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${
-                    liked ? "bg-red-50 text-red-600 ring-1 ring-red-200" : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                  className={`inline-flex items-center gap-1 h-11 px-3 rounded-xl text-[13px] font-medium transition-all active:scale-95 ${
+                    liked ? "bg-red-50 text-red-600 ring-1 ring-red-200" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                   } ${liking ? "opacity-60" : ""}`}
                 >
                   {liked ? "❤️" : "🤍"}{likeCount > 0 ? ` ${likeCount}` : ""}
@@ -775,35 +776,35 @@ export default function ToolDetailPage() {
                     } finally { setSaving(false); }
                   }}
                   disabled={saving}
-                  className={`inline-flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${
-                    saved ? "bg-amber-50 text-amber-600 ring-1 ring-amber-200" : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                  className={`inline-flex items-center gap-1 h-11 px-3 rounded-xl text-[13px] font-medium transition-all active:scale-95 ${
+                    saved ? "bg-amber-50 text-amber-600 ring-1 ring-amber-200" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                   } ${saving ? "opacity-60" : ""}`}
                 >
                   {saved ? "⭐" : "☆"}
                 </button>
               </>
             ) : (
-              <Link href={`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`} className="inline-flex items-center gap-1 h-8 px-2.5 bg-white text-gray-400 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50">
+              <Link href={`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`} className="inline-flex items-center gap-1 h-11 px-3 bg-white text-gray-500 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50">
                 登录
               </Link>
             )}
             <span className="w-px h-5 bg-gray-200 mx-0.5" />
             <button
               onClick={handleShare}
-              className="inline-flex items-center gap-1 h-8 px-2.5 bg-white text-gray-500 border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50 active:scale-95 transition-all"
+              className="inline-flex items-center gap-1 h-11 px-3 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
             >
               {shareCopied ? "✓ 已复制" : "🔗"}
             </button>
             <ToolInstallButton compact />
             <button
               onClick={enterFullscreen}
-              className="inline-flex items-center gap-1 h-8 px-2.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 active:scale-95 transition-all"
+              className="inline-flex items-center gap-1 h-11 px-3 brand-gradient text-white rounded-xl text-[13px] font-medium hover:opacity-90 active:scale-95 transition-all"
             >
               ⛶ 全屏
             </button>
             <Link
               href={`/create?source_tool_id=${tool.id}`}
-              className="inline-flex items-center gap-1 h-8 px-2.5 bg-white text-indigo-600 border border-indigo-200 rounded-lg text-xs font-medium hover:bg-indigo-50 active:scale-95 transition-all"
+              className="inline-flex items-center gap-1 h-11 px-3 bg-white text-indigo-600 border border-indigo-200 rounded-xl text-[13px] font-medium hover:bg-indigo-50 active:scale-95 transition-all"
             >
               ✨ 改编
             </Link>
@@ -811,13 +812,13 @@ export default function ToolDetailPage() {
               <>
               <button
                 onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }}
-                className="inline-flex items-center gap-1 h-8 px-2.5 text-xs text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1 h-11 px-3 text-[13px] text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
               >
                 🖼️ 换封面
               </button>
               <button
                 onClick={() => setDeleteOpen(true)}
-                className="inline-flex items-center gap-1 h-8 px-2.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1 h-11 px-3 text-[13px] text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
               >
                 删除
               </button>

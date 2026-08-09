@@ -966,21 +966,21 @@ function CreatePageInner() {
           <div className="flex bg-gray-900/5 rounded-xl p-1 w-full max-w-[320px]">
             <button
               onClick={() => setMobileTab("chat")}
-              className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${mobileTab === "chat" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}
+              className={`flex-1 min-h-[44px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${mobileTab === "chat" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}
             >
               <span className="text-base leading-none">💬</span>
               对话
             </button>
             <button
               onClick={() => setMobileTab("code")}
-              className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${mobileTab === "code" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}
+              className={`flex-1 min-h-[44px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${mobileTab === "code" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}
             >
               <span className="text-base leading-none">📝</span>
               代码
             </button>
             <button
               onClick={() => { setPreviewLsSeed(readPreviewSeed()); setFullscreenPreview(true); }}
-              className={`flex-1 min-h-[40px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${mobileTab === "preview" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}
+              className={`flex-1 min-h-[44px] flex items-center justify-center gap-1 rounded-lg text-sm font-medium transition-all ${mobileTab === "preview" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500"}`}
             >
               <span className="text-base leading-none">👁</span>
               预览
@@ -999,7 +999,7 @@ function CreatePageInner() {
               {aiMessages.length > 0 && (
                 <button
                   onClick={handleAiClear}
-                  className="min-h-[28px] px-2 py-1 text-[10px] text-gray-400 hover:text-rose-300 transition-colors"
+                  className="min-h-[40px] px-2.5 py-1 text-xs text-gray-400 hover:text-rose-300 transition-colors"
                   style={{ touchAction: "manipulation" }}
                 >
                   清空对话
@@ -1007,7 +1007,7 @@ function CreatePageInner() {
               )}
               <button
                 onClick={handleAiClear}
-                className="min-h-[28px] px-2 py-1 text-[10px] text-indigo-300 hover:text-indigo-200 transition-colors"
+                className="min-h-[40px] px-2.5 py-1 text-xs text-indigo-300 hover:text-indigo-200 transition-colors"
                 style={{ touchAction: "manipulation" }}
               >
                 ＋ 新建对话
@@ -1027,7 +1027,7 @@ function CreatePageInner() {
                         key={v.id}
                         onClick={() => handleAiFillVersion(v)}
                         title="载入编辑器，查看/修改完整代码"
-                        className={`flex-shrink-0 min-h-[32px] px-2.5 py-1 text-xs font-medium rounded-full border transition-all ${
+                        className={`flex-shrink-0 min-h-[40px] px-3 py-1 text-xs font-medium rounded-full border transition-all ${
                           aiActiveVersion === idx
                             ? "bg-emerald-600 text-white border-emerald-500"
                             : "bg-gray-800/70 text-gray-300 border-gray-600 hover:bg-gray-700"
@@ -1041,7 +1041,7 @@ function CreatePageInner() {
                     {!aiGenerating && (
                       <button
                         onClick={handleAiNewVersion}
-                        className="flex-shrink-0 min-h-[32px] px-2.5 py-1 text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-full hover:bg-indigo-500/20 transition-all"
+                        className="flex-shrink-0 min-h-[40px] px-3 py-1 text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-full hover:bg-indigo-500/20 transition-all"
                         style={{ touchAction: "manipulation" }}
                       >
                         ＋ 换个版本
@@ -1167,7 +1167,7 @@ function CreatePageInner() {
 {AI_PROMPT_TEMPLATE}</pre>
                 <button
                   onClick={handleCopyPrompt}
-                  className="absolute top-2 right-2 min-h-[36px] flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 active:scale-95 transition-all"
+                  className="absolute top-2 right-2 min-h-[40px] flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 active:scale-95 transition-all"
                   style={{ touchAction: "manipulation" }}
                 >
                   {promptCopied ? (
@@ -1239,7 +1239,7 @@ function CreatePageInner() {
               </Link>
               <button
                 onClick={() => { setCode(""); editorRef.current?.focus(); }}
-                className="text-[10px] lg:text-xs text-gray-500 hover:text-red-400 transition-colors flex items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center"
+                className="text-xs lg:text-sm text-gray-500 hover:text-red-400 transition-colors flex items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center"
                 title="清空编辑器"
                 aria-label="清空编辑器"
               >
@@ -1368,7 +1368,7 @@ function CreatePageInner() {
             <span className="text-sm text-white/80">预览工具效果</span>
             <button
               onClick={() => { setFullscreenPreview(false); setMobileTab("code"); }}
-              className="min-h-[36px] px-4 text-sm text-white bg-white/20 rounded-lg hover:bg-white/30"
+              className="min-h-[44px] px-4 text-sm text-white bg-white/20 rounded-lg hover:bg-white/30"
             >
               退出预览
             </button>

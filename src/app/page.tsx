@@ -31,6 +31,18 @@ export default function HomePage() {
   const [pinnedToolIds, setPinnedToolIds] = useState<string[]>([]);
   const [likedTools, setLikedTools] = useState<Tool[]>([]);
   const [serverResults, setServerResults] = useState<Tool[] | null>(null);
+  // v1.9 PWA 登录状态提示：仅全站主屏幕入口（standalone）且未登录时显示
+  const [standalone, setStandalone] = useState(false);
+  const [authBannerDismissed, setAuthBannerDismissed] = useState(false);
+  useEffect(() => {
+    try {
+      setStandalone(
+        window.matchMedia("(display-mode: standalone)").matches ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (navigator as any).standalone === true
+      );
+    } catch { /* ignore */ }
+  }, []);
 
   // 缓存优先：先同步渲染上次数据（弱网/慢接口时首屏秒开），再后台刷新替换
   useEffect(() => {
@@ -201,7 +213,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/create"
-              className="min-w-[44px] min-h-[44px] flex items-center px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium"
+              className="min-w-[44px] min-h-[44px] flex items-center px-4 py-1.5 text-sm brand-gradient text-white rounded-xl hover:opacity-90 transition-colors font-medium"
             >
               开始创作
             </Link>
@@ -250,7 +262,7 @@ export default function HomePage() {
                 onClick={() => setActiveCategory(cat.key)}
                 className={`flex-shrink-0 min-h-[44px] flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   activeCategory === cat.key
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
+                    ? "brand-gradient text-white shadow-md shadow-indigo-200"
                     : "bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200"
                 }`}
               >
@@ -279,6 +291,33 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* v1.9 PWA 全站入口登录状态提示（仅 standalone 且未登录） */}
+      {!isSearching && standalone && !user && !authBannerDismissed && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-3">
+          <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl px-4 py-3 shadow-md shadow-indigo-200/50">
+            <div className="flex items-center gap-2.5 text-sm leading-snug">
+              <span className="text-base flex-shrink-0">🔑</span>
+              <span>未登录 · 登录后可保存使用记录、收藏工具</span>
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Link
+                href="/auth"
+                className="min-h-[44px] flex items-center px-4 bg-white text-indigo-600 rounded-xl text-sm font-semibold active:scale-95 transition-transform"
+              >
+                去登录
+              </Link>
+              <button
+                onClick={() => setAuthBannerDismissed(true)}
+                aria-label="关闭提示"
+                className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Newbie guide banner */}
       {!isSearching && <GuideBanner />}

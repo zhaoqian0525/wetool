@@ -241,7 +241,7 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
           ) : (
             <Link
               href="/auth"
-              className="text-xs text-indigo-600 border border-indigo-200 px-3 py-1 rounded-lg hover:bg-indigo-50"
+              className="min-h-[32px] flex items-center px-4 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:opacity-90 active:scale-95 transition-all"
             >
               登录
             </Link>
