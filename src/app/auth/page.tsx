@@ -191,10 +191,10 @@ function AuthForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col pb-20 lg:pb-0">
+    <div className="min-h-screen bg-page flex flex-col pb-20 lg:pb-0">
       {/* 顶部导航 */}
       <header className="h-12 sm:h-14 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center px-4 flex-shrink-0">
-        <Link href="/" className="flex items-center gap-1.5 text-base sm:text-lg font-bold text-indigo-600">
+        <Link href="/" className="flex items-center gap-1.5 text-base sm:text-lg font-bold text-brand">
           <WewooMark className="w-6 h-6" />
           微坞
         </Link>
@@ -296,7 +296,7 @@ function AuthForm() {
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder="怎么称呼你"
                   maxLength={20}
-                  className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                  className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5] transition-shadow"
                   style={{ fontSize: "16px" }}
                   disabled={submitting || !configured}
                   autoComplete="name"
@@ -313,7 +313,7 @@ function AuthForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
-                className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5] transition-shadow"
                 style={{ fontSize: "16px" }}
                 disabled={submitting || !configured}
                 autoComplete="email"
@@ -331,7 +331,7 @@ function AuthForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="至少 6 个字符"
-                className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5] transition-shadow"
                 style={{ fontSize: "16px" }}
                 disabled={submitting || !configured}
                 autoComplete={tab === "login" ? "current-password" : "new-password"}
@@ -350,7 +350,7 @@ function AuthForm() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="再次输入密码"
-                  className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                  className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5] transition-shadow"
                   style={{ fontSize: "16px" }}
                   disabled={submitting || !configured}
                   autoComplete="new-password"
@@ -362,7 +362,7 @@ function AuthForm() {
             <button
               type="submit"
               disabled={submitting || !configured || cooldown > 0}
-              className="w-full min-h-[52px] py-3.5 bg-indigo-600 text-white rounded-xl text-base font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-[0.98]"
+              className="btn-primary w-full min-h-[52px] py-3.5 rounded-xl text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {cooldown > 0 ? (
                 `请等待 ${cooldown} 秒`

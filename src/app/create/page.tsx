@@ -828,14 +828,14 @@ function CreatePageInner() {
   const publishBtn = user ? (
     <button
       onClick={openPublish}
-      className="min-w-[44px] min-h-[44px] flex items-center justify-center px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+      className="btn-primary min-w-[44px] min-h-[44px] flex items-center justify-center px-3 py-1.5 text-sm rounded-lg font-medium"
     >
       发布
     </button>
   ) : (
     <Link
       href="/auth"
-      className="min-w-[44px] min-h-[44px] flex items-center justify-center px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+      className="btn-primary min-w-[44px] min-h-[44px] flex items-center justify-center px-3 py-1.5 text-sm rounded-lg font-medium"
     >
       登录后发布
     </Link>
@@ -1397,7 +1397,7 @@ function CreatePageInner() {
                     value={publishTitle}
                     onChange={(e) => setPublishTitle(e.target.value)}
                     placeholder="给你的工具取个名字"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5]"
                     style={{ fontSize: "16px" }}
                     autoFocus
                     disabled={publishing}
@@ -1410,7 +1410,7 @@ function CreatePageInner() {
                     value={publishDesc}
                     onChange={(e) => setPublishDesc(e.target.value)}
                     placeholder="简单说说这个工具能做什么"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5]"
                     style={{ fontSize: "16px" }}
                     disabled={publishing}
                   />
@@ -1421,7 +1421,7 @@ function CreatePageInner() {
                   <select
                     value={publishCategory}
                     onChange={(e) => setPublishCategory(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-[#5046e5] focus:border-[#5046e5] bg-white"
                     style={{ fontSize: "16px" }}
                     disabled={publishing}
                   >
@@ -1547,7 +1547,7 @@ function CreatePageInner() {
               <button
                 onClick={handlePublish}
                 disabled={publishing}
-                className="flex-1 min-h-[48px] py-3 text-base bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium"
+                className="btn-primary flex-1 min-h-[48px] py-3 text-base font-medium disabled:opacity-50"
               >
                 {publishBtnText}
               </button>
@@ -1607,6 +1607,7 @@ function ShareCard({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="h-1.5 brand-gradient" />
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h3 className="text-lg font-bold text-gray-900">🎉 发布成功</h3>

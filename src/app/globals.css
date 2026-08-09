@@ -183,3 +183,35 @@ body {
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
   }
 }
+
+/* --- v1.10 ??????? token --- */
+.bg-page { background-color: var(--bg-page); }
+.text-brand { color: var(--brand-500); }
+.text-brand-strong { color: var(--brand-600); }
+.border-line { border-color: var(--line); }
+
+.btn-primary {
+  background-image: linear-gradient(135deg, #5046e5, #8b5cf6);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(80, 70, 229, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.btn-primary:hover { filter: brightness(1.06); box-shadow: 0 6px 18px rgba(80, 70, 229, 0.4); }
+.btn-primary:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(80, 70, 229, 0.3); }
+.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; filter: none; box-shadow: none; }
+
+.btn-press { transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease, filter 0.2s ease; }
+.btn-press:active { transform: scale(0.97); }
+
+.card-surface {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.card-surface:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15, 20, 25, 0.08); }
+
+@media (hover: none) {
+  .card-surface:active { transform: translateY(-1px); }
+}

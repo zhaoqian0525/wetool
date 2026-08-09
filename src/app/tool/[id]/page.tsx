@@ -569,7 +569,7 @@ export default function ToolDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
+      <div className="min-h-screen bg-page pb-20 lg:pb-0">
         <Navbar />
         <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <DetailSkeleton />
@@ -581,7 +581,7 @@ export default function ToolDetailPage() {
   // 私密工具且非作者 → 404
   if (tool && tool.visibility === "private" && !isAuthor) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
+      <div className="min-h-screen bg-page pb-20 lg:pb-0">
         <Navbar />
         <div className="flex flex-col items-center justify-center px-4 py-20">
           <div className="text-5xl mb-4">🔒</div>
@@ -600,7 +600,7 @@ export default function ToolDetailPage() {
 
   if (!tool) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
+      <div className="min-h-screen bg-page pb-20 lg:pb-0">
         <Navbar />
         <div className="flex flex-col items-center justify-center px-4 py-20">
           <div className="text-5xl mb-4">🔍</div>
@@ -620,7 +620,7 @@ export default function ToolDetailPage() {
 
   return (
     <ToolPageErrorBoundary>
-    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
+    <div className="min-h-screen bg-page pb-20 lg:pb-0">
       <Navbar
         children={
           <Link

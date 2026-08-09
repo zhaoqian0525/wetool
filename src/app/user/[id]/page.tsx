@@ -41,13 +41,13 @@ export default function UserPage() {
     : myTools[0]?.author || "微坞用户";
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
+    <div className="min-h-screen bg-page pb-20 lg:pb-0">
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* User header（v1.9.10 昵称优先） */}
         <div className="mb-8 text-center sm:text-left">
-          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-2xl mx-auto sm:mx-0 mb-3">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl mx-auto sm:mx-0 mb-3 bg-gradient-to-br from-[#5046E5] to-[#8B5CF6] text-white shadow-md">
             {displayName[0]?.toUpperCase() || "微"}
           </div>
           <h1 className="text-xl font-bold text-gray-900">
