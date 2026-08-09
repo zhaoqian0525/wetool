@@ -88,6 +88,8 @@ export default function ToolDetailPage() {
   // v1.9 修复：仅单工具 PWA 入口（?app=1）自动全屏；
   // 全站 PWA 入口（standalone 但无 ?app=1）正常显示详情页，不再自动全屏
   const [appMode, setAppMode] = useState(false);
+  // v1.9.1 单工具 PWA 全屏：未登录提示条（用户可关闭，本次会话内不再显示）
+  const [authHintDismissed, setAuthHintDismissed] = useState(false);
   useEffect(() => {
     try {
       const q = new URLSearchParams(window.location.search);
@@ -836,14 +838,36 @@ export default function ToolDetailPage() {
                 className={`${fullscreen ? "fixed inset-0 z-50 bg-black" : "relative flex-1 min-h-0 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200"}`}
               >
                 {!docReady && <IframeSkeleton />}
-                {fullscreen && (
+                {fullscreen && !appMode && (
                   <button
-                    onClick={appMode ? () => { window.location.href = "/"; } : exitFullscreen}
+                    onClick={exitFullscreen}
                     style={{ touchAction: "manipulation" }}
                     className="absolute top-3 right-3 z-30 flex items-center gap-1 px-3 py-1.5 bg-gray-800/80 text-white text-xs rounded-full hover:bg-gray-700 active:scale-95 transition-all shadow border border-white/10"
                   >
-                    {appMode ? "🏠 返回广场" : "退出全屏"}
+                    退出全屏
                   </button>
+                )}
+                {/* v1.9.1 单工具 PWA 全屏：未登录时顶部提示登录（进度/记录才能云端保存） */}
+                {fullscreen && appMode && !user && !authHintDismissed && (
+                  <div className="absolute top-0 left-0 right-0 z-[60] flex items-center gap-2 px-3 py-2 bg-gray-900/85 text-white text-xs backdrop-blur-sm">
+                    <span className="flex-1 flex items-center gap-1.5 leading-snug">
+                      <span className="text-sm flex-shrink-0">🔑</span>
+                      <span>未登录 · 登录后进度和记录可云端保存</span>
+                    </span>
+                    <Link
+                      href={`/auth?redirect=${encodeURIComponent(`/tool/${id}?app=1`)}`}
+                      className="min-h-[36px] flex items-center px-3.5 bg-white text-indigo-600 rounded-lg text-xs font-semibold active:scale-95 transition-transform"
+                    >
+                      登录
+                    </Link>
+                    <button
+                      onClick={() => setAuthHintDismissed(true)}
+                      aria-label="关闭登录提示"
+                      className="w-8 h-8 flex items-center justify-center text-white/60 hover:text-white"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 )}
                 {docReady && (
                   <iframe
