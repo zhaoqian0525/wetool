@@ -195,11 +195,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       <Navbar
-        children={
-          <span className="hidden sm:inline text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-            AI 工具集市
-          </span>
-        }
+        title="发现实用小工具"
         actions={
           <div className="flex items-center gap-2">
             <Link
@@ -223,10 +219,9 @@ export default function HomePage() {
 
       {/* Hero / Search / Category Filter */}
       <main>
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 sm:pt-7 pb-3 sm:pb-4">
-        <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
-          发现实用小工具
-        </h1>
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4 pb-3 sm:pb-4">
+        {/* 页面标题已移至导航栏 logo 旁，此处保留隐藏 h1 用于 SEO/无障碍 */}
+        <h1 className="sr-only">发现实用小工具</h1>
 
         {/* Search bar */}
         <div className="relative mb-4">
@@ -250,43 +245,6 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Category + Sort */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => setActiveCategory(cat.key)}
-                className={`flex-shrink-0 min-h-[44px] flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  activeCategory === cat.key
-                    ? "brand-gradient text-white shadow-md shadow-indigo-200"
-                    : "bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200"
-                }`}
-              >
-                <span className="mr-1.5">{cat.icon}</span>
-                {cat.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-1 flex-shrink-0">
-            <button
-              onClick={() => setSortBy("latest")}
-              className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 rounded-lg text-xs font-medium transition-all ${
-                sortBy === "latest" ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              最新
-            </button>
-            <button
-              onClick={() => setSortBy("popular")}
-              className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 rounded-lg text-xs font-medium transition-all ${
-                sortBy === "popular" ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              热门
-            </button>
-          </div>
-        </div>
       </section>
 
       {/* v1.9 PWA 全站入口登录状态提示（仅 standalone 且未登录） */}
@@ -393,6 +351,52 @@ export default function HomePage() {
         </section>
       )}
 
+      {/* 分类 + 排序（v1.9.5：与广场内容在一起，位于最近使用/我的工具下方） */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-1 pb-3">
+        <h2 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+          <span>{isSearching ? "🔍" : "🧩"}</span>
+          {isSearching ? "搜索结果" : "广场"}
+          {!loading && filtered.length > 0 && (
+            <span className="text-xs font-normal text-gray-400">· {filtered.length} 个工具</span>
+          )}
+        </h2>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => setActiveCategory(cat.key)}
+                className={`flex-shrink-0 min-h-[44px] flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  activeCategory === cat.key
+                    ? "brand-gradient text-white shadow-md shadow-indigo-200"
+                    : "bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-200"
+                }`}
+              >
+                <span className="mr-1.5">{cat.icon}</span>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1 flex-shrink-0">
+            <button
+              onClick={() => setSortBy("latest")}
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 rounded-lg text-xs font-medium transition-all ${
+                sortBy === "latest" ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              最新
+            </button>
+            <button
+              onClick={() => setSortBy("popular")}
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 rounded-lg text-xs font-medium transition-all ${
+                sortBy === "popular" ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              热门
+            </button>
+          </div>
+        </div>
+      </section>
       {/* Tool Grid */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-20 lg:pb-16">
         {loading ? (
@@ -401,7 +405,6 @@ export default function HomePage() {
           <EmptyState category={activeCategory} search={search} />
         ) : (
           <>
-            <p className="text-xs text-gray-500 mb-3">{filtered.length} 个工具</p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {filtered.map((tool) => (
                 <ToolCard key={tool.id} tool={tool} viewCount={viewCounts[tool.id]} />
