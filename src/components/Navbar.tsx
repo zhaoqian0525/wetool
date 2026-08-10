@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { WewooMark } from "@/components/WewooLogo";
 import ThemeToggle from "@/components/ThemeToggle";
+import Avatar from "@/components/Avatar";
 
 interface NavbarProps {
   /** Extra content to render between the logo and the auth section (desktop only) */
@@ -120,9 +121,11 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                 title={user.email ?? ""}
               >
-                <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
-                  {(user.email?.[0] ?? "U").toUpperCase()}
-                </div>
+                <Avatar
+                  url={user.user_metadata?.avatar_url as string | undefined}
+                  name={user.user_metadata?.name || user.email || "U"}
+                  size={32}
+                />
                 <span className="hidden sm:inline text-sm text-gray-700 max-w-[100px] truncate">
                   {user.email?.split("@")[0]}
                 </span>
@@ -227,9 +230,11 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
           ) : user ? (
             <div className="flex items-center gap-2">
               <Link href={`/user/${user.id}`} className="flex items-center gap-1.5 min-h-[32px]">
-                <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-                  {(user.email?.[0] ?? "U").toUpperCase()}
-                </div>
+                <Avatar
+                  url={user.user_metadata?.avatar_url as string | undefined}
+                  name={user.user_metadata?.name || user.email || "U"}
+                  size={28}
+                />
                 <span className="text-xs text-gray-600 max-w-[80px] truncate">
                   {user.email?.split("@")[0]}
                 </span>

@@ -1,6 +1,6 @@
 {
-  "version": "1.13.0",
+  "version": "1.13.1",
   "buildDate": "2026-08-10",
-  "buildTimestamp": "2026-08-10T23:50:00.000+08:00",
-  "description": "v1.13.0 提速与收尾：内置工具封面全部转 WebP（体积 -72%）；新增详情数据缓存（fetchToolById 写缓存 + 详情页预填秒开，24h TTL）；ROADMAP 技术债状态整理"
+  "buildTimestamp": "2026-08-11T00:30:00.000+08:00",
+  "description": "v1.13.1 个人头像更换 + 微信分享优化：头像上传（压缩 512px/WebP → Supabase Storage → user_metadata），导航栏/用户页统一 Avatar 组件展示；工具页 OG 分享图改用工具封面、描述带作者，用户主页新增分享 metadata"
 }

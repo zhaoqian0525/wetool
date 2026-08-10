@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
+import Avatar from "@/components/Avatar";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
 import { fetchToolsByUser, fetchTools, fetchUserLikedTools, type Tool } from "@/lib/data";
+import { uploadAvatar } from "@/lib/avatar";
 
 export default function UserPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +21,33 @@ export default function UserPage() {
   const [myTools, setMyTools] = useState<Tool[]>([]);
   const [likedTools, setLikedTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("请选择图片文件");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("图片不能超过 5MB");
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const url = await uploadAvatar(file, user.id);
+      if (url) {
+        toast.success("头像已更新");
+      } else {
+        toast.error("头像上传失败，请重试");
+      }
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -45,10 +74,42 @@ export default function UserPage() {
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* User header（v1.9.10 昵称优先） */}
+        {/* User header（v1.9.10 昵称优先；v1.13.1 头像可更换） */}
         <div className="mb-8 text-center sm:text-left">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl mx-auto sm:mx-0 mb-3 bg-gradient-to-br from-[#5046E5] to-[#8B5CF6] text-white shadow-md">
-            {displayName[0]?.toUpperCase() || "微"}
+          <div className="relative w-16 h-16 mx-auto sm:mx-0 mb-3">
+            <Avatar
+              url={isSelf ? (user?.user_metadata?.avatar_url as string | undefined) : undefined}
+              name={displayName}
+              size={64}
+              className="shadow-md"
+            />
+            {isSelf && (
+              <>
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors disabled:opacity-50"
+                  aria-label="更换头像"
+                  title="更换头像"
+                >
+                  {uploadingAvatar ? (
+                    <span className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  )}
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </>
+            )}
           </div>
           <h1 className="text-xl font-bold text-gray-900">
             {isSelf ? displayName : `@${displayName} 的主页`}
