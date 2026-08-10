@@ -743,7 +743,7 @@ export default function ToolDetailPage() {
               className="w-full h-40 sm:h-52 rounded-xl mb-5 flex items-center justify-center"
               style={{ background: tool.thumbnailGradient || "linear-gradient(135deg,#5046e5,#8b5cf6)" }}
             >
-              <span className="text-5xl select-none">💻</span>
+              <span className="w-24 h-24 rounded-full bg-white/25 flex items-center justify-center text-5xl select-none">💻</span>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">此工具需要下载到电脑使用</h3>
             <p className="text-sm text-gray-500 mb-5 max-w-md mx-auto leading-relaxed">
@@ -916,7 +916,7 @@ export default function ToolDetailPage() {
             )
           ) : (
             <div className="flex-1 rounded-xl flex flex-col items-center justify-center p-8" style={{ background: tool.thumbnailGradient }}>
-              <span className="text-4xl mb-2">{CATEGORY_EMOJI[tool.category] || "🛠️"}</span>
+              <span className="w-16 h-16 rounded-full bg-white/25 flex items-center justify-center text-4xl mb-2">{CATEGORY_EMOJI[tool.category] || "🛠️"}</span>
               <span className="text-white font-bold">{tool.title}</span>
             </div>
           )}
@@ -946,7 +946,7 @@ export default function ToolDetailPage() {
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center" style={{ background: rt.thumbnailGradient }}>
-                        <span className="text-3xl drop-shadow-lg group-hover:scale-110 transition-transform duration-200">{getToolEmoji(rt)}</span>
+                        <span className="w-16 h-16 rounded-full bg-white/25 flex items-center justify-center text-3xl drop-shadow-lg group-hover:scale-110 transition-transform duration-200">{getToolEmoji(rt)}</span>
                       </div>
                     )}
                   </div>

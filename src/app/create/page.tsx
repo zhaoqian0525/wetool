@@ -864,7 +864,7 @@ function CreatePageInner() {
       </Link>
       <button
         onClick={saveSnapshot}
-        className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-2.5 py-1 text-xs rounded-lg transition-all font-medium ${
+        className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 py-1.5 text-sm rounded-lg transition-all font-medium ${
           savedIndicator
             ? "bg-green-500 text-white"
             : "bg-amber-500 text-white hover:bg-amber-600"

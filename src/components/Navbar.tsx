@@ -159,7 +159,7 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
             /* Not logged in */
             <Link
               href="/auth"
-              className="px-3 py-1.5 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+              className="min-w-[44px] min-h-[44px] flex items-center px-3 py-1.5 text-sm text-indigo-600 border border-indigo-200 rounded-xl hover:bg-indigo-50 transition-colors"
             >
               {configured ? "登录" : "登录/注册"}
             </Link>

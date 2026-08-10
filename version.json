@@ -1,6 +1,6 @@
 {
-  "version": "1.12.1",
+  "version": "1.12.2",
   "buildDate": "2026-08-10",
-  "buildTimestamp": "2026-08-10T21:31:35.000+08:00",
-  "description": "v1.12.1 P2 设计系统深化（第二批）：暗色模式。深/浅主题切换（导航栏按钮，跟随系统 + localStorage 记忆 + 首帧防闪烁，浅色模式零改动）；暗色样式全量适配（CSS 变量 + Tailwind 硬编码类覆盖、页面根统一 bg-page、毛玻璃导航/引导页渐变/输入框边框）；修复注释内嵌 */ 导致 :root[data-theme=\"dark\"] 规则被浏览器解析器丢弃的编译 bug。"
+  "buildTimestamp": "2026-08-10T22:15:00.000+08:00",
+  "description": "v1.12.2 UI 形状统一与圆角修复：修复业务圆角 token（--radius-sm/md/lg 12/20/35px）与 Tailwind 圆角主题变量撞名，导致全站 rounded-lg 按钮误变 35px 胶囊的问题；create 页顶部按钮统一 8px 圆角与字号；首页最新/热门改胶囊与分类统一；桌面端登录按钮统一 44px/12px；工具封面 emoji 加圆形背景；教程横幅图标格改圆形；用户页卡片统一 16px 圆角。"
 }

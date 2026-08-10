@@ -14,10 +14,9 @@
   --brand-gradient: linear-gradient(135deg, #5046e5, #8b5cf6);
   --accent-cyan: #22d3ee;
   --ink: #0a1628;
-  --radius-sm: 12px;
-  --radius-md: 20px;
-  --radius-lg: 35px;
+  --radius-control: 12px;
   --radius-card: 20px;
+  --radius-hero: 35px;
   --shadow-card: 0 1px 2px rgba(15, 20, 25, 0.04), 0 4px 12px rgba(15, 20, 25, 0.06);
   --bg-page: #f9f9fb;
   --bg-card: #ffffff;
@@ -227,9 +226,9 @@ body {
 }
 
 /* --- v1.12 设计系统深化：语义工具类（token 落地） --- */
-.radius-sm { border-radius: var(--radius-sm); }
-.radius-md { border-radius: var(--radius-md); }
-.radius-lg { border-radius: var(--radius-lg); }
+.radius-sm { border-radius: var(--radius-control); }
+.radius-md { border-radius: var(--radius-card); }
+.radius-lg { border-radius: var(--radius-hero); }
 .text-secondary { color: var(--text-2); }
 .text-muted { color: var(--text-3); }
 .bg-soft { background-color: var(--bg-soft); }
@@ -238,7 +237,7 @@ body {
 .panel {
   background: var(--bg-card);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-control);
   box-shadow: var(--shadow-card);
 }
 
@@ -303,7 +302,7 @@ body {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid #d1d5db;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-control);
   font-size: 1rem;
   background: var(--bg-card);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;

@@ -333,7 +333,9 @@ export default function HomePage() {
                     className="aspect-square flex items-center justify-center"
                     style={{ background: String(t.thumbnailGradient || "linear-gradient(135deg, #5046e5, #8b5cf6)") }}
                   >
-                    <span className="text-3xl sm:text-4xl">{getToolEmoji(t)}</span>
+                    <span className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/25 flex items-center justify-center text-3xl sm:text-4xl">
+                      {getToolEmoji(t)}
+                    </span>
                   </div>
                   {/* 标题 */}
                   <div className="p-2">
@@ -376,7 +378,9 @@ export default function HomePage() {
                   className="h-16 flex items-center justify-center"
                   style={{ background: t.thumbnailGradient || "linear-gradient(135deg, #5046e5, #8b5cf6)" }}
                 >
-                  <span className="text-xl">{getToolEmoji(t)}</span>
+                  <span className="w-9 h-9 rounded-full bg-white/25 flex items-center justify-center text-xl">
+                    {getToolEmoji(t)}
+                  </span>
                 </div>
                 <div className="px-2 py-1.5">
                   <p className="text-xs font-medium text-gray-800 truncate leading-tight">{t.title}</p>
@@ -416,7 +420,7 @@ export default function HomePage() {
           <div className="flex gap-1 flex-shrink-0">
             <button
               onClick={() => setSortBy("latest")}
-              className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 rounded-lg text-xs font-medium transition-all ${
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 rounded-full text-xs font-medium transition-all ${
                 sortBy === "latest" ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -424,7 +428,7 @@ export default function HomePage() {
             </button>
             <button
               onClick={() => setSortBy("popular")}
-              className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 rounded-lg text-xs font-medium transition-all ${
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 rounded-full text-xs font-medium transition-all ${
                 sortBy === "popular" ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -490,7 +494,7 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
             className="absolute inset-0 flex items-center justify-center"
             style={{ background: tool.thumbnailGradient }}
           >
-            <span className="text-4xl sm:text-5xl drop-shadow-lg group-hover:scale-110 transition-transform duration-200">
+            <span className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/25 flex items-center justify-center text-4xl sm:text-5xl drop-shadow-lg group-hover:scale-110 transition-transform duration-200">
               {emoji}
             </span>
           </div>
@@ -557,7 +561,7 @@ function GuideBanner() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-2">
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-4 flex items-center gap-3 sm:gap-4">
-        <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-xl sm:text-2xl">
+        <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 rounded-full flex items-center justify-center text-xl sm:text-2xl">
           📖
         </div>
         <div className="flex-1 min-w-0">

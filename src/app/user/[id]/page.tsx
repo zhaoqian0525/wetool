@@ -69,7 +69,7 @@ export default function UserPage() {
                 <Link
                   key={t.id}
                   href={`/tool/${t.id}`}
-                  className="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                  className="block bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
                 >
                   <div
                     className="aspect-[4/3] flex items-center justify-center"
@@ -95,7 +95,7 @@ export default function UserPage() {
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl border border-gray-100 h-32 animate-pulse" />
+                <div key={i} className="bg-white rounded-2xl border border-gray-100 h-32 animate-pulse" />
               ))}
             </div>
           ) : myTools.length === 0 ? (
@@ -117,7 +117,7 @@ export default function UserPage() {
                 <div key={t.id} className="group relative">
                   <Link
                     href={`/tool/${t.id}`}
-                    className="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                    className="block bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
                   >
                     <div
                       className="aspect-[4/3] flex items-center justify-center"
