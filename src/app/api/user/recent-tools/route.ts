@@ -7,6 +7,7 @@ export interface RecentTool {
   id: string;
   title: string;
   thumbnailGradient: string;
+  coverUrl?: string;
   author: string;
   category: string;
   lastUsedAt: string;
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
   const dbIds = states.map((s: { tool_id: string }) => s.tool_id);
   const { data: tools, error: toolsError } = await ctx.supabase
     .from("tools")
-    .select("id, title, thumbnail_gradient, author, category")
+    .select("id, title, thumbnail_gradient, cover_url, author, category")
     .in("id", dbIds);
 
   if (toolsError) {
@@ -63,6 +64,7 @@ export async function GET(request: NextRequest) {
         id: String(row.id),
         title: String(row.title || ""),
         thumbnailGradient: String(row.thumbnail_gradient || ""),
+        coverUrl: row.cover_url ? String(row.cover_url) : undefined,
         author: String(row.author || ""),
         category: String(row.category || "生活"),
         lastUsedAt,
@@ -77,6 +79,7 @@ export async function GET(request: NextRequest) {
         id: mock.id,
         title: mock.title,
         thumbnailGradient: mock.thumbnailGradient,
+        coverUrl: mock.coverUrl || `/covers/${mock.id}.png`,
         author: mock.author,
         category: mock.category,
         lastUsedAt,

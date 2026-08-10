@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     author: String(row.author ?? ""),
     authorId: row.author_id ? String(row.author_id) : undefined,
     category: String(row.category ?? "生活"),
-    coverUrl: row.cover_url ? String(row.cover_url) : `/covers/${String(row.id)}.png`,
+    coverUrl: row.cover_url ? String(row.cover_url) : undefined,
     thumbnailGradient: String(row.thumbnail_gradient ?? ""),
     isDownloadable: row.is_downloadable === true || row.is_downloadable === "true" || undefined,
     createdAt: String(row.created_at ?? new Date().toISOString()),

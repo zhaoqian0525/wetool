@@ -36,7 +36,7 @@ function mapRow(row: Record<string, unknown>): Tool {
     code: String(row.code ?? ""),
     thumbnailGradient:
       String(row.thumbnail_gradient ?? row.thumbnailGradient ?? ""),
-    coverUrl: row.cover_url ? String(row.cover_url) : `/covers/${String(row.id)}.png`,
+    coverUrl: row.cover_url ? String(row.cover_url) : undefined,
     createdAt: String(row.created_at ?? row.createdAt ?? new Date().toISOString()),
     description: row.description ? String(row.description) : undefined,
     sourceToolId: row.source_tool_id ? String(row.source_tool_id) : undefined,
@@ -278,11 +278,12 @@ export async function fetchTools(): Promise<Tool[]> {
   const merged = [...localPublic, ...dbTools, ...MOCK_TOOLS];
   // 去重
   const seen = new Set<string>();
+  const builtinIds = new Set(MOCK_TOOLS.map((m) => m.id));
   return merged.filter((t) => {
     if (seen.has(t.id)) return false;
     seen.add(t.id);
-    // 默认封面
-    if (!t.coverUrl) t.coverUrl = `/covers/${t.id}.png`;
+    // 默认封面：仅内置工具存在公共封面文件，用户工具无封面时前端显示渐变占位
+    if (!t.coverUrl && builtinIds.has(t.id)) t.coverUrl = `/covers/${t.id}.png`;
     return true;
   });
 }
@@ -307,7 +308,9 @@ export async function fetchToolById(id: string): Promise<Tool | null> {
 
 /** 给工具加默认封面图 */
 function ensureCover(tool: Tool | null): Tool | null {
-  if (tool && !tool.coverUrl) tool.coverUrl = `/covers/${tool.id}.png`;
+  if (tool && !tool.coverUrl && MOCK_TOOLS.some((m) => m.id === tool.id)) {
+    tool.coverUrl = `/covers/${tool.id}.png`;
+  }
   return tool;
 }
 

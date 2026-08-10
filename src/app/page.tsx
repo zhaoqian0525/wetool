@@ -111,10 +111,12 @@ export default function HomePage() {
       // 缓存解析失败，忽略
     }
     authedFetch(`/api/user/recent-tools`)
-      .then((r) => r.json())
-      .then((data) => {
+      .then((r) => r.json().then((data) => ({ ok: r.ok, data })))
+      .then(({ ok, data }) => {
         if (cancelled) return;
-        const tools = data.tools || [];
+        // 401/登录态失效或服务端错误：保留本地缓存数据，避免"最近使用"区块凭空消失
+        if (!ok) return;
+        const tools = Array.isArray(data.tools) ? data.tools : [];
         setRecentTools(tools);
         try {
           localStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), tools }));
@@ -122,7 +124,9 @@ export default function HomePage() {
           // 缓存写入失败（如隐私模式），忽略
         }
       })
-      .catch(() => { if (!cancelled) setRecentTools([]); });
+      .catch(() => {
+        // 网络失败：保留本地缓存数据，不覆盖
+      });
     return () => { cancelled = true; };
   }, [user]);
 
@@ -332,7 +336,7 @@ export default function HomePage() {
                     className="relative aspect-square overflow-hidden"
                     style={{ background: String(t.thumbnailGradient || "linear-gradient(135deg, #5046e5, #8b5cf6)") }}
                   >
-                    {String(t.coverUrl) && (
+                    {t.coverUrl ? (
                       <Image
                         src={String(t.coverUrl)}
                         alt={String(t.title)}
@@ -341,7 +345,7 @@ export default function HomePage() {
                         sizes="(max-width: 640px) 30vw, 15vw"
                         loading="lazy"
                       />
-                    )}
+                    ) : null}
                   </div>
                   {/* 标题 */}
                   <div className="p-2">
