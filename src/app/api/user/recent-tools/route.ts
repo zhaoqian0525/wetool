@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
         id: mock.id,
         title: mock.title,
         thumbnailGradient: mock.thumbnailGradient,
-        coverUrl: mock.coverUrl || `/covers/${mock.id}.png`,
+        coverUrl: mock.coverUrl || `/covers/${mock.id}.webp`,
         author: mock.author,
         category: mock.category,
         lastUsedAt,

@@ -1,6 +1,6 @@
 {
-  "version": "1.12.4",
+  "version": "1.13.0",
   "buildDate": "2026-08-10",
-  "buildTimestamp": "2026-08-10T23:20:00.000+08:00",
-  "description": "v1.12.4 修复最近使用封面错误与手机端不显示：recent-tools 接口补充 coverUrl 字段；修复 String(undefined) 误判与无封面工具破图兜底（统一渐变占位，仅内置工具保留公共封面）；token 过期 401 或网络失败时保留最近使用缓存，authedFetch 自动刷新 session 重试一次"
+  "buildTimestamp": "2026-08-10T23:50:00.000+08:00",
+  "description": "v1.13.0 提速与收尾：内置工具封面全部转 WebP（体积 -72%）；新增详情数据缓存（fetchToolById 写缓存 + 详情页预填秒开，24h TTL）；ROADMAP 技术债状态整理"
 }

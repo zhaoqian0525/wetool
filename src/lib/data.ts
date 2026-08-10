@@ -283,7 +283,7 @@ export async function fetchTools(): Promise<Tool[]> {
     if (seen.has(t.id)) return false;
     seen.add(t.id);
     // 默认封面：仅内置工具存在公共封面文件，用户工具无封面时前端显示渐变占位
-    if (!t.coverUrl && builtinIds.has(t.id)) t.coverUrl = `/covers/${t.id}.png`;
+    if (!t.coverUrl && builtinIds.has(t.id)) t.coverUrl = `/covers/${t.id}.webp`;
     return true;
   });
 }
@@ -300,16 +300,73 @@ export async function fetchToolById(id: string): Promise<Tool | null> {
       supabase.from("tools").select("*").eq("id", id).single()
     );
     if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
-      return mapRow((result as { data: Record<string, unknown> }).data);
+      const tool = mapRow((result as { data: Record<string, unknown> }).data);
+      writeToolDetailCache(tool);
+      return tool;
     }
   }
   return ensureCover(MOCK_TOOLS.find((t) => t.id === id) ?? null);
 }
 
 /** 给工具加默认封面图 */
+export interface ToolDetailCacheEntry {
+  savedAt: number;
+  tool: Tool;
+}
+
+// 详情数据缓存（v1.13.0）：fetchToolById 成功后写入，详情页进入时同步预填，实现秒开；
+// 网络结果始终覆盖缓存，保证数据最新。TTL 24h，最多缓存 10 个工具（含完整 code，防超限）。
+const TOOL_DETAIL_CACHE_PREFIX = "wewoo-tool-detail-";
+const TOOL_DETAIL_CACHE_INDEX = "wewoo-tool-detail-index";
+const TOOL_DETAIL_CACHE_TTL = 24 * 60 * 60 * 1000;
+const TOOL_DETAIL_CACHE_MAX = 10;
+
+function readToolDetailCacheIndex(): string[] {
+  try {
+    const raw = localStorage.getItem(TOOL_DETAIL_CACHE_INDEX);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 同步读取工具详情缓存（供详情页首屏预填），TTL 过期或缺失返回 null */
+export function readToolDetailCache(id: string): Tool | null {
+  try {
+    const raw = localStorage.getItem(TOOL_DETAIL_CACHE_PREFIX + id);
+    if (!raw) return null;
+    const entry = JSON.parse(raw) as ToolDetailCacheEntry;
+    if (!entry || !entry.tool || Date.now() - entry.savedAt > TOOL_DETAIL_CACHE_TTL) {
+      localStorage.removeItem(TOOL_DETAIL_CACHE_PREFIX + id);
+      return null;
+    }
+    return entry.tool;
+  } catch {
+    return null;
+  }
+}
+
+function writeToolDetailCache(tool: Tool): void {
+  try {
+    localStorage.setItem(TOOL_DETAIL_CACHE_PREFIX + tool.id, JSON.stringify({ savedAt: Date.now(), tool }));
+    const index = readToolDetailCacheIndex().filter((x) => x !== tool.id);
+    index.unshift(tool.id);
+    // 超限：删除最旧条目
+    while (index.length > TOOL_DETAIL_CACHE_MAX) {
+      const old = index.pop();
+      if (old) localStorage.removeItem(TOOL_DETAIL_CACHE_PREFIX + old);
+    }
+    localStorage.setItem(TOOL_DETAIL_CACHE_INDEX, JSON.stringify(index));
+  } catch {
+    // localStorage 满/隐私模式：忽略缓存写入
+  }
+}
+
+
 function ensureCover(tool: Tool | null): Tool | null {
   if (tool && !tool.coverUrl && MOCK_TOOLS.some((m) => m.id === tool.id)) {
-    tool.coverUrl = `/covers/${tool.id}.png`;
+    tool.coverUrl = `/covers/${tool.id}.webp`;
   }
   return tool;
 }
@@ -324,7 +381,7 @@ export async function fetchToolsByUser(userId: string): Promise<Tool[]> {
       return ((result as { data: Record<string, unknown>[] }).data).map(mapRow);
     }
   }
-  return MOCK_TOOLS.filter((t) => t.authorId === userId).map((t) => ({ ...t, coverUrl: t.coverUrl || `/covers/${t.id}.png` }));
+  return MOCK_TOOLS.filter((t) => t.authorId === userId).map((t) => ({ ...t, coverUrl: t.coverUrl || `/covers/${t.id}.webp` }));
 }
 
 /**
@@ -546,7 +603,7 @@ export async function fetchUserLikedTools(userId: string, targetType: LikeTarget
       for (const tid of toolIds) {
         if (!result.find(t => t.id === tid)) {
           const mock = MOCK_TOOLS.find(t => t.id === tid);
-          if (mock) result.push({ ...mock, coverUrl: mock.coverUrl || `/covers/${mock.id}.png` });
+          if (mock) result.push({ ...mock, coverUrl: mock.coverUrl || `/covers/${mock.id}.webp` });
         }
       }
       

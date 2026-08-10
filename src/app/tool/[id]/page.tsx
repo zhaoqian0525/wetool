@@ -13,7 +13,7 @@ import { ToolPageErrorBoundary } from "@/components/ToolPageErrorBoundary";
 import { ToolHistoryDrawer } from "@/components/ToolHistoryDrawer";
 import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
-import { fetchToolById, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, type Tool, type Review, type LikeTargetType, type Visibility } from "@/lib/data";
+import { fetchToolById, readToolDetailCache, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, type Tool, type Review, type LikeTargetType, type Visibility } from "@/lib/data";
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
 import { authedFetch } from "@/lib/api-client";
 import { getLsSnapshot, setLsSnapshot } from "@/lib/toolStateBridge";
@@ -155,6 +155,12 @@ export default function ToolDetailPage() {
     let cancelled = false;
 
     async function loadAll() {
+      // v1.13.0 提速：命中详情缓存立即渲染（iframe 秒开），网络数据到达后覆盖保持最新
+      const cached = readToolDetailCache(id);
+      if (cached && !cancelled) {
+        setTool(cached);
+        setLoading(false);
+      }
       // 并行加载 tool、reviews、rating
       let t: Tool | null = null;
       let revs: Review[] = [];
