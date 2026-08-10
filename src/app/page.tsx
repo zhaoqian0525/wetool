@@ -8,7 +8,6 @@ import { useAuth } from "@/components/AuthProvider";
 import { fetchTools, loadToolsCacheSync, fetchViewCounts, fetchToolsByUser, fetchUserLikedTools, CATEGORIES, type Tool } from "@/lib/data";
 import { authedFetch } from "@/lib/api-client";
 import versionInfo from "../../version.json";
-import { getToolEmoji } from "@/lib/constants";
 import { WewooMark } from "@/components/WewooLogo";
 import { Badge } from "@/components/ui";
 
@@ -328,14 +327,21 @@ export default function HomePage() {
                   href={`/tool/${t.id}`}
                   className="flex-shrink-0 w-[120px] sm:w-[140px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden card-hover-float group"
                 >
-                  {/* 封面：渐变背景 + emoji */}
+                  {/* 封面：封面图优先，无封面用渐变占位 */}
                   <div
-                    className="aspect-square flex items-center justify-center"
+                    className="relative aspect-square overflow-hidden"
                     style={{ background: String(t.thumbnailGradient || "linear-gradient(135deg, #5046e5, #8b5cf6)") }}
                   >
-                    <span className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/25 flex items-center justify-center text-3xl sm:text-4xl">
-                      {getToolEmoji(t)}
-                    </span>
+                    {String(t.coverUrl) && (
+                      <Image
+                        src={String(t.coverUrl)}
+                        alt={String(t.title)}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 30vw, 15vw"
+                        loading="lazy"
+                      />
+                    )}
                   </div>
                   {/* 标题 */}
                   <div className="p-2">
@@ -375,12 +381,19 @@ export default function HomePage() {
                 className="flex-shrink-0 w-24 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div
-                  className="h-16 flex items-center justify-center"
+                  className="relative h-16 overflow-hidden"
                   style={{ background: t.thumbnailGradient || "linear-gradient(135deg, #5046e5, #8b5cf6)" }}
                 >
-                  <span className="w-9 h-9 rounded-full bg-white/25 flex items-center justify-center text-xl">
-                    {getToolEmoji(t)}
-                  </span>
+                  {t.coverUrl && (
+                    <Image
+                      src={t.coverUrl}
+                      alt={t.title}
+                      fill
+                      className="object-cover"
+                      sizes="96px"
+                      loading="lazy"
+                    />
+                  )}
                 </div>
                 <div className="px-2 py-1.5">
                   <p className="text-xs font-medium text-gray-800 truncate leading-tight">{t.title}</p>
@@ -471,8 +484,6 @@ export default function HomePage() {
 // ---- ToolCard — React.memo 防止不必要的重渲染 ----
 
 const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewCount?: number }) {
-  const emoji = getToolEmoji(tool);
-
   return (
     <Link
       href={`/tool/${tool.id}`}
@@ -490,14 +501,7 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
             loading="lazy"
           />
         ) : (
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ background: tool.thumbnailGradient }}
-          >
-            <span className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/25 flex items-center justify-center text-4xl sm:text-5xl drop-shadow-lg group-hover:scale-110 transition-transform duration-200">
-              {emoji}
-            </span>
-          </div>
+          <div className="absolute inset-0" style={{ background: tool.thumbnailGradient }} />
         )}
       </div>
 

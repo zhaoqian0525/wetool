@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
 import { fetchToolsByUser, fetchTools, fetchUserLikedTools, type Tool } from "@/lib/data";
-import { getToolEmoji } from "@/lib/constants";
 
 export default function UserPage() {
   const { id } = useParams<{ id: string }>();
@@ -72,10 +72,19 @@ export default function UserPage() {
                   className="block bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
                 >
                   <div
-                    className="aspect-[4/3] flex items-center justify-center"
+                    className="relative aspect-[4/3] overflow-hidden"
                     style={{ background: t.thumbnailGradient || "linear-gradient(135deg,#5046e5,#8b5cf6)" }}
                   >
-                    <span className="text-2xl">{getToolEmoji(t)}</span>
+                    {t.coverUrl && (
+                      <Image
+                        src={t.coverUrl}
+                        alt={t.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 50vw, 25vw"
+                        loading="lazy"
+                      />
+                    )}
                   </div>
                   <div className="p-2.5">
                     <p className="text-xs font-medium text-gray-800 truncate">{t.title}</p>
@@ -120,10 +129,19 @@ export default function UserPage() {
                     className="block bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
                   >
                     <div
-                      className="aspect-[4/3] flex items-center justify-center"
+                      className="relative aspect-[4/3] overflow-hidden"
                       style={{ background: t.thumbnailGradient || "linear-gradient(135deg,#5046e5,#8b5cf6)" }}
                     >
-                      <span className="text-2xl">{getToolEmoji(t)}</span>
+                      {t.coverUrl && (
+                        <Image
+                          src={t.coverUrl}
+                          alt={t.title}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 50vw, 25vw"
+                          loading="lazy"
+                        />
+                      )}
                     </div>
                     <div className="p-2.5">
                       <p className="text-xs font-medium text-gray-800 truncate">{t.title}</p>

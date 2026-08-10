@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getToolEmoji, CATEGORY_EMOJI } from "@/lib/constants";
+import { CATEGORY_EMOJI } from "@/lib/constants";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
@@ -945,9 +945,7 @@ export default function ToolDetailPage() {
                         loading="lazy"
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center" style={{ background: rt.thumbnailGradient }}>
-                        <span className="w-16 h-16 rounded-full bg-white/25 flex items-center justify-center text-3xl drop-shadow-lg group-hover:scale-110 transition-transform duration-200">{getToolEmoji(rt)}</span>
-                      </div>
+                      <div className="absolute inset-0" style={{ background: rt.thumbnailGradient }} />
                     )}
                   </div>
                   <div className="p-2">
