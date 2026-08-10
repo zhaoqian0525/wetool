@@ -30,7 +30,7 @@ export class ToolPageErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         this.props.fallback ?? (
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+          <div className="min-h-screen bg-page flex items-center justify-center p-8">
             <div className="text-center max-w-sm">
               <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
                 <svg

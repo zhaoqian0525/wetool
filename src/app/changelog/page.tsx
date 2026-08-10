@@ -53,7 +53,7 @@ const CHANGELOG_ENTRIES = [
 
 export default function ChangelogPage() {
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
+    <div className="min-h-screen bg-page pb-20 lg:pb-0">
       <Navbar
         children={
           <Link

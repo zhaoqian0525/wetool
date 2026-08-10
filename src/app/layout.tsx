@@ -87,6 +87,12 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        {/* v1.12.1 暗色模式：首帧前设置 data-theme，避免刷新闪烁（跟随系统 + localStorage 记忆） */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("wewoo-theme");var d=t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light";}catch(e){document.documentElement.dataset.theme="light";}})();`,
+          }}
+        />
       </head>
       <body className="antialiased bg-gray-50 text-gray-900 min-h-screen">
         <SiteManifestLink />

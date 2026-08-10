@@ -1,6 +1,6 @@
 {
-  "version": "1.12.0",
-  "buildDate": "2026-08-09",
-  "buildTimestamp": "2026-08-09T22:30:00.000+08:00",
-  "description": "v1.12.0 P2 设计系统深化（第一批）：token 完整落地（圆角 12/20/35、文字层级、背景层级、页面宽度、青色点缀去硬编码）+ 语义工具类（panel/btn-secondary/btn-ghost/btn-danger/input-base）+ 组件化（Modal 统一 6 处弹窗、Badge 统一分类/状态徽章）。暗色模式排 v1.12.1。"
+  "version": "1.12.1",
+  "buildDate": "2026-08-10",
+  "buildTimestamp": "2026-08-10T21:31:35.000+08:00",
+  "description": "v1.12.1 P2 设计系统深化（第二批）：暗色模式。深/浅主题切换（导航栏按钮，跟随系统 + localStorage 记忆 + 首帧防闪烁，浅色模式零改动）；暗色样式全量适配（CSS 变量 + Tailwind 硬编码类覆盖、页面根统一 bg-page、毛玻璃导航/引导页渐变/输入框边框）；修复注释内嵌 */ 导致 :root[data-theme=\"dark\"] 规则被浏览器解析器丢弃的编译 bug。"
 }

@@ -54,7 +54,7 @@ export default function CleanupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-page pb-20">
       <Navbar />
       <div className="max-w-2xl mx-auto px-4 py-8">
         <h1 className="text-xl font-bold text-gray-900 mb-2">🛠️ 本地数据清理</h1>

@@ -196,7 +196,7 @@ export default function HomePage() {
   }, [myTools, likedTools]);
 
   return (
-    <div className="min-h-screen bg-[#F9F9FB] pb-20 lg:pb-0">
+    <div className="min-h-screen bg-page pb-20 lg:pb-0">
       <Navbar
         children={
           <span className="hidden sm:inline text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">

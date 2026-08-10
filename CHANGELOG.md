@@ -6,6 +6,17 @@
 
 ---
 
+## [1.12.1] - 2026-08-10
+
+### Added（P2 设计系统深化 · 第二批：暗色模式）
+- 深/浅主题切换：导航栏新增切换按钮（桌面端操作栏 / 移动端头像区），跟随系统偏好 + localStorage 记忆（wewoo-theme），首帧前内联脚本防刷新闪烁，切换同步更新浏览器 theme-color（移动端地址栏颜色）
+- 暗色样式全量适配：CSS 变量覆盖（--bg-page/--bg-card/--bg-soft/--text-*/--line/--brand-*）+ Tailwind 硬编码类覆盖（bg-white/bg-gray-*/text-gray-*/border-gray-*/indigo/绿/橙/红/蓝状态色及 hover/focus/group-hover 变体）
+- 各页面根背景统一 bg-page 语义类（浅色值不变）；毛玻璃导航（bg-white/95）、引导页顶部渐变、输入框边框暗色适配
+
+### Fixed
+- 修复编译级 bug：globals.css 注释内嵌 `*/`（btn-*/text-secondary）导致注释提前闭合、残留文本把 `:root[data-theme="dark"]` 吞成无效规则被浏览器解析器丢弃（body 背景暗色不生效的根因）
+- 修复首页根容器硬编码 bg-[#F9F9FB] 未随暗色变暗
+
 ## [1.12.0] - 2026-08-09
 
 ### Added（P2 设计系统深化·第一批）

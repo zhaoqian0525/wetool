@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { WewooMark } from "@/components/WewooLogo";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface NavbarProps {
   /** Extra content to render between the logo and the auth section (desktop only) */
@@ -107,6 +108,7 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
         {/* Right: Actions + Auth */}
         <div className="flex items-center gap-2">
           {actions}
+          <ThemeToggle />
 
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
@@ -219,6 +221,7 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
             微坞
           </Link>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
           ) : user ? (
