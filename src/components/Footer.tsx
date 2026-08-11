@@ -16,7 +16,7 @@ export default function Footer() {
           </div>
           <nav className="flex items-center gap-6 text-sm text-gray-500">
             <Link href="/" className="hover:text-indigo-600 transition-colors">首页</Link>
-            <Link href="/create" className="hover:text-indigo-600 transition-colors">创作</Link>
+            <Link href="/create?new=1" className="hover:text-indigo-600 transition-colors">创作</Link>
             <Link href="/guide" className="hover:text-indigo-600 transition-colors">新手教程</Link>
             <Link href="/terms" className="hover:text-indigo-600 transition-colors">服务条款</Link>
             <Link href="/privacy" className="hover:text-indigo-600 transition-colors">隐私政策</Link>

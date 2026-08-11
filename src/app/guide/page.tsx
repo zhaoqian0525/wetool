@@ -95,7 +95,7 @@ export default function GuidePage() {
             不需要懂编程，跟着步骤走，5 分钟做出你的第一个小工具
           </p>
           <Link
-            href="/create"
+            href="/create?new=1"
             className="inline-flex items-center gap-2 bg-white text-indigo-600 font-semibold px-8 py-3 rounded-xl hover:scale-105 transition-transform shadow-lg"
           >
             去创作页面
@@ -320,7 +320,7 @@ export default function GuidePage() {
             <p className="text-indigo-100 mb-6">跟着教程做，你也可以做出好用的工具！</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
-                href="/create"
+                href="/create?new=1"
                 className="inline-flex items-center justify-center gap-2 bg-white text-indigo-600 font-semibold px-6 py-3 rounded-xl hover:scale-105 transition-transform shadow-lg"
               >
                 <span>🚀 开始创作</span>

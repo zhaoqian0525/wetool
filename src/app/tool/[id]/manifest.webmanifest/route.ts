@@ -12,7 +12,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const tool = await fetchToolById(id);
+  // v1.14.0 容错：网络失败时返回 404（manifest 仅作增强能力，不影响页面使用）
+  let tool: Awaited<ReturnType<typeof fetchToolById>>;
+  try {
+    tool = await fetchToolById(id);
+  } catch {
+    return new NextResponse("not found", { status: 404 });
+  }
   if (!tool) {
     return new NextResponse("not found", { status: 404 });
   }

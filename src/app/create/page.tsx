@@ -343,22 +343,28 @@ function CreatePageInner() {
     setAiMessages([]);
     setAiVersions([]);
     setAiActiveVersion(null);
-    fetchToolById(sourceToolIdParam).then((tool) => {
-      if (tool) {
-        setSourceToolId(tool.id);
-        setSourceToolTitle(tool.title);
-        if (tool.code) setCode(tool.code);
-        setAiMessages([
-          {
-            id: genMsgId(),
-            role: "assistant",
-            content: `已加载工具「${tool.title ?? "改编源"}」的代码。直接告诉我你想怎么改，我会生成新版完整代码，例如：「换一套配色」「加一个功能」「改成上下布局」。`,
+    fetchToolById(sourceToolIdParam)
+      .then((tool) => {
+        if (tool) {
+          setSourceToolId(tool.id);
+          setSourceToolTitle(tool.title);
+          if (tool.code) setCode(tool.code);
+          setAiMessages([
+            {
+              id: genMsgId(),
+              role: "assistant",
+              content: `已加载工具「${tool.title ?? "改编源"}」的代码。直接告诉我你想怎么改，我会生成新版完整代码，例如：「换一套配色」「加一个功能」「改成上下布局」。`,
           },
         ]);
       }
       toast.info("已加载改编源，可直接用对话修改");
       setSourceLoaded(true);
-    });
+    })
+      .catch(() => {
+        // v1.14.0 容错：改编源加载失败（网络抖动）不阻塞创作页
+        toast.error("加载改编源失败，请重试");
+        setSourceLoaded(true);
+      });
   }, [sourceToolIdParam, sourceLoaded]);
 
   // Persist versions
@@ -462,6 +468,24 @@ function CreatePageInner() {
   const aiChatKey = "wewoo-ai-chat" + (user?.id ? "-" + user.id : "");
 
   const genMsgId = () => "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+  // v1.14.0：从导航入口（?new=1）进入创作页 = 全新对话，清掉历史草稿并移除参数；
+  // 直接访问 /create 或页面内刷新仍保留草稿（生成到一半刷新不丢）
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("new")) return;
+    const key = user ? "wewoo-ai-chat-" + user.id : "wewoo-ai-chat";
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // 隐私模式忽略
+    }
+    setAiMessages([]);
+    setAiVersions([]);
+    setAiActiveVersion(null);
+    window.history.replaceState({}, "", "/create");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // 恢复对话（localStorage）
   useEffect(() => {

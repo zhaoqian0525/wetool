@@ -8,7 +8,7 @@ import Navbar from "@/components/Navbar";
 import Avatar from "@/components/Avatar";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
-import { fetchToolsByUser, fetchTools, fetchUserLikedTools, type Tool } from "@/lib/data";
+import { fetchToolsByUser, fetchUserLikedTools, type Tool } from "@/lib/data";
 import { uploadAvatar } from "@/lib/avatar";
 
 export default function UserPage() {
@@ -17,7 +17,6 @@ export default function UserPage() {
   const toast = useToast();
   const isSelf = user?.id === id;
 
-  const [allTools, setAllTools] = useState<Tool[]>([]);
   const [myTools, setMyTools] = useState<Tool[]>([]);
   const [likedTools, setLikedTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,18 +48,36 @@ export default function UserPage() {
     }
   };
 
+  // v1.14.0 提速：先同步渲染本地缓存（秒开），再后台刷新替换
   useEffect(() => {
     if (!id) return;
     setLoading(true);
+    const cacheKey = "wewoo-user-tools-" + id;
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) {
+        const cached = JSON.parse(raw) as { savedAt: number; tools: Tool[]; liked: Tool[] } | null;
+        if (cached && Array.isArray(cached.tools) && Array.isArray(cached.liked)) {
+          setMyTools(cached.tools);
+          setLikedTools(cached.liked);
+          setLoading(false);
+        }
+      }
+    } catch {
+      // 缓存解析失败忽略
+    }
     Promise.all([
       fetchToolsByUser(id),
-      fetchTools(),
       fetchUserLikedTools(id, "save"),
-    ]).then(([userTools, all, liked]) => {
+    ]).then(([userTools, liked]) => {
       setMyTools(userTools);
-      setAllTools(all);
       setLikedTools(liked);
       setLoading(false);
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), tools: userTools, liked }));
+      } catch {
+        // 写入失败忽略
+      }
     }).catch(() => { setLoading(false); });
   }, [id]);
 
@@ -88,7 +105,7 @@ export default function UserPage() {
                 <button
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={uploadingAvatar}
-                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors disabled:opacity-50"
+                  className="absolute -bottom-1 -right-1 min-h-0 w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors disabled:opacity-50"
                   aria-label="更换头像"
                   title="更换头像"
                 >
@@ -174,7 +191,7 @@ export default function UserPage() {
               <p className="text-sm text-gray-400">还没有发布工具</p>
               {isSelf && (
                 <Link
-                  href="/create"
+                  href="/create?new=1"
                   className="inline-flex items-center min-h-[44px] mt-3 px-4 py-2 text-sm text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors"
                 >
                   去创作

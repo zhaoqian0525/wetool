@@ -304,6 +304,14 @@ export async function fetchToolById(id: string): Promise<Tool | null> {
       writeToolDetailCache(tool);
       return tool;
     }
+    // v1.14.0 修复：网络超时/失败（queryWithTimeout 返回 null）≠ 工具不存在。
+    // 有本地详情缓存则兜底返回（避免把「网络抖动」误判为「工具未找到」清空正在使用的工具）；
+    // 无缓存则抛出，由调用方区分「加载失败」与「确认不存在」。
+    if (result === null) {
+      const cached = readToolDetailCache(id);
+      if (cached) return cached;
+      throw new Error("TOOL_FETCH_NETWORK_ERROR");
+    }
   }
   return ensureCover(MOCK_TOOLS.find((t) => t.id === id) ?? null);
 }
@@ -390,31 +398,78 @@ export async function fetchToolsByUser(userId: string): Promise<Tool[]> {
  */
 export async function resolveSourceTool(tool: Tool): Promise<Tool> {
   if (!tool.sourceToolId) return tool;
-  const source = await fetchToolById(tool.sourceToolId);
-  if (source) {
-    tool.sourceTool = { id: source.id, title: source.title, author: source.author };
+  // v1.14.0 修复：源工具解析失败（网络抖动/源被删）不应中断主工具展示
+  try {
+    const source = await fetchToolById(tool.sourceToolId);
+    if (source) {
+      tool.sourceTool = { id: source.id, title: source.title, author: source.author };
+    }
+  } catch {
+    /* 忽略，主工具不受影响 */
   }
   return tool;
 }
 
 // ---- Reviews ----
 
+// v1.14.0 评论系统完善：支持回复（parent_id/reply_to_name）、头像（user_avatar）、点赞数（最热排序）
+const REVIEW_BASE_COLS = "id, tool_id, user_id, user_name, rating, content, created_at";
+const REVIEW_FULL_COLS = REVIEW_BASE_COLS + ", parent_id, reply_to_name, user_avatar";
+
+function mapReviewRow(row: Record<string, unknown>): Review {
+  return {
+    id: String(row.id),
+    toolId: String(row.tool_id),
+    userId: String(row.user_id),
+    userName: String(row.user_name ?? ""),
+    rating: Number(row.rating),
+    content: String(row.content ?? ""),
+    createdAt: String(row.created_at),
+    parentId: row.parent_id ? String(row.parent_id) : null,
+    replyToName: row.reply_to_name ? String(row.reply_to_name) : null,
+    avatarUrl: row.user_avatar ? String(row.user_avatar) : null,
+  };
+}
+
+/** 拉取一批评论的点赞数（用于最热排序），失败时返回空 Map 不影响展示 */
+export async function fetchReviewLikeCounts(reviewIds: string[]): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (reviewIds.length === 0) return counts;
+  const supabase = await getSupabaseClient();
+  if (!supabase) return counts;
+  try {
+    // 分批查询避免 in 列表过长
+    const chunks = chunkArray(reviewIds, 50);
+    for (const chunk of chunks) {
+      const result = await queryWithTimeout(
+        supabase.from("likes").select("target_id").eq("target_type", "review").in("target_id", chunk)
+      );
+      if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+        for (const row of (result as { data: Record<string, unknown>[] }).data) {
+          const tid = String(row.target_id);
+          counts.set(tid, (counts.get(tid) ?? 0) + 1);
+        }
+      }
+    }
+  } catch {
+    /* 点赞数加载失败不影响评论展示 */
+  }
+  return counts;
+}
+
 export async function fetchReviews(toolId: string): Promise<Review[]> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    const result = await queryWithTimeout(
-      supabase.from("reviews").select("*").eq("tool_id", toolId).order("created_at", { ascending: false })
-    );
-    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
-      return ((result as { data: Record<string, unknown>[] }).data).map((row) => ({
-        id: String(row.id),
-        toolId: String(row.tool_id),
-        userId: String(row.user_id),
-        userName: String(row.user_name ?? ""),
-        rating: Number(row.rating),
-        content: String(row.content ?? ""),
-        createdAt: String(row.created_at),
-      }));
+    // 优先全字段查询（含新列）；若数据库尚未执行 ALTER（列不存在）则回退基础列查询
+    for (const cols of [REVIEW_FULL_COLS, REVIEW_BASE_COLS]) {
+      const result = await queryWithTimeout(
+        supabase.from("reviews").select(cols).eq("tool_id", toolId).order("created_at", { ascending: false })
+      );
+      if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+        const rows = (result as { data: Record<string, unknown>[] }).data;
+        // 点赞数由调用方（详情页）统一拉取，避免重复请求
+        return rows.map(mapReviewRow);
+      }
     }
   }
   return getMockReviews()
@@ -450,31 +505,43 @@ export async function addReview(
   userId: string,
   userName: string,
   rating: number,
-  content: string
+  content: string,
+  opts?: { parentId?: string | null; replyToName?: string | null; avatarUrl?: string | null }
 ): Promise<Review> {
   const supabase = await getSupabaseClient();
   if (supabase) {
-    const result = await queryWithTimeout(
-      supabase.from("reviews").insert({
+    // v1.14.0：优先带新列插入（回复/头像）；若数据库尚未执行 ALTER 则回退基础列插入
+    const insertRows = [
+      {
+        tool_id: toolId,
+        user_id: userId,
+        user_name: userName,
+        rating,
+        content,
+        parent_id: opts?.parentId ?? null,
+        reply_to_name: opts?.replyToName ?? null,
+        user_avatar: opts?.avatarUrl ?? null,
+        created_at: new Date().toISOString(),
+      },
+      {
         tool_id: toolId,
         user_id: userId,
         user_name: userName,
         rating,
         content,
         created_at: new Date().toISOString(),
-      }).select().single()
-    );
-    if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
-      const row = (result as { data: Record<string, unknown> }).data;
-      return {
-        id: String(row.id),
-        toolId: String(row.tool_id),
-        userId: String(row.user_id),
-        userName: String(row.user_name ?? ""),
-        rating: Number(row.rating),
-        content: String(row.content ?? ""),
-        createdAt: String(row.created_at),
-      };
+      },
+    ];
+    for (const row of insertRows) {
+      const result = await queryWithTimeout(
+        supabase.from("reviews").insert(row).select().single()
+      );
+      if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
+        const data = (result as { data: Record<string, unknown> }).data;
+        const review = mapReviewRow(data);
+        review.likeCount = 0;
+        return review;
+      }
     }
   }
   // Mock mode
@@ -486,6 +553,9 @@ export async function addReview(
     rating,
     content,
     createdAt: new Date().toISOString(),
+    parentId: opts?.parentId ?? null,
+    replyToName: opts?.replyToName ?? null,
+    avatarUrl: opts?.avatarUrl ?? null,
   };
   setMockReviews([newReview, ...getMockReviews()]);
   return newReview;

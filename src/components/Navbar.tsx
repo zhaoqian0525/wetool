@@ -60,7 +60,7 @@ function UserIcon({ active }: { active: boolean }) {
 function useMobileTabs(userId: string | undefined) {
   return [
     { path: "/", label: "首页", icon: HomeIcon, exact: true },
-    { path: "/create", label: "创建", icon: CreateIcon, exact: true },
+    { path: "/create?new=1", label: "创建", icon: CreateIcon, exact: true },
     {
       path: userId ? `/user/${userId}` : "/auth",
       label: "我的",

@@ -44,6 +44,11 @@ export interface Review {
   rating: number; // 1-5
   content: string;
   createdAt: string;
+  // v1.14.0 评论系统完善
+  parentId?: string | null; // 回复的父评论 id
+  replyToName?: string | null; // 回复对象昵称
+  avatarUrl?: string | null; // 评论者头像
+  likeCount?: number; // 点赞数（最热排序用）
 }
 
 export const CATEGORIES: { key: string; label: string; icon: string }[] = [

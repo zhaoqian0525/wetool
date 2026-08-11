@@ -218,7 +218,7 @@ export default function HomePage() {
               教程
             </Link>
             <Link
-              href="/create"
+              href="/create?new=1"
               className="min-w-[44px] min-h-[44px] flex items-center px-4 py-1.5 text-sm brand-gradient text-white rounded-xl hover:opacity-90 transition-colors font-medium"
             >
               开始创作
@@ -643,7 +643,7 @@ function EmptyState({ category, search }: { category: string; search: string }) 
           : `「${category}」分类下还没有工具，做第一个吃螃蟹的人吧`}
       </p>
       <Link
-        href="/create"
+        href="/create?new=1"
         className="min-h-[44px] flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all shadow-md shadow-indigo-200"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

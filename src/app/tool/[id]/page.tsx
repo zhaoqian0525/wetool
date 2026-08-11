@@ -13,7 +13,7 @@ import { ToolPageErrorBoundary } from "@/components/ToolPageErrorBoundary";
 import { ToolHistoryDrawer } from "@/components/ToolHistoryDrawer";
 import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
-import { fetchToolById, readToolDetailCache, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, type Tool, type Review, type LikeTargetType, type Visibility } from "@/lib/data";
+import { fetchToolById, readToolDetailCache, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, fetchReviewLikeCounts, type Tool, type Review, type LikeTargetType, type Visibility } from "@/lib/data";
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
 import { authedFetch } from "@/lib/api-client";
 import { getLsSnapshot, setLsSnapshot } from "@/lib/toolStateBridge";
@@ -30,6 +30,9 @@ export default function ToolDetailPage() {
   const { user } = useAuth();
   const toast = useToast();
   const [tool, setTool] = useState<Tool | null>(null);
+  // v1.14.0 修复：网络失败（非工具不存在）时标记，展示可重试的失败视图
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadRetry, setLoadRetry] = useState(0);
 
   // 工具数据持久化
   useToolStorage(id, user?.id);
@@ -62,6 +65,10 @@ export default function ToolDetailPage() {
   const [newContent, setNewContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState("");
+  // v1.14.0 评论系统完善：排序 + 回复
+  const [reviewSort, setReviewSort] = useState<"latest" | "hot">("latest");
+  const [replyingTo, setReplyingTo] = useState<Review | null>(null);
+  const [replyContent, setReplyContent] = useState("");
 
   // Share + history + delete + clear state
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -165,6 +172,7 @@ export default function ToolDetailPage() {
       let t: Tool | null = null;
       let revs: Review[] = [];
       let avg: { average: number; count: number } = { average: 0, count: 0 };
+      let networkError = false;
       try {
         [t, revs, avg] = await Promise.all([
           fetchToolById(id),
@@ -172,8 +180,16 @@ export default function ToolDetailPage() {
           fetchAverageRating(id),
         ]);
       } catch {
-        // 任一请求失败 → 尝试单独加载 tool
-        t = await fetchToolById(id);
+        // 网络失败：尝试单独加载 tool（fetchToolById 有缓存兜底）
+        try {
+          t = await fetchToolById(id);
+        } catch {
+          // v1.14.0 修复：网络抖动 ≠ 工具不存在。
+          // 若已渲染过（缓存命中）则保留现状，不再误清为「工具未找到」；
+          // 若从未渲染成功则标记加载失败，显示可重试的失败视图。
+          networkError = true;
+          t = null;
+        }
       }
 
       if (cancelled) return;
@@ -182,16 +198,28 @@ export default function ToolDetailPage() {
         const resolved = await resolveSourceTool(t);
         if (cancelled) return;
         setTool(resolved);
+        setLoadFailed(false);
         // 加载关联工具
         fetchTools().then((all) => {
           if (cancelled) return;
           setRelated(all.filter((rt) => rt.category === resolved.category && rt.id !== resolved.id).slice(0, 4));
         });
+      } else if (networkError) {
+        // 网络失败：保留已渲染内容（缓存已先行 setTool(cached)），仅从未成功时显示失败视图
+        setLoadFailed(true);
+        setTool((prev) => prev);
       } else {
         setTool(null);
       }
 
       setReviews(revs);
+      // v1.14.0：加载评论点赞数（最热排序）
+      if (revs.length > 0) {
+        fetchReviewLikeCounts(revs.map(r => r.id)).then((counts) => {
+          if (cancelled) return;
+          setReviews((prev) => prev.map((r) => ({ ...r, likeCount: counts.get(r.id) ?? r.likeCount ?? 0 })));
+        });
+      }
       // 加载评论点赞状态
       if (user?.id && revs.length > 0) {
         fetchUserLikes(user.id, "review", revs.map(r => r.id)).then(s => {
@@ -217,7 +245,7 @@ export default function ToolDetailPage() {
     }
 
     return () => { cancelled = true; };
-  }, [id, user?.id]);
+  }, [id, user?.id, loadRetry]);
 
   // 🔥 记录最近使用 + 使用历史
   // 注意：不在此处直接 POST state（会把云端记忆数据整体覆盖），
@@ -260,7 +288,9 @@ export default function ToolDetailPage() {
     setSubmitting(true);
     setReviewError("");
     try {
-      const review = await addReview(id, user.id, user.user_metadata?.name || user.email?.split("@")[0] || "匿名用户", newRating, newContent.trim());
+      const review = await addReview(id, user.id, user.user_metadata?.name || user.email?.split("@")[0] || "匿名用户", newRating, newContent.trim(), {
+        avatarUrl: user.user_metadata?.avatar_url ?? null,
+      });
       setReviews((prev) => [review, ...prev]);
       setAvgRating((prev) => {
         const newTotal = prev.average * prev.count + newRating;
@@ -273,6 +303,32 @@ export default function ToolDetailPage() {
       setSubmitting(false);
     }
   }, [user, id, newRating, newContent, submitting]);
+
+  // v1.14.0 评论回复
+  const handleSubmitReply = useCallback(async () => {
+    if (!user || submitting || !replyingTo) return;
+    if (!replyContent.trim()) {
+      setReviewError("请输入回复内容");
+      return;
+    }
+    setSubmitting(true);
+    setReviewError("");
+    try {
+      const reply = await addReview(id, user.id, user.user_metadata?.name || user.email?.split("@")[0] || "匿名用户", replyingTo.rating, replyContent.trim(), {
+        parentId: replyingTo.id,
+        replyToName: replyingTo.userName,
+        avatarUrl: user.user_metadata?.avatar_url ?? null,
+      });
+      setReviews((prev) => [...prev, reply]);
+      setReplyContent("");
+      setReplyingTo(null);
+      toast.success("回复成功");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "回复失败，请重试");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [user, id, submitting, replyingTo, replyContent, toast]);
 
   // 🔥 使用 Blob URL 替代 srcdoc（兼容微信/QQ 等内嵌浏览器）
   // srcDoc 用于标准浏览器（Safari/Chrome/Firefox），blobUrl 仅用于微信/QQ/X5
@@ -632,6 +688,33 @@ export default function ToolDetailPage() {
   }
 
   if (!tool) {
+    // v1.14.0 修复：网络失败与「工具不存在」区分开——失败时显示可重试视图，不再误报 404
+    if (loadFailed) {
+      return (
+        <div className="min-h-screen bg-page pb-20 lg:pb-0">
+          <Navbar />
+          <div className="flex flex-col items-center justify-center px-4 py-20">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">加载失败</h2>
+            <p className="text-sm text-gray-500 mb-6">网络似乎开小差了，请重试或稍后再来</p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => { setLoadFailed(false); setLoadRetry((n) => n + 1); }}
+                className="min-h-[44px] flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+              >
+                重新加载
+              </button>
+              <Link
+                href="/"
+                className="min-h-[44px] flex items-center px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors"
+              >
+                返回广场
+              </Link>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-page pb-20 lg:pb-0">
         <Navbar />
@@ -1034,61 +1117,170 @@ export default function ToolDetailPage() {
           )}
 
           {/* Review list */}
+          {reviews.length > 0 && (
+            <div className="flex items-center gap-1 mb-4">
+              {(["latest", "hot"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setReviewSort(mode)}
+                  className={"min-h-[36px] px-3.5 py-1.5 text-xs rounded-lg font-medium transition-colors " + (reviewSort === mode ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}
+                >
+                  {mode === "latest" ? "最新" : "最热"}
+                </button>
+              ))}
+            </div>
+          )}
           {reviews.length > 0 ? (
             <div className="space-y-4">
-              {reviews.map((review) => (
-                <div key={review.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                        {review.userName[0]?.toUpperCase() || "?"}
+              {reviews
+                .filter((r) => !r.parentId)
+                .sort((a, b) =>
+                  reviewSort === "hot"
+                    ? (b.likeCount ?? 0) - (a.likeCount ?? 0) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                    : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                )
+                .map((review) => {
+                  const replies = reviews.filter((r) => r.parentId === review.id);
+                  const isAuthor = review.userId === tool.authorId;
+                  return (
+                    <div key={review.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                      <div className="flex items-start gap-3">
+                        {review.avatarUrl ? (
+                          <img src={review.avatarUrl} alt={review.userName} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                            {review.userName[0]?.toUpperCase() || "?"}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-sm font-medium text-gray-800">{review.userName}</span>
+                              {isAuthor && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[10px] font-medium">
+                                  作者
+                                </span>
+                              )}
+                              {review.replyToName && (
+                                <span className="text-xs text-gray-400">
+                                  回复 @{review.replyToName}
+                                </span>
+                              )}
+                            </div>
+                            {!review.parentId && (
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <span
+                                      key={star}
+                                      className={"text-sm " + (star <= review.rating ? "text-yellow-400" : "text-gray-200")}
+                                    >
+                                      ★
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">{new Date(review.createdAt).toLocaleDateString("zh-CN")}</p>
+                          <p className="text-sm text-gray-600 leading-relaxed mt-1.5">{review.content}</p>
+                          {/* 点赞 + 回复 */}
+                          <div className="mt-2 flex items-center gap-1">
+                            {user && (
+                              <button
+                                onClick={async () => {
+                                  const liked = reviewLikes.has(review.id);
+                                  try {
+                                    const newLiked = await toggleLike(user.id, "review", review.id, liked);
+                                    setReviewLikes(prev => {
+                                      const next = new Set(prev);
+                                      newLiked ? next.add(review.id) : next.delete(review.id);
+                                      return next;
+                                    });
+                                    setReviews(prev => prev.map(r => r.id === review.id ? { ...r, likeCount: Math.max(0, (r.likeCount ?? 0) + (newLiked ? 1 : -1)) } : r));
+                                  } catch (e: unknown) {
+                                    toast.error(e instanceof Error ? e.message : "操作失败");
+                                  }
+                                }}
+                                className={"inline-flex items-center gap-0.5 text-xs px-2 py-1 rounded-lg transition-colors " + (reviewLikes.has(review.id) ? "text-red-500 bg-red-50" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50")}
+                              >
+                                {reviewLikes.has(review.id) ? "❤️" : "🤍"}
+                                {review.likeCount ? <span>{review.likeCount}</span> : null}
+                              </button>
+                            )}
+                            {user && (
+                              <button
+                                onClick={() => { setReplyingTo(replyingTo?.id === review.id ? null : review); setReviewError(""); }}
+                                className={"inline-flex items-center text-xs px-2 py-1 rounded-lg transition-colors " + (replyingTo?.id === review.id ? "text-indigo-600 bg-indigo-50" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50")}
+                              >
+                                回复
+                              </button>
+                            )}
+                          </div>
+                          {/* 回复输入框 */}
+                          {replyingTo?.id === review.id && (
+                            <div className="mt-3 bg-gray-50 rounded-xl p-3">
+                              <textarea
+                                value={replyContent}
+                                onChange={(e) => { setReplyContent(e.target.value); setReviewError(""); }}
+                                placeholder={"回复 @" + review.userName + "..."}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50"
+                                rows={2}
+                                autoFocus
+                              />
+                              {reviewError && (
+                                <p className="text-xs text-red-500 mt-1">{reviewError}</p>
+                              )}
+                              <div className="flex gap-2 mt-2">
+                                <button
+                                  onClick={handleSubmitReply}
+                                  disabled={submitting}
+                                  className="min-h-[36px] px-4 py-1.5 bg-indigo-600 text-white text-xs rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                                >
+                                  {submitting ? "提交中..." : "提交回复"}
+                                </button>
+                                <button
+                                  onClick={() => setReplyingTo(null)}
+                                  className="min-h-[36px] px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                                >
+                                  取消
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {/* 回复列表 */}
+                          {replies.length > 0 && (
+                            <div className="mt-3 space-y-2.5 border-l-2 border-gray-100 pl-3">
+                              {replies.map((reply) => (
+                                <div key={reply.id} className="bg-gray-50 rounded-xl p-3">
+                                  <div className="flex items-center gap-2">
+                                    {reply.avatarUrl ? (
+                                      <img src={reply.avatarUrl} alt={reply.userName} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+                                    ) : (
+                                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                                        {reply.userName[0]?.toUpperCase() || "?"}
+                                      </div>
+                                    )}
+                                    <span className="text-xs font-medium text-gray-700">{reply.userName}</span>
+                                    {reply.userId === tool.authorId && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[10px] font-medium">
+                                        作者
+                                      </span>
+                                    )}
+                                    <span className="text-[10px] text-gray-400">
+                                      {new Date(reply.createdAt).toLocaleDateString("zh-CN")}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-600 leading-relaxed mt-1.5">{reply.content}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">{review.userName}</p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(review.createdAt).toLocaleDateString("zh-CN")}
-                        </p>
-                      </div>
                     </div>
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span
-                          key={star}
-                          className={`text-sm ${star <= review.rating ? "text-yellow-400" : "text-gray-200"}`}
-                        >
-                          ★
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 leading-relaxed">{review.content}</p>
-                  {/* 评论点赞 */}
-                  {user && (
-                    <div className="mt-2 flex items-center gap-1">
-                      <button
-                        onClick={async () => {
-                          const liked = reviewLikes.has(review.id);
-                          try {
-                            const newLiked = await toggleLike(user.id, "review", review.id, liked);
-                            setReviewLikes(prev => {
-                              const next = new Set(prev);
-                              newLiked ? next.add(review.id) : next.delete(review.id);
-                              return next;
-                            });
-                          } catch (e: unknown) {
-                            toast.error(e instanceof Error ? e.message : "操作失败");
-                          }
-                        }}
-                        className={`inline-flex items-center gap-0.5 text-xs px-2 py-1 rounded-lg transition-colors ${
-                          reviewLikes.has(review.id) ? "text-red-500 bg-red-50" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        {reviewLikes.has(review.id) ? "❤️" : "🤍"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                  );
+                })}
             </div>
           ) : (
             <div className="text-center py-8">
