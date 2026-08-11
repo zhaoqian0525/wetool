@@ -27,7 +27,7 @@ export default function Footer() {
           © 2026 微坞 WeWoo · we-woo.net · 保留所有权利
         </div>
         <div className="mt-1 text-center text-[10px] text-gray-400">
-          v{versionInfo.version} · 更新于 {versionInfo.buildTimestamp ? new Date(versionInfo.buildTimestamp).toLocaleString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : versionInfo.buildDate}
+          v{versionInfo.version} · 更新于 {versionInfo.buildTimestamp ? new Date(versionInfo.buildTimestamp).toLocaleString("zh-CN", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : versionInfo.buildDate}
         </div>
       </div>
     </footer>
