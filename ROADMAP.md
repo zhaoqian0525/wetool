@@ -9,6 +9,18 @@
 
 已上线：注册登录（可填昵称）、工具发布/编辑/改编、iframe 沙盒预览、全屏模式、点赞/收藏、评论/评分、使用历史、最近使用、我的工具、分类筛选（含小游戏）、搜索（服务端 ilike + 前端防抖）、浏览量统计、下载型工具、三级可见性、PWA、SEO、封面系统、新手教程、微信内嵌浏览器兼容、移动端创作（编辑/全屏预览切换）、内置 AI 直接生成（DeepSeek 流式）、对话式创作（多轮修改 + 多版本切换 + 生成自动填入编辑器 + 快捷场景）、改编对话、权限安抚反馈、AI 成本控制（上下文压缩 / 限流 / 余额保护 / 用量日志）、密钥泄漏修复、AI 模型钉死 flash 低价档、关闭思考模式防正文截断、创作页三 tab（对话/代码/预览）+ 桌面三栏、改编对话隔离、外部提示词折叠、安装到主屏幕提示、预览 tab 直通全屏、AI 输出/输入长度限制放松（长工具完整生成）、教程入口补全（创作页顶部教程按钮 / 对话空状态引导 / 登录后教程横幅重显）、12 秒误报「语法错误」根治（READY 确认按 iframe 实例记忆 + PING 补收 + onLoad 兜底，重试真正重建 iframe）、创作页顶部按钮样式统一（教程图标+文字，示例/教程统一白底靛蓝描边次级样式）。 P2 设计系统深化第一批（token 完整落地：圆角 12/20/35/文字层级/背景层级/页面宽度；语义工具类 panel/btn-*/input-base；组件化 Modal 统一 6 处弹窗 + Badge 统一徽章）。 暗色模式（v1.12.1：深/浅主题切换，跟随系统 + localStorage 记忆 + 首帧防闪烁，浅色模式零改动，全站 9 类页面暗色适配，无浅色残留）。 UI 形状统一（v1.12.2：修复 rounded-lg 被 token 误改 35px 的圆角体系 bug，create 页按钮/首页排序/登录按钮/封面图标格/卡片圆角全面统一）。 工具卡片封面统一（v1.12.3：个人主页/首页/相关推荐卡片图标全部改用工具封面图，无封面纯渐变占位，移除 emoji 图标）。 最近使用封面与手机端修复（v1.12.4：recent-tools 接口补 coverUrl；修复 String(undefined) 误判与无封面工具破图兜底（统一渐变占位，仅内置工具保留公共封面）；token 过期 401 或网络失败保留最近使用缓存，authedFetch 自动刷新 session 重试）。 提速与收尾（v1.13.0：18 个内置封面转 WebP（体积 -72%）并切换引用；详情数据缓存（fetchToolById 写缓存 + 详情页预填秒开，24h TTL）；ROADMAP 技术债状态整理勾选）。 个人头像与分享优化（v1.13.1：头像上传更换（压缩 512px/WebP → Storage → user_metadata），导航栏/用户页统一 Avatar 组件；工具页 OG 分享图改用工具封面 + 描述带作者，用户主页分享 metadata）。 评论系统完善 + 创作新对话 + 用户页提速（v1.14.0：评论最新/最热排序、回复（@昵称 + 嵌套 + 作者标记 + 头像）、点赞数展示；底部创建入口 ?new=1 开启全新对话；用户主页工具列表本地缓存秒开；更换头像按钮修复为圆形；修复网络抖动误弹「工具未找到」（网络失败与确认不存在区分 + 详情缓存兜底 + 可重试失败视图））。
 
+**2026-08-12 双 AI 安全审查（已核验采纳）**：外部 AI 对平台做全量代码走读 + 线上只读探测，以下问题已人工核验属实并纳入计划：
+
+- **P0-1 RLS 大面积未生效（已实测）**：anon key 可直读 tools / likes / reviews / user_pinned_tools / tool_state / tool_usage_history / tool_drafts / tool_recent 全部表（tools 返回含 author_id，likes 返回含 user_id）。现有 supabase_fix_rls.sql 仅覆盖 tools/favorites/reviews，其余表线上从未开 RLS。
+- **P0-2 captureCover 沙箱带 allow-same-origin**（src/lib/cover.ts:35-37）：封面截图 iframe 以同源权限加载用户 HTML，与安全模型矛盾（可读写父页 localStorage/token）。修复需技术验证（blob URL 或服务端截图），不可贸然改（会破坏封面功能）。
+- **P1 lint 失效**：package.json 仍是 "lint": "next lint"，Next 16 已移除该命令（.eslintrc.json 遗留、eslint.config.mjs 未接入）。
+- **P1 可见性切换是假功能**：handleChangeVisibility 只改前端 state，未落库 Supabase（刷新失效）。
+- **P1 搜索注入面**：/api/tools/search 把用户 q 直接拼进 PostgREST .or() 字符串，逗号/括号未转义。
+- **P1 Storage 授权过宽**：cover_auth_update 允许任意登录用户覆盖/删除 tool-covers 桶任意文件，无 owner 校验。
+- **P1 限流仅内存 Map**：checkRateLimit 模块级 Map，Vercel 多实例/冷启动可绕过；x-forwarded-for 首段可伪造。
+- **P2**：浏览量造假（内置工具只写本地不加库）、AI 用量无持久化/无告警、首页 fetchTools 无分页、发布无幂等、anon key 硬编码 3 处、零测试零 CI、robots 与 sitemap 矛盾（robots 禁 /create /auth 但 sitemap 收录）、无内容审核、out/ 残留目录。
+- **勘误确认**：Vercel 函数超时非 10s（Fluid Compute 默认 300s）；src/proxy.ts 是 Next 16 中间件改名（非死代码，安全头生效）。
+
 已知技术债 / 风险（本次代码审查发现）：
 
 | # | 级别 | 问题 | 位置 |
@@ -26,6 +38,11 @@
 | B11 | P2 | 工具页同时注册 useToolStorage + 页面自带 message 监听，同一消息双重处理，行为不一致 | src/app/tool/[id]/page.tsx |
 | B12 | P2 | 未登录（游客）无法使用任何状态持久化，纪念日类工具游客一刷新就清空 | 全站 |
 | B13 | P2 | create 页 'useToolStorage("preview")' 将编辑器预览状态写入 wewoo-db-preview 命名空间，与正式工具状态隔离但无清理策略 | src/app/create/page.tsx |
+| B14 | P0 安全 | RLS 大面积未生效：tools/likes/reviews/user_pinned_tools/tool_state/tool_usage_history/tool_drafts/tool_recent 可匿名直读（含 user_id/author_id），supabase_fix_rls.sql 仅覆盖 tools/favorites/reviews，supabase_view_count.sql 线上未执行 | supabase_fix_rls.sql / supabase_view_count.sql |
+| B15 | P1 | 工具可见性切换是假功能：handleChangeVisibility 只改前端 state，Supabase visibility 未落库，刷新失效 | src/app/tool/[id]/page.tsx |
+| B16 | P1 安全 | 搜索 route 把用户 q 直接拼进 PostgREST .or() 字符串，逗号/括号未转义，存在过滤注入面 | src/app/api/tools/search/route.ts |
+| B17 | P1 安全 | Storage cover_auth_update 允许任意登录用户覆盖/删除 tool-covers 桶任意文件，无 owner 校验 | supabase_fix_storage.sql |
+| B18 | P1 | lint 失效：package.json 仍是 "next lint"（Next 16 已移除该命令），eslint.config.mjs 未接入 | package.json |
 
 ---
 
@@ -76,6 +93,41 @@
 - P4：开放平台（第三方开发者、SDK 文档、应用市场化）。
 
 **Python 兼容性结论：现阶段不做。** Pyodide 体积大、手机内存吃不消、生态受限；服务端执行有沙箱逃逸风险。内置 AI 后，用户直接说需求 → AI 翻译成合规 JS，用户无感知。远期（P3）可评估 Pyodide 子集（如只支持纯计算库）。
+
+**白盒能力现状（2026-08-12 审查确认）**：L0 沙盒内已可用——云记忆 KV（__wewoo.save/load/remove/list/clear）、表单草稿/状态墓碑（saveDraft/loadDraft/saveState/loadState + 输入自动监听）、使用记录（recordAction/getHistory）、localStorage shim 自动同步父页面、Canvas/Canvas 动画、DOM/CSS、定时器、WebAudio 合成音效、FileReader 读本地文件、正则/计算/算法。**结论：90% 的「计算 + 记录 + 娱乐」类工具已可覆盖**，主要缺口是三类体验：复制结果、导出文件、系统级提醒/输入。
+
+**高价值应用方向（现有权限即可做，供场景模板库 / 内置工具扩充参考）**：
+
+| 类别 | 示例 |
+|------|------|
+| 实用型 | 家庭账本、房贷/复利/提前还款计算器、纪念日与倒数日（配记忆自动恢复）、药箱用药记录、体重/血糖趋势图（Canvas 折线）、番茄钟/专注计时（WebAudio 提示音可完全离线）、白噪音发生器、决策转盘/抽签、随机点名/分组、家庭事务轮值表、身份证/银行卡校验、退休倒计时、时区换算钟 |
+| 教育型 | 口算/古诗词/单词小测（已有，可继续扩展）、元素周期表、乐理练习（节拍器/音阶跟练/视唱练耳，WebAudio 零成本）、打字测速、错题本（云记忆）、历史年代轴、地理常识自测 |
+| 工程/效率型 | 单位换算/色环电阻/欧姆定律、正则测试器、JSON/CSV 格式化、Markdown 预览、文本 diff、表格转 Markdown、敏感词自查、图片工具全家桶（压缩/九宫格/水印/滤镜/表情包/二维码，Canvas + 本地文件）、提示词模板库、AI 输出格式转换 |
+| 有趣型（小游戏） | 2048、扫雷、数独、贪吃蛇、俄罗斯方块、华容道、记忆翻牌、五子棋人机、打字竞技、节奏打击游戏（WebAudio 音乐）、Canvas 物理小游戏、像素画编辑器 |
+
+**零风险能力（按「解锁价值 ÷ 风险」排序，建议并入 v2.0 权限透明反馈版本的第一批，不单独抢 minor）**：
+
+| 优先级 | 能力 | 解锁场景 | 落地方式 |
+|--------|------|----------|----------|
+| P0 | 剪贴板写入 | 一键复制结果/文案/密码（现在沙盒内不可靠） | iframe 加 allow="clipboard-write" 或父页面代理；**永不开放剪贴板读取** |
+| P0 | 文件导出（wewoo.download） | 图片保存、导出 CSV/报告/日历文件——图片工具和办公工具刚需 | 复用父页面下载机制扩展为代理 API |
+| P0 | Web Worker | 大数据计算、图片处理、物理游戏不卡 UI | CSP script-src 加 blob:（一行改动，纯性能提升） |
+| P0 | 语音朗读 + 音效 | 适老化朗读、游戏音效、学习跟读 | WebAudio 已可用；补 speechSynthesis 验证 + 写进 AI 生成提示词 |
+| P1 | 白名单联网代理（wewoo.fetch → /api/proxy，即 L2） | 汇率/天气/词典/翻译——工具从「单机」变「应用」的最大杠杆 | 仅 GET + 域名白名单 + 限流 + 审计 + 缓存；不代持 Cookie |
+| P1 | 通知（wewoo.notify → 父页面 Notification/Web Push） | 喝水/用药/番茄钟/纪念日提醒类工具变「活」的 | 用户逐工具授权、可撤销 |
+| P1 | 只读用户信息（wewoo.user） | 个性化问候、排行榜、「我的数据」 | 只暴露昵称/头像，不暴露邮箱/ID |
+| P1 | 分享卡片（wewoo.share） | 工具结果一键生成分享文案/图片，配合微信生态 | 父页面拼装分享 |
+| P2 | 摄像头/麦克风/定位（allow="camera/microphone/geolocation"） | 扫码查件、语音输入、天气打卡 | 必须用户手势触发 + 逐次授权 |
+| P2 | 全屏 + 指针锁定（allow="fullscreen; pointer-lock"） | 游戏沉浸体验 | 仅游戏类工具声明 |
+| P3 | 外部模式（L3） | 完整权限复杂工具，新标签页运行 | 显式同意 + 风险提示 |
+
+**安全红线（架构级约束，写死不可破）**：
+1. **永不开放 allow-same-origin**——这是隔离主站 Cookie/localStorage 的生命线。
+2. **永不开放任意 URL 联网**——只走白名单代理，可审计、可撤销。
+3. **不开放原生 cookie/IndexedDB**——统一走平台 KV，方便数据保护与「注销即删」。
+4. **权限三件套**：工具声明 → 发布时 AST 静态扫描核对 → 用户首次使用时弹授权、可随时撤销。分级审核：L0 免审、L1 自动 + 抽检、L2 人工审核、L3 强提示。
+
+**权限测试场（建议随 v2.0 一起做）**：做一个「权限测试场」内置工具，让用户直观看到每个权限是什么、有什么用，反而能降低对开放权限的戒心，也是很好的社区教育素材。
 
 ---
 
@@ -356,6 +408,20 @@
 | 任务 | 改动点 | 验收 |
 |------|--------|------|
 | ✅ 4.81 卡片图标改用封面 | 个人主页（收藏/发布）、首页（广场/最近使用/我的工具）、工具详情页相关推荐：有 coverUrl 显示封面图（next/image fill + object-cover），无封面显示纯渐变占位，移除 getToolEmoji 图标 | 用户页 11 卡片全封面、首页 32 卡片全封面，无 emoji（Puppeteer 实测）；tsc 通过 |
+
+### v1.15.0 安全加固（P0/P1，2026-08-12 双 AI 审查驱动）
+
+| 编号 | 任务 | 改动点 | 验收 |
+|------|------|--------|------|
+| ⬜ 4.90 | RLS 全表启用（P0） | 在 tools/favorites/reviews 已有策略基础上，补齐 likes / user_pinned_tools / tool_state / tool_usage_history / tool_drafts / tool_recent 的 RLS + owner 读写 + 公共读策略；⚠️ 前端 src/lib/data.ts 用 anon key + 登录 session 直读这些表，策略必须兼容现有查询（owner 可读 + 公共读），逐个表用匿名 key 复测并回归（点赞/收藏/评论/最近使用/记忆/草稿） | 匿名 key 无法直读任何用户行为表；现有功能逐表回归通过 |
+| ⬜ 4.91 | captureCover 沙箱修复（P0） | 去掉封面截图 iframe 的 allow-same-origin（src/lib/cover.ts:35-37），先验证 blob URL 或服务端截图（puppeteer 已在依赖）可行性再落地 | 用户 HTML 无法读写父页 localStorage/token；封面截图功能不坏 |
+| ⬜ 4.92 | lint 修复（P1） | package.json lint 改 eslint .（Next 16 已移除 next lint），删除遗留 .eslintrc.json，接入 eslint.config.mjs | npm run lint 本地可跑通过 |
+| ⬜ 4.93 | 可见性落库（P1） | 发布/编辑表单与 handleChangeVisibility 切换都写入 Supabase visibility 字段 | 切换公开/未列出/私密后刷新保持 |
+| ⬜ 4.94 | 搜索参数化（P1） | /api/tools/search 不再把 q 拼进 .or() 字符串，改参数化 ilike / 转义特殊字符 | 注入 payload 无效果，正常搜索不回归 |
+| ⬜ 4.95 | Storage owner 校验（P1） | cover_auth_update 策略加 owner 路径约束（storage.foldername(name)[1] = auth.uid()::text） | 登录用户无法覆盖/删除他人封面 |
+| ⬜ 4.96 | 限流加固（P1） | AI 生成接口限流从模块级 Map 升级为可跨实例方案（Upstash/DB 计数或 Vercel WAF 优先），x-forwarded-for 取可信来源 | 多实例/冷启动下仍生效；正常使用不受影响 |
+
+> P2 候选（可并入后续 patch，不阻塞发布）：浏览量落库（内置工具）、发布幂等（防双击重复 insert）、anon key 收敛（3 处硬编码 fallback）、robots 与 sitemap 矛盾修正（robots 禁 /create /auth 但 sitemap 收录）、GitHub Actions 基础 CI（lint/typecheck/build）。
 
 ### v2.0 内核升级：权限透明反馈（major，涉及沙盒/注入体系）
 | 任务 | 改动点 | 验收 |
