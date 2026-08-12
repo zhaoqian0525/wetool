@@ -6,6 +6,19 @@
 
 ---
 
+## [1.15.0] - 2026-08-12
+
+### Security（双 AI 安全审查驱动）
+- 封面截图沙箱修复（P0）：`captureCover` 不再给用户代码 iframe 加 `allow-same-origin`；改为 T4 快照机制——沙盒运行（仅 allow-scripts）→ 注入快照脚本回传 DOM（canvas 序列化为 dataURL）→ 清理脚本/事件/嵌入内容后渲染进无脚本 iframe → html2canvas 截图。用户 HTML 无法再读写父页面 localStorage/Supabase token
+- 修复封面构建注入 bug：用户 HTML 为 `<head><style>` 紧凑结构时，注入的 CSP/视口/重置样式被错误塞进 `<style>` 标签内部，导致样式失效且 CSP 未生效（顺带修复）
+- 搜索参数化（P1）：`/api/tools/search` 过滤 `.or()` 字符串中的特殊字符，注入 payload 不再构成过滤注入面
+- 工具可见性落库（P1）：详情页公开/未列出/私密切换同步写入 Supabase，失败自动回滚并 toast 提示
+- AI 生成限流加固（P1）：新增 Supabase RPC `ai_rate_bump` 跨实例计数（`ai_rate_limit` 表），未部署时自动回退内存 Map；`x-forwarded-for` 改取可信末段
+- lint 修复（P1）：`package.json` lint 改 `eslint .`（Next 16 已移除 `next lint`），删除遗留 `.eslintrc.json`
+
+### Notes
+- ⚠️ 请在 Supabase Dashboard → SQL Editor 执行一次 `supabase_fix_rls_all.sql`（幂等）：全表 RLS（likes/tool_state/tool_usage_history/tool_drafts/user_pinned_tools/tool_recent 等）+ Storage owner 路径约束 + `ai_rate_limit` 表/`ai_rate_bump` RPC。执行前 4.90/4.95 的线上防护不生效
+
 ## [1.14.0] - 2026-08-12
 
 ### Added

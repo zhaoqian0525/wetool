@@ -7,7 +7,7 @@
 
 ## 一、当前状态（v1.14.0，2026-08-12）
 
-已上线：注册登录（可填昵称）、工具发布/编辑/改编、iframe 沙盒预览、全屏模式、点赞/收藏、评论/评分、使用历史、最近使用、我的工具、分类筛选（含小游戏）、搜索（服务端 ilike + 前端防抖）、浏览量统计、下载型工具、三级可见性、PWA、SEO、封面系统、新手教程、微信内嵌浏览器兼容、移动端创作（编辑/全屏预览切换）、内置 AI 直接生成（DeepSeek 流式）、对话式创作（多轮修改 + 多版本切换 + 生成自动填入编辑器 + 快捷场景）、改编对话、权限安抚反馈、AI 成本控制（上下文压缩 / 限流 / 余额保护 / 用量日志）、密钥泄漏修复、AI 模型钉死 flash 低价档、关闭思考模式防正文截断、创作页三 tab（对话/代码/预览）+ 桌面三栏、改编对话隔离、外部提示词折叠、安装到主屏幕提示、预览 tab 直通全屏、AI 输出/输入长度限制放松（长工具完整生成）、教程入口补全（创作页顶部教程按钮 / 对话空状态引导 / 登录后教程横幅重显）、12 秒误报「语法错误」根治（READY 确认按 iframe 实例记忆 + PING 补收 + onLoad 兜底，重试真正重建 iframe）、创作页顶部按钮样式统一（教程图标+文字，示例/教程统一白底靛蓝描边次级样式）。 P2 设计系统深化第一批（token 完整落地：圆角 12/20/35/文字层级/背景层级/页面宽度；语义工具类 panel/btn-*/input-base；组件化 Modal 统一 6 处弹窗 + Badge 统一徽章）。 暗色模式（v1.12.1：深/浅主题切换，跟随系统 + localStorage 记忆 + 首帧防闪烁，浅色模式零改动，全站 9 类页面暗色适配，无浅色残留）。 UI 形状统一（v1.12.2：修复 rounded-lg 被 token 误改 35px 的圆角体系 bug，create 页按钮/首页排序/登录按钮/封面图标格/卡片圆角全面统一）。 工具卡片封面统一（v1.12.3：个人主页/首页/相关推荐卡片图标全部改用工具封面图，无封面纯渐变占位，移除 emoji 图标）。 最近使用封面与手机端修复（v1.12.4：recent-tools 接口补 coverUrl；修复 String(undefined) 误判与无封面工具破图兜底（统一渐变占位，仅内置工具保留公共封面）；token 过期 401 或网络失败保留最近使用缓存，authedFetch 自动刷新 session 重试）。 提速与收尾（v1.13.0：18 个内置封面转 WebP（体积 -72%）并切换引用；详情数据缓存（fetchToolById 写缓存 + 详情页预填秒开，24h TTL）；ROADMAP 技术债状态整理勾选）。 个人头像与分享优化（v1.13.1：头像上传更换（压缩 512px/WebP → Storage → user_metadata），导航栏/用户页统一 Avatar 组件；工具页 OG 分享图改用工具封面 + 描述带作者，用户主页分享 metadata）。 评论系统完善 + 创作新对话 + 用户页提速（v1.14.0：评论最新/最热排序、回复（@昵称 + 嵌套 + 作者标记 + 头像）、点赞数展示；底部创建入口 ?new=1 开启全新对话；用户主页工具列表本地缓存秒开；更换头像按钮修复为圆形；修复网络抖动误弹「工具未找到」（网络失败与确认不存在区分 + 详情缓存兜底 + 可重试失败视图））。
+已上线：注册登录（可填昵称）、工具发布/编辑/改编、iframe 沙盒预览、全屏模式、点赞/收藏、评论/评分、使用历史、最近使用、我的工具、分类筛选（含小游戏）、搜索（服务端 ilike + 前端防抖）、浏览量统计、下载型工具、三级可见性、PWA、SEO、封面系统、新手教程、微信内嵌浏览器兼容、移动端创作（编辑/全屏预览切换）、内置 AI 直接生成（DeepSeek 流式）、对话式创作（多轮修改 + 多版本切换 + 生成自动填入编辑器 + 快捷场景）、改编对话、权限安抚反馈、AI 成本控制（上下文压缩 / 限流 / 余额保护 / 用量日志）、密钥泄漏修复、AI 模型钉死 flash 低价档、关闭思考模式防正文截断、创作页三 tab（对话/代码/预览）+ 桌面三栏、改编对话隔离、外部提示词折叠、安装到主屏幕提示、预览 tab 直通全屏、AI 输出/输入长度限制放松（长工具完整生成）、教程入口补全（创作页顶部教程按钮 / 对话空状态引导 / 登录后教程横幅重显）、12 秒误报「语法错误」根治（READY 确认按 iframe 实例记忆 + PING 补收 + onLoad 兜底，重试真正重建 iframe）、创作页顶部按钮样式统一（教程图标+文字，示例/教程统一白底靛蓝描边次级样式）。 P2 设计系统深化第一批（token 完整落地：圆角 12/20/35/文字层级/背景层级/页面宽度；语义工具类 panel/btn-*/input-base；组件化 Modal 统一 6 处弹窗 + Badge 统一徽章）。 暗色模式（v1.12.1：深/浅主题切换，跟随系统 + localStorage 记忆 + 首帧防闪烁，浅色模式零改动，全站 9 类页面暗色适配，无浅色残留）。 UI 形状统一（v1.12.2：修复 rounded-lg 被 token 误改 35px 的圆角体系 bug，create 页按钮/首页排序/登录按钮/封面图标格/卡片圆角全面统一）。 工具卡片封面统一（v1.12.3：个人主页/首页/相关推荐卡片图标全部改用工具封面图，无封面纯渐变占位，移除 emoji 图标）。 最近使用封面与手机端修复（v1.12.4：recent-tools 接口补 coverUrl；修复 String(undefined) 误判与无封面工具破图兜底（统一渐变占位，仅内置工具保留公共封面）；token 过期 401 或网络失败保留最近使用缓存，authedFetch 自动刷新 session 重试）。 提速与收尾（v1.13.0：18 个内置封面转 WebP（体积 -72%）并切换引用；详情数据缓存（fetchToolById 写缓存 + 详情页预填秒开，24h TTL）；ROADMAP 技术债状态整理勾选）。 个人头像与分享优化（v1.13.1：头像上传更换（压缩 512px/WebP → Storage → user_metadata），导航栏/用户页统一 Avatar 组件；工具页 OG 分享图改用工具封面 + 描述带作者，用户主页分享 metadata）。 评论系统完善 + 创作新对话 + 用户页提速（v1.14.0：评论最新/最热排序、回复（@昵称 + 嵌套 + 作者标记 + 头像）、点赞数展示；底部创建入口 ?new=1 开启全新对话；用户主页工具列表本地缓存秒开；更换头像按钮修复为圆形；修复网络抖动误弹「工具未找到」（网络失败与确认不存在区分 + 详情缓存兜底 + 可重试失败视图））。 安全加固（v1.15.0：封面截图沙箱修复（T4 快照机制：沙盒运行 → DOM 快照回传 → 无脚本 iframe + html2canvas 截图，用户代码不再接触 allow-same-origin）、修复封面构建 head 注入 bug（`<head><style>` 紧凑结构时 CSP/重置样式被塞进 style 标签导致样式失效且 CSP 未生效）、搜索参数化转义、可见性落库、AI 限流跨实例化（Supabase RPC 计数，未部署自动回退内存 Map + x-forwarded-for 取末段）、lint 修复（eslint .）；配套 supabase_fix_rls_all.sql 需在 Dashboard 执行：全表 RLS + Storage owner 约束 + ai_rate_limit 表/RPC）。
 
 **2026-08-12 双 AI 安全审查（已核验采纳）**：外部 AI 对平台做全量代码走读 + 线上只读探测，以下问题已人工核验属实并纳入计划：
 
@@ -411,15 +411,17 @@
 
 ### v1.15.0 安全加固（P0/P1，2026-08-12 双 AI 审查驱动）
 
+> ⚠️ 部署后需在 Supabase Dashboard → SQL Editor 执行一次 `supabase_fix_rls_all.sql`（全表 RLS + Storage owner 约束 + `ai_rate_limit` 表/`ai_rate_bump` RPC；幂等可重复执行）。执行前 4.90/4.95 的线上防护不生效（代码已就绪，限流未部署时自动回退内存计数）。
+
 | 编号 | 任务 | 改动点 | 验收 |
 |------|------|--------|------|
-| ⬜ 4.90 | RLS 全表启用（P0） | 在 tools/favorites/reviews 已有策略基础上，补齐 likes / user_pinned_tools / tool_state / tool_usage_history / tool_drafts / tool_recent 的 RLS + owner 读写 + 公共读策略；⚠️ 前端 src/lib/data.ts 用 anon key + 登录 session 直读这些表，策略必须兼容现有查询（owner 可读 + 公共读），逐个表用匿名 key 复测并回归（点赞/收藏/评论/最近使用/记忆/草稿） | 匿名 key 无法直读任何用户行为表；现有功能逐表回归通过 |
-| ⬜ 4.91 | captureCover 沙箱修复（P0） | 去掉封面截图 iframe 的 allow-same-origin（src/lib/cover.ts:35-37），先验证 blob URL 或服务端截图（puppeteer 已在依赖）可行性再落地 | 用户 HTML 无法读写父页 localStorage/token；封面截图功能不坏 |
-| ⬜ 4.92 | lint 修复（P1） | package.json lint 改 eslint .（Next 16 已移除 next lint），删除遗留 .eslintrc.json，接入 eslint.config.mjs | npm run lint 本地可跑通过 |
-| ⬜ 4.93 | 可见性落库（P1） | 发布/编辑表单与 handleChangeVisibility 切换都写入 Supabase visibility 字段 | 切换公开/未列出/私密后刷新保持 |
-| ⬜ 4.94 | 搜索参数化（P1） | /api/tools/search 不再把 q 拼进 .or() 字符串，改参数化 ilike / 转义特殊字符 | 注入 payload 无效果，正常搜索不回归 |
-| ⬜ 4.95 | Storage owner 校验（P1） | cover_auth_update 策略加 owner 路径约束（storage.foldername(name)[1] = auth.uid()::text） | 登录用户无法覆盖/删除他人封面 |
-| ⬜ 4.96 | 限流加固（P1） | AI 生成接口限流从模块级 Map 升级为可跨实例方案（Upstash/DB 计数或 Vercel WAF 优先），x-forwarded-for 取可信来源 | 多实例/冷启动下仍生效；正常使用不受影响 |
+| ✅ 4.90 | RLS 全表启用（P0） | 在 tools/favorites/reviews 已有策略基础上，补齐 likes / user_pinned_tools / tool_state / tool_usage_history / tool_drafts / tool_recent 的 RLS + owner 读写 + 公共读策略；⚠️ 前端 src/lib/data.ts 用 anon key + 登录 session 直读这些表，策略必须兼容现有查询（owner 可读 + 公共读），逐个表用匿名 key 复测并回归（点赞/收藏/评论/最近使用/记忆/草稿） | 匿名 key 无法直读任何用户行为表；现有功能逐表回归通过 |
+| ✅ 4.91 | captureCover 沙箱修复（P0） | 去掉封面截图 iframe 的 allow-same-origin（src/lib/cover.ts:35-37），先验证 blob URL 或服务端截图（puppeteer 已在依赖）可行性再落地 | 用户 HTML 无法读写父页 localStorage/token；封面截图功能不坏 |
+| ✅ 4.92 | lint 修复（P1） | package.json lint 改 eslint .（Next 16 已移除 next lint），删除遗留 .eslintrc.json，接入 eslint.config.mjs | npm run lint 本地可跑通过 |
+| ✅ 4.93 | 可见性落库（P1） | 发布/编辑表单与 handleChangeVisibility 切换都写入 Supabase visibility 字段 | 切换公开/未列出/私密后刷新保持 |
+| ✅ 4.94 | 搜索参数化（P1） | /api/tools/search 不再把 q 拼进 .or() 字符串，改参数化 ilike / 转义特殊字符 | 注入 payload 无效果，正常搜索不回归 |
+| ✅ 4.95 | Storage owner 校验（P1） | cover_auth_update 策略加 owner 路径约束（storage.foldername(name)[1] = auth.uid()::text） | 登录用户无法覆盖/删除他人封面 |
+| ✅ 4.96 | 限流加固（P1） | AI 生成接口限流从模块级 Map 升级为可跨实例方案（Upstash/DB 计数或 Vercel WAF 优先），x-forwarded-for 取可信来源 | 多实例/冷启动下仍生效；正常使用不受影响 |
 
 > P2 候选（可并入后续 patch，不阻塞发布）：浏览量落库（内置工具）、发布幂等（防双击重复 insert）、anon key 收敛（3 处硬编码 fallback）、robots 与 sitemap 矛盾修正（robots 禁 /create /auth 但 sitemap 收录）、GitHub Actions 基础 CI（lint/typecheck/build）。
 

@@ -60,6 +60,38 @@ export function checkRateLimit(ip: string): { ok: boolean; retryAfterSec?: numbe
   return { ok: true };
 }
 
+const FALLBACK_SUPABASE_URL = "https://cvacrykzcppiflmvwwfe.supabase.co";
+const FALLBACK_SUPABASE_ANON_KEY = "sb_publishable_HedSPsepnDWtvd3IuQhlWw_JPeVevVu";
+
+/**
+ * 跨实例速率限制（v1.15.0）：优先走 Supabase RPC（ai_rate_bump，见 supabase_fix_rls_all.sql），
+ * 多实例/冷启动下依然生效；RPC 未部署或网络异常时回退内存 Map，不阻断生成。
+ */
+export async function checkRateLimitRemote(ip: string): Promise<{ ok: boolean; retryAfterSec?: number }> {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || FALLBACK_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY;
+    const res = await fetch(`${url}/rest/v1/rpc/ai_rate_bump`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({ p_ip: ip, p_min: RATE_MIN, p_day: RATE_DAY }),
+      signal: AbortSignal.timeout(2500),
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const j = (await res.json()) as { ok?: boolean; retry_after?: number };
+      return { ok: j.ok !== false, retryAfterSec: j.retry_after ?? 60 };
+    }
+  } catch {
+    // RPC 未部署 / 网络异常：回退内存限流
+  }
+  return checkRateLimit(ip);
+}
+
 /** 查询 DeepSeek 余额（带 5 分钟缓存；查询失败不阻塞生成） */
 let balanceCache: { at: number; cny: number | null } = { at: 0, cny: null };
 export async function getBalanceCny(apiKey: string): Promise<number | null> {

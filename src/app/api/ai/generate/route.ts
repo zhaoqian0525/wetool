@@ -6,7 +6,7 @@ import {
   MAX_TOKENS,
   MAX_CONTEXT_CHARS,
   MIN_BALANCE_CNY,
-  checkRateLimit,
+  checkRateLimitRemote,
   getBalanceCny,
   extractUsageFromSseTail,
   compactHistory,
@@ -83,10 +83,10 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // 速率限制（按 IP）
+  // 速率限制（按 IP；取 x-forwarded-for 最后一段，避免客户端伪造首段绕过）
   const fwd = request.headers.get("x-forwarded-for");
-  const ip = fwd ? fwd.split(",")[0].trim() : "unknown";
-  const rl = checkRateLimit(ip);
+  const ip = fwd ? (fwd.split(",").pop()?.trim() || "unknown") : "unknown";
+  const rl = await checkRateLimitRemote(ip);
   if (!rl.ok) {
     return new Response(JSON.stringify({ error: "请求太频繁，请稍后再试" }), {
       status: 429,

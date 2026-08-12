@@ -650,10 +650,22 @@ export default function ToolDetailPage() {
 
   // 作者权限检查
   const isAuthor = user && tool && tool.authorId === user.id;
-  const handleChangeVisibility = (v: string) => {
+  const handleChangeVisibility = async (v: string) => {
     if (!tool || !isAuthor) return;
-    setToolVisibility(v as Visibility);
-    // TODO: 同时更新 Supabase visibility
+    const prev = toolVisibility;
+    const next = v as Visibility;
+    setToolVisibility(next);
+    try {
+      const client = getSupabase();
+      if (!client) throw new Error("数据库未连接，无法保存");
+      const { error } = await client.from("tools").update({ visibility: next }).eq("id", tool.id);
+      if (error) throw new Error(error.message || "更新失败");
+      setTool({ ...tool, visibility: next });
+      toast.success(next === "public" ? "已设为公开" : next === "unlisted" ? "已设为未列出" : "已设为私密");
+    } catch (e) {
+      setToolVisibility(prev);
+      toast.error(e instanceof Error ? e.message : "更新失败，请重试");
+    }
   };
 
   if (loading) {

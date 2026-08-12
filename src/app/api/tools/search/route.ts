@@ -9,7 +9,10 @@ import { createClient } from "@supabase/supabase-js";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const q = (request.nextUrl.searchParams.get("q") || "").trim().slice(0, 100);
+  // v1.15.0：过滤 PostgREST .or() 特殊字符，防止把用户输入拼进过滤串造成注入
+  const rawQ = (request.nextUrl.searchParams.get("q") || "").trim().slice(0, 100);
+  if (!rawQ) return NextResponse.json({ tools: [] });
+  const q = rawQ.replace(/[,()'"\\*]/g, " ").replace(/\s+/g, " ").trim();
   if (!q) return NextResponse.json({ tools: [] });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://cvacrykzcppiflmvwwfe.supabase.co";

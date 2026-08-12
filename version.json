@@ -1,6 +1,6 @@
 {
-  "version": "1.14.0",
+  "version": "1.15.0",
   "buildDate": "2026-08-12",
-  "buildTimestamp": "2026-08-12T02:30:00.000+08:00",
-  "description": "v1.14.0 评论系统完善 + 创作新对话 + 用户页提速：评论支持最新/最热排序、回复（含作者标记与头像）、点赞数展示；底部创建入口进入即开启全新对话（?new=1 清草稿）；更换头像按钮修复为圆形；我的页面工具列表本地缓存秒开；修复网络抖动误弹「工具未找到」（网络失败区分于确认不存在，详情页缓存兜底 + 可重试失败视图）。"
+  "buildTimestamp": "2026-08-12T23:00:00.000+08:00",
+  "description": "v1.15.0 安全加固：封面截图沙箱修复（T4 快照机制，用户 HTML 无法读写父页 localStorage/token）+ 封面 head 注入 bug 修复；搜索参数化；工具可见性落库；AI 生成限流跨实例化（Supabase RPC，未部署自动回退）；lint 修复（eslint .）。配套 supabase_fix_rls_all.sql 需在 Supabase Dashboard 执行（全表 RLS + Storage owner 约束 + 限流表/RPC）。"
 }

@@ -13,42 +13,73 @@ import { getSupabase } from "./supabase";
 const COVER_WIDTH = 375;
 const COVER_HEIGHT = 667;
 const COVER_BUCKET = "tool-covers";
+// v1.15.0：沙盒运行阶段等待 DOM 快照回传的超时
+const SNAP_TIMEOUT_MS = 6000;
 
 // ---- Screenshot ----
 
 /** 将 HTML 代码渲染为隐藏 DOM 并截图，返回 Blob */
 export async function captureCover(htmlCode: string): Promise<Blob | null> {
-  let container: HTMLDivElement | null = null;
+  let runIframe: HTMLIFrameElement | null = null;
+  let snapIframe: HTMLIFrameElement | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
 
   try {
     const html2canvas = (await import("html2canvas")).default;
 
-    // 创建离屏容器
-    container = document.createElement("div");
-    container.style.cssText =
-      "position:fixed;left:-9999px;top:-9999px;width:375px;height:667px;overflow:hidden;background:#fff;";
-    document.body.appendChild(container);
+    // 第一阶段：沙盒运行 iframe（仅 allow-scripts，无 allow-same-origin）。
+    // 用户代码处于 opaque origin，无法访问父页面 localStorage/token；
+    // 渲染约 1 秒后回传 DOM 快照（canvas 已序列化为 dataURL 图片）。
+    runIframe = document.createElement("iframe");
+    runIframe.style.cssText =
+      "position:fixed;left:-9999px;top:-9999px;width:375px;height:667px;border:0;background:#fff;";
+    runIframe.sandbox.add("allow-scripts");
+    document.body.appendChild(runIframe);
 
-    // 渲染用户代码为完整 HTML 文档的 iframe（更好的隔离）
-    const iframe = document.createElement("iframe");
-    iframe.style.cssText = "width:375px;height:667px;border:0;";
-    iframe.sandbox.add("allow-scripts");
-    // 关键：截图用 iframe 需要 allow-same-origin 才能让 html2canvas 访问
-    iframe.sandbox.add("allow-same-origin");
-    container.appendChild(iframe);
+    const snapshot = await new Promise<{ html: string }>((resolve, reject) => {
+      const onMessage = (event: MessageEvent) => {
+        if (event.source !== runIframe?.contentWindow) return;
+        if (typeof event.data !== "string") return;
+        let parsed: { __wewooSnap?: boolean; html?: string; error?: string } | null = null;
+        try {
+          parsed = JSON.parse(event.data);
+        } catch {
+          return;
+        }
+        if (!parsed || parsed.__wewooSnap !== true) return;
+        cleanup();
+        if (parsed.html) resolve({ html: parsed.html });
+        else reject(new Error(parsed.error || "cover snapshot failed"));
+      };
+      const cleanup = () => {
+        window.removeEventListener("message", onMessage);
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      };
+      timer = setTimeout(() => {
+        cleanup();
+        reject(new Error("cover snapshot timeout"));
+      }, SNAP_TIMEOUT_MS);
+      window.addEventListener("message", onMessage);
+      runIframe!.srcdoc = buildCoverHtml(htmlCode);
+    });
 
-    // 写入 srcdoc
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) throw new Error("Cannot access iframe document");
+    // 第二阶段：快照渲染进无脚本 iframe（sandbox allow-same-origin，无 allow-scripts），
+    // 父页面用 html2canvas 截图。快照已剥离脚本/事件/嵌入内容，不会执行用户代码。
+    const dom = sanitizeSnapshotHtml(snapshot.html);
+    snapIframe = document.createElement("iframe");
+    snapIframe.style.cssText =
+      "position:fixed;left:-9999px;top:-9999px;width:375px;height:667px;border:0;background:#fff;";
+    snapIframe.sandbox.add("allow-same-origin");
+    document.body.appendChild(snapIframe);
+    snapIframe.srcdoc = dom;
+    await waitSnapLoaded(snapIframe);
 
-    doc.open();
-    doc.write(ensureCompleteHtml(htmlCode));
-    doc.close();
+    const doc = snapIframe.contentDocument;
+    if (!doc) throw new Error("snapshot iframe inaccessible");
 
-    // 等待渲染
-    await sleep(800);
-
-    // 截图
     const canvas = await html2canvas(doc.body, {
       width: COVER_WIDTH,
       height: COVER_HEIGHT,
@@ -56,10 +87,11 @@ export async function captureCover(htmlCode: string): Promise<Blob | null> {
       useCORS: true,
       allowTaint: true,
       backgroundColor: "#ffffff",
+      windowWidth: COVER_WIDTH,
+      windowHeight: COVER_HEIGHT,
     });
 
-    // 转换为 Blob
-    return new Promise((resolve, reject) => {
+    return new Promise<Blob | null>((resolve, reject) => {
       canvas.toBlob(
         (b) => {
           if (b && b.size > 0) resolve(b);
@@ -72,12 +104,137 @@ export async function captureCover(htmlCode: string): Promise<Blob | null> {
     console.warn("Cover screenshot failed:", err);
     return null;
   } finally {
-    if (container && container.parentNode) {
-      container.parentNode.removeChild(container);
+    if (timer) clearTimeout(timer);
+    if (runIframe && runIframe.parentNode) {
+      runIframe.parentNode.removeChild(runIframe);
+    }
+    if (snapIframe && snapIframe.parentNode) {
+      snapIframe.parentNode.removeChild(snapIframe);
     }
   }
 }
 
+/**
+ * 构建沙盒运行阶段的 HTML：注入与预览一致的 CSP + 快照回传脚本。
+ * 用户代码在 opaque origin 中执行，无法触达父页面。
+ */
+function buildCoverHtml(code: string): string {
+  const cspMeta =
+    '<meta http-equiv="Content-Security-Policy" content="' +
+    "default-src 'none'; " +
+    "style-src 'unsafe-inline'; " +
+    "script-src 'unsafe-inline'; " +
+    "img-src data: https:; " +
+    "font-src 'none'; " +
+    "connect-src 'none'; " +
+    "frame-src 'none'; " +
+    "media-src 'none'; " +
+    "object-src 'none'; " +
+    "base-uri 'none'; " +
+    "form-action 'none'" +
+    '">';
+  const viewportMeta =
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">';
+  const resetCSS =
+    "<style>*,*::before,*::after{box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:16px}</style>";
+  const snapScript = `<script>
+(function () {
+  var SENT = false;
+  function send(payload) {
+    if (SENT) return;
+    SENT = true;
+    try { parent.postMessage(JSON.stringify(Object.assign({ __wewooSnap: true }, payload)), "*"); } catch (e) {}
+  }
+  function snap() {
+    try {
+      var clone = document.documentElement.cloneNode(true);
+      var srcCanvases = document.querySelectorAll("canvas");
+      var dstCanvases = clone.querySelectorAll("canvas");
+      for (var i = 0; i < srcCanvases.length && i < dstCanvases.length; i++) {
+        try {
+          var img = document.createElement("img");
+          img.src = srcCanvases[i].toDataURL("image/png");
+          img.width = srcCanvases[i].width;
+          img.height = srcCanvases[i].height;
+          img.style.cssText = srcCanvases[i].getAttribute("style") || "";
+          dstCanvases[i].parentNode.replaceChild(img, dstCanvases[i]);
+        } catch (e) {}
+      }
+      send({ html: "<!DOCTYPE html>" + clone.outerHTML });
+    } catch (e) { send({ error: String((e && e.message) || e) }); }
+  }
+  if (document.readyState === "loading") {
+    window.addEventListener("DOMContentLoaded", function () { setTimeout(snap, 1000); });
+  } else {
+    setTimeout(snap, 1000);
+  }
+})();
+<\/script>`;
+
+  const headBlock = `<head>
+  <meta charset="UTF-8">
+  ${viewportMeta}
+  ${cspMeta}
+  ${resetCSS}
+</head>`;
+
+  if (/<html[\s>]/i.test(code)) {
+    let result = code;
+    if (/<head[\s>]/i.test(result)) {
+      result = result.replace(
+        /<head\b[^>]*>/i,
+        (m) => `${m}\n  ${viewportMeta}\n  ${cspMeta}\n  ${resetCSS}`
+      );
+    } else {
+      result = result.replace(/<html\b[^>]*>/i, (m) => `${m}\n${headBlock}`);
+    }
+    if (/<\/body>/i.test(result)) {
+      result = result.replace(/<\/body>/i, `${snapScript}\n</body>`);
+    } else {
+      result = result + `\n${snapScript}`;
+    }
+    return result;
+  }
+
+  // 裸代码片段：包裹为完整文档
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+${headBlock}
+<body>
+${snapScript}
+${code}
+</body>
+</html>`;
+}
+
+/** 等待快照 iframe 完成渲染（load 事件 + 150ms 布局稳定，最长 2s 兜底） */
+function waitSnapLoaded(iframe: HTMLIFrameElement): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, 2000);
+    iframe.addEventListener(
+      "load",
+      () => {
+        clearTimeout(timer);
+        setTimeout(resolve, 150);
+      },
+      { once: true }
+    );
+  });
+}
+
+/** 剥离快照中的可执行内容：脚本、事件属性、嵌入框架、base、meta refresh、javascript: URL */
+function sanitizeSnapshotHtml(html: string): string {
+  let h = html;
+  h = h.replace(/<script[\s\S]*?<\/script>/gi, "");
+  h = h.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+  h = h.replace(/<iframe[\s\S]*?<\/iframe>/gi, "").replace(/<iframe[^>]*\/?>/gi, "");
+  h = h.replace(/<object[\s\S]*?<\/object>/gi, "").replace(/<object[^>]*\/?>/gi, "");
+  h = h.replace(/<embed[^>]*\/?>/gi, "");
+  h = h.replace(/<base[^>]*\/?>/gi, "");
+  h = h.replace(/<meta[^>]*http-equiv=["']refresh["'][^>]*\/?>/gi, "");
+  h = h.replace(/\s(?:href|src|xlink:href)=["']javascript:[^"']*["']/gi, "");
+  return h;
+}
 // ---- Fallback ---
 
 const GRADIENT_PAIRS: [string, string][] = [
@@ -298,40 +455,6 @@ async function ensureBucket(supabase: ReturnType<typeof getSupabase>) {
   } catch {
     // Bucket 可能已存在或无权创建，静默忽略
   }
-}
-
-/** 确保用户代码是完整 HTML 文档 */
-function ensureCompleteHtml(code: string): string {
-  if (/<html[\s>]/i.test(code) && /<body[\s>]/i.test(code)) {
-    // 已完整，注入 viewport（如果缺失）
-    if (!/<meta\s+name="viewport"/i.test(code)) {
-      return code.replace(
-        /(<head[\s>][^]*?>)/i,
-        `$1\n  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">`
-      );
-    }
-    return code;
-  }
-
-  // 包裹为完整文档
-  return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 16px; }
-  </style>
-</head>
-<body>
-${code}
-</body>
-</html>`;
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
 }
 
 function wrapText(
