@@ -17,6 +17,10 @@ const COVER_BUCKET = "tool-covers";
 const SNAP_TIMEOUT_MS = 6000;
 // v1.15.3：html2canvas 截图阶段加超时（iOS Safari 下可能永不返回导致卡住「正在生成封面」），超时走渐变封面兜底
 const HTML2CANVAS_TIMEOUT_MS = 15000;
+// v1.15.4：canvas.toBlob 阶段加超时（iOS Safari 可能永不回调，导致永久卡在「正在生成封面」）
+const TO_BLOB_TIMEOUT_MS = 8000;
+// v1.15.4：封面上传阶段加超时，避免网络挂起导致界面无限等待
+const UPLOAD_TIMEOUT_MS = 25000;
 
 // ---- Screenshot ----
 
@@ -97,15 +101,7 @@ export async function captureCover(htmlCode: string): Promise<Blob | null> {
       "cover html2canvas timeout"
     );
 
-    return new Promise<Blob | null>((resolve, reject) => {
-      canvas.toBlob(
-        (b) => {
-          if (b && b.size > 0) resolve(b);
-          else reject(new Error("Canvas produced empty blob"));
-        },
-        "image/png"
-      );
-    });
+    return canvasToBlobWithTimeout(canvas, TO_BLOB_TIMEOUT_MS, "cover canvas toBlob timeout");
   } catch (err) {
     console.warn("Cover screenshot failed:", err);
     return null;
@@ -230,6 +226,41 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, message: string):
   }
 }
 
+/** v1.15.4：canvas.toBlob 带超时包装（iOS Safari 可能永不回调） */
+function canvasToBlobWithTimeout(
+  canvas: HTMLCanvasElement,
+  ms: number,
+  message: string
+): Promise<Blob> {
+  return withTimeout(
+    new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (b) => {
+          if (b && b.size > 0) resolve(b);
+          else reject(new Error("Canvas produced empty blob"));
+        },
+        "image/png"
+      );
+    }),
+    ms,
+    message
+  );
+}
+
+/** v1.15.4：将 dataURL 转为 Blob（带超时，iOS Safari 大图可能长时间无回调） */
+export async function dataUrlToBlob(dataUrl: string): Promise<Blob | null> {
+  try {
+    return await withTimeout(
+      fetch(dataUrl).then((res) => res.blob()),
+      TO_BLOB_TIMEOUT_MS,
+      "cover dataURL to blob timeout"
+    );
+  } catch (err) {
+    console.warn("Cover dataURL conversion failed:", err);
+    return null;
+  }
+}
+
 function waitSnapLoaded(iframe: HTMLIFrameElement): Promise<void> {
   return new Promise((resolve) => {
     const timer = setTimeout(resolve, 2000);
@@ -247,6 +278,8 @@ function waitSnapLoaded(iframe: HTMLIFrameElement): Promise<void> {
 /** 剥离快照中的可执行内容：脚本、事件属性、嵌入框架、base、meta refresh、javascript: URL */
 function sanitizeSnapshotHtml(html: string): string {
   let h = html;
+  // srcdoc 若以 <!DOCTYPE 开头，部分浏览器（尤其 iOS Safari）可能导致 iframe 空白/加载异常
+  h = h.replace(/^<!DOCTYPE[^>]*>/i, "");
   h = h.replace(/<script[\s\S]*?<\/script>/gi, "");
   h = h.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
   h = h.replace(/<iframe[\s\S]*?<\/iframe>/gi, "").replace(/<iframe[^>]*\/?>/gi, "");
@@ -349,15 +382,7 @@ export async function generateDefaultCoverBlob(
   ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
   ctx.fillText("微坞 WeWoo", canvas.width / 2, canvas.height - 30);
 
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (b) => {
-        if (b) resolve(b);
-        else reject(new Error("Failed to create fallback cover"));
-      },
-      "image/png"
-    );
-  });
+  return canvasToBlobWithTimeout(canvas, TO_BLOB_TIMEOUT_MS, "fallback cover canvas toBlob timeout");
 }
 
 /** 从渐变 CSS 中解析两个十六进制颜色，供 Canvas 绘制使用 */
@@ -410,15 +435,7 @@ export async function generateCustomCoverBlob(
   ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
   ctx.fillText("微坞 WeWoo", canvas.width / 2, canvas.height - 30);
 
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (b) => {
-        if (b) resolve(b);
-        else reject(new Error("Failed to create custom cover"));
-      },
-      "image/png"
-    );
-  });
+  return canvasToBlobWithTimeout(canvas, TO_BLOB_TIMEOUT_MS, "custom cover canvas toBlob timeout");
 }
 
 // ---- Upload ----
@@ -433,33 +450,46 @@ export async function uploadCoverToStorage(
   if (!supabase) return null;
 
   try {
-    // 确保 bucket 存在
-    await ensureBucket(supabase);
-
-    const filePath = `public/${toolId}.png`;
-
-    const { error } = await supabase.storage
-      .from(COVER_BUCKET)
-      .upload(filePath, blob, {
-        contentType: "image/png",
-        upsert: true,
-      });
-
-    if (error) {
-      console.warn("Cover upload error:", error.message);
-      return null;
-    }
-
-    // 获取公开 URL
-    const { data: urlData } = supabase.storage
-      .from(COVER_BUCKET)
-      .getPublicUrl(filePath);
-
-    return urlData?.publicUrl ?? null;
+    // v1.15.4：上传整体加超时（iOS Safari 网络挂起时避免永久等待）
+    return await withTimeout(
+      doUploadCover(supabase, blob, toolId),
+      UPLOAD_TIMEOUT_MS,
+      "cover upload timeout"
+    );
   } catch (err) {
     console.warn("Cover upload failed:", err);
     return null;
   }
+}
+
+async function doUploadCover(
+  supabase: NonNullable<ReturnType<typeof getSupabase>>,
+  blob: Blob,
+  toolId: string
+): Promise<string | null> {
+  // 确保 bucket 存在
+  await ensureBucket(supabase);
+
+  const filePath = "public/" + toolId + ".png";
+
+  const { error } = await supabase.storage
+    .from(COVER_BUCKET)
+    .upload(filePath, blob, {
+      contentType: "image/png",
+      upsert: true,
+    });
+
+  if (error) {
+    console.warn("Cover upload error:", error.message);
+    return null;
+  }
+
+  // 获取公开 URL
+  const { data: urlData } = supabase.storage
+    .from(COVER_BUCKET)
+    .getPublicUrl(filePath);
+
+  return urlData?.publicUrl ?? null;
 }
 
 // ---- Helpers ----

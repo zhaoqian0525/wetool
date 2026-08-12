@@ -18,7 +18,7 @@ import { wrapSecureSrcDoc } from "@/lib/sandbox";
 import { authedFetch } from "@/lib/api-client";
 import { getLsSnapshot, setLsSnapshot } from "@/lib/toolStateBridge";
 import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } from "@/components/CoverPicker";
-import { captureCover, generateCustomCoverBlob, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
+import { captureCover, dataUrlToBlob, generateCustomCoverBlob, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
 import { getSupabase } from "@/lib/supabase";
 import ToolInstallButton from "@/components/ToolInstallButton";
 import { Modal, Badge } from "@/components/ui";
@@ -625,8 +625,8 @@ export default function ToolDetailPage() {
       if (!client) throw new Error("数据库未连接，无法保存封面");
       let blob: Blob | null = null;
       if (coverChoice.mode === "upload" && coverChoice.uploadDataUrl) {
-        const res = await fetch(coverChoice.uploadDataUrl);
-        blob = await res.blob();
+        blob = await dataUrlToBlob(coverChoice.uploadDataUrl);
+        if (!blob) throw new Error("图片读取失败，请重新选择");
       } else if (coverChoice.mode === "gradient") {
         const gradientCss = COVER_GRADIENTS[coverChoice.gradientIndex % COVER_GRADIENTS.length];
         blob = await generateCustomCoverBlob(tool.title, 0, coverChoice.emoji, gradientCss);

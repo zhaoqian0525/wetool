@@ -15,7 +15,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
 import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } from "@/components/CoverPicker";
-import { captureCover, generateCustomCoverBlob, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
+import { captureCover, dataUrlToBlob, generateCustomCoverBlob, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
 import { AI_PROMPT_TEMPLATE, aiPrompts, containsSensitiveContent, extractHtmlFromAiOutput } from "@/lib/aiPrompts";
 import { getLsSnapshot } from "@/lib/toolStateBridge";
 import { Modal } from "@/components/ui";
@@ -753,8 +753,7 @@ function CreatePageInner() {
       try {
         let coverBlob: Blob | null = null;
         if (coverChoice.mode === "upload" && coverChoice.uploadDataUrl) {
-          const res = await fetch(coverChoice.uploadDataUrl);
-          coverBlob = await res.blob();
+          coverBlob = await dataUrlToBlob(coverChoice.uploadDataUrl);
         } else if (coverChoice.mode === "gradient") {
           const gradientCss = COVER_GRADIENTS[coverChoice.gradientIndex % COVER_GRADIENTS.length];
           coverBlob = await generateCustomCoverBlob(title, currentVersions.length, coverChoice.emoji, gradientCss);
