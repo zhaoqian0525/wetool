@@ -18,7 +18,7 @@ import { wrapSecureSrcDoc } from "@/lib/sandbox";
 import { authedFetch } from "@/lib/api-client";
 import { getLsSnapshot, setLsSnapshot } from "@/lib/toolStateBridge";
 import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } from "@/components/CoverPicker";
-import { captureCover, generateCustomCoverBlob, uploadCoverToStorage } from "@/lib/cover";
+import { captureCover, generateCustomCoverBlob, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
 import { getSupabase } from "@/lib/supabase";
 import ToolInstallButton from "@/components/ToolInstallButton";
 import { Modal, Badge } from "@/components/ui";
@@ -633,7 +633,11 @@ export default function ToolDetailPage() {
       } else {
         blob = await captureCover(tool.code);
       }
-      if (!blob) throw new Error("封面生成失败，请换一种方式");
+      if (!blob) {
+        // v1.15.3：自动截图失败（如 iOS Safari html2canvas 超时）→ 自动使用默认渐变封面，不打断用户
+        toast.info("自动截图失败，已使用默认渐变封面");
+        blob = await generateDefaultCoverBlob(tool.title, 0);
+      }
       const url = await uploadCoverToStorage(blob, tool.id, client);
       if (!url) throw new Error("封面上传失败，请稍后重试");
       const { error } = await client.from("tools").update({ cover_url: url }).eq("id", tool.id);

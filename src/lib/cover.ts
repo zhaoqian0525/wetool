@@ -15,6 +15,8 @@ const COVER_HEIGHT = 667;
 const COVER_BUCKET = "tool-covers";
 // v1.15.0：沙盒运行阶段等待 DOM 快照回传的超时
 const SNAP_TIMEOUT_MS = 6000;
+// v1.15.3：html2canvas 截图阶段加超时（iOS Safari 下可能永不返回导致卡住「正在生成封面」），超时走渐变封面兜底
+const HTML2CANVAS_TIMEOUT_MS = 15000;
 
 // ---- Screenshot ----
 
@@ -80,16 +82,20 @@ export async function captureCover(htmlCode: string): Promise<Blob | null> {
     const doc = snapIframe.contentDocument;
     if (!doc) throw new Error("snapshot iframe inaccessible");
 
-    const canvas = await html2canvas(doc.body, {
-      width: COVER_WIDTH,
-      height: COVER_HEIGHT,
-      scale: 1,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#ffffff",
-      windowWidth: COVER_WIDTH,
-      windowHeight: COVER_HEIGHT,
-    });
+    const canvas = await withTimeout(
+      html2canvas(doc.body, {
+        width: COVER_WIDTH,
+        height: COVER_HEIGHT,
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        windowWidth: COVER_WIDTH,
+        windowHeight: COVER_HEIGHT,
+      }),
+      HTML2CANVAS_TIMEOUT_MS,
+      "cover html2canvas timeout"
+    );
 
     return new Promise<Blob | null>((resolve, reject) => {
       canvas.toBlob(
@@ -208,6 +214,22 @@ ${code}
 }
 
 /** 等待快照 iframe 完成渲染（load 事件 + 150ms 布局稳定，最长 2s 兜底） */
+/** Promise 超时包装：超时抛错由调用方走兑底；挂 catch 避免原 Promise 晚到失败产生 unhandled rejection */
+async function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  promise.catch(() => {});
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function waitSnapLoaded(iframe: HTMLIFrameElement): Promise<void> {
   return new Promise((resolve) => {
     const timer = setTimeout(resolve, 2000);

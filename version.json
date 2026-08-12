@@ -1,6 +1,6 @@
 {
-  "version": "1.15.2",
+  "version": "1.15.3",
   "buildDate": "2026-08-12",
-  "buildTimestamp": "2026-08-12T20:43:00.000+08:00",
-  "description": "v1.15.2 修复：iOS 添加到主屏幕的快捷方式被存成官网首页（工具 manifest URL 版本化 ?v=2 + 禁止缓存，强制 iOS 重新抓取正确的工具 start_url）；修复 Storage 上传策略 bug（foldername()[2] 恒为 NULL 导致所有新封面/头像上传被拒，改用 filename() 解析，需在 Supabase 执行一次 supabase_fix_rls_storage_v2.sql）。"
+  "buildTimestamp": "2026-08-12T21:47:00.000+08:00",
+  "description": "v1.15.3 修复：自动截图卡死（iPhone Safari 发布/更换封面一直卡在「正在生成封面」）——html2canvas 截图阶段加 15s 超时，超时自动走默认渐变封面兜底，发布与更换封面流程不再卡死。"
 }
