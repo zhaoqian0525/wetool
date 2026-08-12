@@ -27,7 +27,7 @@ import { Modal, Badge } from "@/components/ui";
 export default function ToolDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const toast = useToast();
   const [tool, setTool] = useState<Tool | null>(null);
   // v1.14.0 修复：网络失败（非工具不存在）时标记，展示可重试的失败视图
@@ -865,7 +865,9 @@ export default function ToolDetailPage() {
         <div className="flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
           {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
           <div className="flex items-center gap-2 pb-2.5 flex-wrap">
-            {user ? (
+            {authLoading ? (
+              <div className="h-11 w-24 rounded-xl bg-gray-100 animate-pulse" aria-hidden />
+            ) : user ? (
               <>
                 <button
                   onClick={async () => {
@@ -974,7 +976,7 @@ export default function ToolDetailPage() {
                   </button>
                 )}
                 {/* v1.9.1 单工具 PWA 全屏：未登录时顶部提示登录（进度/记录才能云端保存） */}
-                {fullscreen && appMode && !user && !authHintDismissed && (
+                {fullscreen && appMode && !user && !authLoading && !authHintDismissed && (
                   <div className="absolute top-0 left-0 right-0 z-[60] flex items-center gap-2 px-3 py-2 bg-gray-900/85 text-white text-xs backdrop-blur-sm">
                     <span className="flex-1 flex items-center gap-1.5 leading-snug">
                       <span className="text-sm flex-shrink-0">🔑</span>
@@ -1082,7 +1084,9 @@ export default function ToolDetailPage() {
           </div>
 
           {/* Write review */}
-          {user ? (
+          {authLoading ? (
+            <div className="bg-gray-50 rounded-2xl p-5 mb-6 h-28 animate-pulse" aria-hidden />
+          ) : user ? (
             <div className="bg-white rounded-2xl p-4 sm:p-5 mb-6 shadow-sm border border-gray-100">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">写评价</h3>
               <div className="flex items-center gap-1 mb-3">

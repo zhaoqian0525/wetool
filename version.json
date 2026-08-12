@@ -1,6 +1,6 @@
 {
-  "version": "1.15.0",
+  "version": "1.15.1",
   "buildDate": "2026-08-12",
-  "buildTimestamp": "2026-08-12T23:00:00.000+08:00",
-  "description": "v1.15.0 安全加固：封面截图沙箱修复（T4 快照机制，用户 HTML 无法读写父页 localStorage/token）+ 封面 head 注入 bug 修复；搜索参数化；工具可见性落库；AI 生成限流跨实例化（Supabase RPC，未部署自动回退）；lint 修复（eslint .）。配套 supabase_fix_rls_all.sql 需在 Supabase Dashboard 执行（全表 RLS + Storage owner 约束 + 限流表/RPC）。"
+  "buildTimestamp": "2026-08-12T23:40:00.000+08:00",
+  "description": "v1.15.1 修复：手机桌面（PWA）打开工具时登录按钮闪一下消失——工具页点赞区/评价区、全屏未登录横幅、首页 standalone 横幅在登录态加载完成前显示骨架占位，不再闪现「登录」按钮。"
 }

@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui";
 // ---- Component ----
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [tools, setTools] = useState<Tool[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("全部");
   const [loading, setLoading] = useState(true);
@@ -287,7 +287,7 @@ export default function HomePage() {
       </section>
 
       {/* v1.9 PWA 全站入口登录状态提示（仅 standalone 且未登录） */}
-      {!isSearching && standalone && !user && !authBannerDismissed && (
+      {!isSearching && standalone && !user && !authLoading && !authBannerDismissed && (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-3">
           <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl px-4 py-3 shadow-md shadow-indigo-200/50">
             <div className="flex items-center gap-2.5 text-sm leading-snug">
