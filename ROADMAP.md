@@ -425,6 +425,12 @@
 | ✅ 4.102 | v1.15.3 后 iPhone Safari 封面生成仍卡死 | 根因：captureCover 最后一步 canvas.toBlob 在 iOS 上可能永不回调且无超时保护 → 新增 canvasToBlobWithTimeout（8s），toBlob 超时返回 null 走渐变兜底；upload 模式 dataURL→Blob 加 8s 超时（dataUrlToBlob）；uploadCoverToStorage 整体加 25s 超时（withTimeout 包装，避免网络挂起无限等待） | iPhone Safari 发布/更换封面 30s 内必完成（正常截图/上传或渐变兜底），不再永久卡在「正在生成封面」；桌面 Chrome E2E 自动截图 11s、上传图片 4.6s 均正常，写库与清理通过 |
 | ✅ 4.103 | 快照 iframe srcdoc 兼容 | srcdoc 以 <!DOCTYPE 开头在部分浏览器（尤其 iOS Safari）可能空白/加载异常 → sanitizeSnapshotHtml 先剥离前缀 doctype 再渲染 | 桌面/安卓截图结果与之前一致，无回归 |
 
+### 运维：E2E 测试数据清理（2026-08-12）
+
+| 编号 | 任务 | 状态 | 说明 |
+|------|------|------|------|
+| ⏳ 4.104 | E2E 测试数据防残留 | 发现线上残留测试工具「E2E自动截图-678692」（bff0fb46，测试账号），已删除工具记录 + 封面文件，全库 E2E 残留 = 0 | 后续 E2E 脚本统一改为 try/finally 清理，跑完自动校验「title 含 E2E 的工具 = 0」；发布/封面 E2E 完成后若异常中断需人工复查 |
+
 ### v1.15.3 自动截图卡死修复（2026-08-12）
 
 | 编号 | 任务 | 改动点 | 验收 |
