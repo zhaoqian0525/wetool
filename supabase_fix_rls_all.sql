@@ -118,6 +118,7 @@ CREATE POLICY "recent_delete_own" ON tool_recent FOR DELETE USING (auth.uid()::t
 
 -- =============================================
 -- Storage：tool-covers 上传/更新/删除限定 owner 路径
+-- v1.15.2 修复：改用 storage.filename() 解析文件名（旧版用 foldername()[2]，对 public/<toolId>.png 恒为 NULL，会锁死所有封面上传）
 -- 路径约定：封面 public/<toolId>.png；头像 avatars/<userId>.webp
 -- =============================================
 INSERT INTO storage.buckets (id, name, public, file_size_limit)
@@ -134,11 +135,11 @@ CREATE POLICY "cover_auth_upload" ON storage.objects
   FOR INSERT
   WITH CHECK (
     bucket_id = 'tool-covers' AND auth.role() = 'authenticated' AND (
-      (storage.foldername(name))[1] = 'avatars' AND (storage.foldername(name))[2] = auth.uid()::text
+      (storage.foldername(name))[1] = 'avatars' AND storage.filename(name) = auth.uid()::text || '.webp'
       OR
       (storage.foldername(name))[1] = 'public' AND EXISTS (
         SELECT 1 FROM public.tools t
-        WHERE t.id::text = (storage.foldername(name))[2]
+        WHERE t.id::text = split_part(storage.filename(name), '.', 1)
           AND t.author_id = auth.uid()::text
       )
     )
@@ -149,11 +150,11 @@ CREATE POLICY "cover_auth_update" ON storage.objects
   FOR UPDATE
   USING (
     bucket_id = 'tool-covers' AND auth.role() = 'authenticated' AND (
-      (storage.foldername(name))[1] = 'avatars' AND (storage.foldername(name))[2] = auth.uid()::text
+      (storage.foldername(name))[1] = 'avatars' AND storage.filename(name) = auth.uid()::text || '.webp'
       OR
       (storage.foldername(name))[1] = 'public' AND EXISTS (
         SELECT 1 FROM public.tools t
-        WHERE t.id::text = (storage.foldername(name))[2]
+        WHERE t.id::text = split_part(storage.filename(name), '.', 1)
           AND t.author_id = auth.uid()::text
       )
     )
@@ -164,11 +165,11 @@ CREATE POLICY "cover_auth_delete" ON storage.objects
   FOR DELETE
   USING (
     bucket_id = 'tool-covers' AND auth.role() = 'authenticated' AND (
-      (storage.foldername(name))[1] = 'avatars' AND (storage.foldername(name))[2] = auth.uid()::text
+      (storage.foldername(name))[1] = 'avatars' AND storage.filename(name) = auth.uid()::text || '.webp'
       OR
       (storage.foldername(name))[1] = 'public' AND EXISTS (
         SELECT 1 FROM public.tools t
-        WHERE t.id::text = (storage.foldername(name))[2]
+        WHERE t.id::text = split_part(storage.filename(name), '.', 1)
           AND t.author_id = auth.uid()::text
       )
     )

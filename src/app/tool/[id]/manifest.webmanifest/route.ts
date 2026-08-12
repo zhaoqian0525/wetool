@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { fetchToolById } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
+// v1.15.2：iOS 会顽固缓存 manifest；早期工具页曾同时注入站点 manifest（start_url "/"），
+// 导致 iOS 记住 start_url "/" 而把主屏快捷方式存成官网首页。
+// 配合 layout 中 ?v=2 版本化 URL 强制 iOS 重新抓取，拿到正确的工具 start_url；
+// 并禁止 HTTP 缓存，避免再次缓存旧 manifest。
+
 
 /**
  * v1.8.8 每个工具的独立 PWA manifest：
@@ -49,6 +54,9 @@ export async function GET(
   };
 
   return NextResponse.json(manifest, {
-    headers: { "Content-Type": "application/manifest+json; charset=utf-8" },
+    headers: {
+      "Content-Type": "application/manifest+json; charset=utf-8",
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+    },
   });
 }

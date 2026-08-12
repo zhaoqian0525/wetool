@@ -91,7 +91,7 @@ export default async function ToolLayout({
   return (
     <>
       {/* v1.8.8 每个工具注入独立 PWA manifest，支持添加到主屏幕后打开即全屏 */}
-      <link rel="manifest" href={`/tool/${id}/manifest.webmanifest`} />
+      <link rel="manifest" href={`/tool/${id}/manifest.webmanifest?v=2`} />
       {children}
     </>
   );

@@ -6,6 +6,11 @@
 
 ---
 
+## [1.15.2] - 2026-08-12
+
+### Fixed
+- iOS「添加到主屏幕」的快捷方式被存成官网首页：工具页 manifest URL 版本化（?v=2）+ manifest 响应禁止缓存（no-store），强制 iOS 重新抓取到正确的工具 start_url。老设备需要：删除旧主屏快捷方式 → 清除 we-woo.net 网站数据 → 重新添加
+- 封面上传被 Storage 策略误拒（v1.15.0 遗留）：cover_auth_upload/update/delete 用 storage.foldername()[2] 取文件 ID，对 public/<toolId>.png 恒为 NULL，导致所有新工具封面、头像上传 403（表现为发布后没有封面）。改用 storage.filename() 解析；需在 Supabase SQL Editor 执行一次 supabase_fix_rls_storage_v2.sql（已同步修正 supabase_fix_rls_all.sql）
 ## [1.15.1] - 2026-08-12
 
 ### Fixed
