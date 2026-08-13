@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthedSupabase, unauthorizedResponse } from "@/lib/api-auth";
+import { getAuthedSupabase, getAdminServiceClient, unauthorizedResponse } from "@/lib/api-auth";
 import { toDbToolId } from "@/lib/builtinIds";
 
 /**
@@ -28,7 +28,12 @@ export async function POST(
   }
 
   const dbId = toDbToolId(id);
-  const { error } = await ctx.supabase
+  // RLS 只允许作者更新自己的工具，管理员下架必须走 service_role（代码层已校验 isAdmin）
+  const admin = getAdminServiceClient();
+  if (!admin) {
+    return NextResponse.json({ error: "服务器未配置 SUPABASE_SERVICE_ROLE_KEY" }, { status: 500 });
+  }
+  const { error } = await admin
     .from("tools")
     .update({ is_banned: body.banned })
     .eq("id", dbId);

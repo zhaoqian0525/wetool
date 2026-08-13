@@ -1,6 +1,6 @@
 {
-  "version": "2.0.1",
+  "version": "2.0.2",
   "buildDate": "2026-08-14",
-  "buildTimestamp": "2026-08-14T00:00:00.000+08:00",
-  "description": "v2.0.1 M1.5：审核底线落地（is_banned 公开过滤 + 管理后台下架/恢复 + 举报处理队列）"
+  "buildTimestamp": "2026-08-14T12:00:00.000+08:00",
+  "description": "v2.0.2 修复：广场封面不显示（mapRow 兼容 camelCase）+ 管理后台下架/举报处理失效（改用 service_role）"
 }

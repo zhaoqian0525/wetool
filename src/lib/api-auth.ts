@@ -54,6 +54,16 @@ export async function getAuthedSupabase(request: NextRequest): Promise<AuthedCon
 }
 
 /** 仅校验身份并返回 userId（用于不需要 RLS 查询的接口） */
+
+/**
+ * 绠＄悊鍛樻搷浣滅敤鐨?service_role 瀹㈡埛绔?/ 閫氳繃 SUPABASE_SERVICE_ROLE_KEY 缁曡繃 RLS锛堝彧鍦ㄦ柉鏈嶅姟绔娇鐢紝浠ｇ爜灞傚凡鏍￠獙绠＄悊鍛樿韩浠斤級銆?* 涓嶉厤缃簡璇ラ敊閿ュ垯杩斿洖 null銆?*/
+export function getAdminServiceClient(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://cvacrykzcppiflmvwwfe.supabase.co";
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!key) return null;
+  return createClient(url, key);
+}
+
 export async function getAuthUserId(request: NextRequest): Promise<string | null> {
   const ctx = await getAuthedSupabase(request);
   return ctx ? ctx.userId : null;

@@ -31,16 +31,16 @@ function mapRow(row: Record<string, unknown>): Tool {
     id: String(row.id),
     title: String(row.title ?? ""),
     author: String(row.author ?? ""),
-    authorId: row.author_id ? String(row.author_id) : undefined,
+    authorId: row.author_id ? String(row.author_id) : row.authorId ? String(row.authorId) : undefined,
     category: row.category as ToolCategory,
     code: String(row.code ?? ""),
     thumbnailGradient:
       String(row.thumbnail_gradient ?? row.thumbnailGradient ?? ""),
-    coverUrl: row.cover_url ? String(row.cover_url) : undefined,
+    coverUrl: row.cover_url ? String(row.cover_url) : row.coverUrl ? String(row.coverUrl) : undefined,
     createdAt: String(row.created_at ?? row.createdAt ?? new Date().toISOString()),
     description: row.description ? String(row.description) : undefined,
-    sourceToolId: row.source_tool_id ? String(row.source_tool_id) : undefined,
-    viewCount: row.view_count !== undefined && row.view_count !== null ? Number(row.view_count) : undefined,
+    sourceToolId: row.source_tool_id ? String(row.source_tool_id) : row.sourceToolId ? String(row.sourceToolId) : undefined,
+    viewCount: row.view_count !== undefined && row.view_count !== null ? Number(row.view_count) : row.viewCount !== undefined && row.viewCount !== null ? Number(row.viewCount) : undefined,
     visibility: (["public", "unlisted", "private"].includes(String(row.visibility ?? ""))
       ? String(row.visibility)
       : "public") as Visibility,

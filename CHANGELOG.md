@@ -6,6 +6,15 @@
 
 ---
 
+## [2.0.2] - 2026-08-14
+
+### Fixed
+- 广场 / 首页 / 搜索结果中数据库工具的封面不显示：v2.0.0 的 /api/tools/public 与 /api/tools/search 返回 camelCase 字段（coverUrl / authorId / sourceToolId / viewCount），而 mapRow 只读取 snake_case（cover_url 等），导致封面、作者 ID、源工具 ID、浏览数丢失。已为 mapRow 增加 camelCase 兼容（封面立即恢复，作者判断 / 改编链路 / 浏览量同步修复）
+- 管理后台「下架 / 恢复 / 标记处理 / 驳回」操作无效：tools 表 RLS 仅允许作者更新自己的工具、reports 表无 UPDATE 策略，管理员以普通用户身份更新会被 RLS 拒绝。管理 API 已改用 SUPABASE_SERVICE_ROLE_KEY（代码层仍先校验管理员身份，未配置密钥时返回明确错误）
+
+### Chore
+- 删除测试工具「E2E自动截图-206600」（含关联的使用记录、举报、封面文件），公共列表恢复 16 个真实工具
+---
 ## [2.0.1] - 2026-08-14
 
 ### Added（M1.5 审核底线落地）

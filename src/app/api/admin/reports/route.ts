@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthedSupabase, unauthorizedResponse } from "@/lib/api-auth";
+import { getAuthedSupabase, getAdminServiceClient, unauthorizedResponse } from "@/lib/api-auth";
 
 /**
  * GET /api/admin/reports?status=pending
@@ -18,7 +18,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "status 参数不合法" }, { status: 400 });
   }
 
-  let query = ctx.supabase
+  const admin = getAdminServiceClient();
+  if (!admin) {
+    return NextResponse.json({ error: "服务器未配置 SUPABASE_SERVICE_ROLE_KEY" }, { status: 500 });
+  }
+  let query = admin
     .from("reports")
     .select("id, tool_id, user_id, reason, status, note, created_at")
     .order("created_at", { ascending: false })
@@ -36,7 +40,7 @@ export async function GET(request: NextRequest) {
   const toolIds = Array.from(new Set((data ?? []).map((r: Record<string, unknown>) => String(r.tool_id))));
   let titleMap: Record<string, { title?: string; is_banned?: boolean }> = {};
   if (toolIds.length > 0) {
-    const { data: tools } = await ctx.supabase
+    const { data: tools } = await admin
       .from("tools")
       .select("id, title, is_banned")
       .in("id", toolIds);

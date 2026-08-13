@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthedSupabase, unauthorizedResponse } from "@/lib/api-auth";
+import { getAuthedSupabase, getAdminServiceClient, unauthorizedResponse } from "@/lib/api-auth";
 
 /**
  * POST /api/admin/reports/[id]/resolve
@@ -26,7 +26,12 @@ export async function POST(
     return NextResponse.json({ error: "status 必须为 resolved/rejected/processing" }, { status: 400 });
   }
 
-  const { error } = await ctx.supabase
+  // reports 表无 UPDATE 策略，管理员处理必须走 service_role（代码层已校验 isAdmin）
+  const admin = getAdminServiceClient();
+  if (!admin) {
+    return NextResponse.json({ error: "服务器未配置 SUPABASE_SERVICE_ROLE_KEY" }, { status: 500 });
+  }
+  const { error } = await admin
     .from("reports")
     .update({
       status,
