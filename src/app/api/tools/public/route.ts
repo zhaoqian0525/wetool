@@ -11,7 +11,7 @@ import { createClient } from "@supabase/supabase-js";
  */
 export const dynamic = "force-dynamic";
 
-const LEAN_SELECT = "id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count";
+const LEAN_SELECT = "id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count, is_banned";
 const MAX_TOOLS = 200;
 
 export async function GET() {
@@ -26,6 +26,7 @@ export async function GET() {
     .from("tools")
     .select(LEAN_SELECT)
     .eq("visibility", "public")
+    .eq("is_banned", false)
     .order("created_at", { ascending: false })
     .limit(MAX_TOOLS);
 

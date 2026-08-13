@@ -28,6 +28,8 @@ export interface Tool {
   viewCount?: number;
   visibility: Visibility;
   isDownloadable?: boolean;
+  /** v2.0.1：平台下架标记（公共列表过滤；详情页非作者显示已下架） */
+  isBanned?: boolean;
 }
 
 export interface Favorite {

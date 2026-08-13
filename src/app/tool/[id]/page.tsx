@@ -737,6 +737,26 @@ export default function ToolDetailPage() {
     );
   }
 
+  // 已下架工具且非作者 → 显示下架提示（M1.5）
+  if (tool && tool.isBanned && !isAuthor) {
+    return (
+      <div className="min-h-screen bg-page pb-20 lg:pb-0">
+        <Navbar />
+        <div className="flex flex-col items-center justify-center px-4 py-20">
+          <div className="text-5xl mb-4">🚫</div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">该工具已下架</h2>
+          <p className="text-sm text-gray-500 mb-6">该工具因违反社区规范被平台下架，暂时无法访问</p>
+          <Link
+            href="/"
+            className="min-h-[44px] flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+          >
+            返回广场
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (!tool) {
     // v1.14.0 修复：网络失败与「工具不存在」区分开——失败时显示可重试视图，不再误报 404
     if (loadFailed) {
@@ -802,6 +822,12 @@ export default function ToolDetailPage() {
       />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* 已下架工具：作者可见提示（M1.5） */}
+        {tool.isBanned && isAuthor && (
+          <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            该工具已被平台下架（仅作者可见）。如需申诉或恢复，请联系管理员。
+          </div>
+        )}
         {/* Tool Header（v1.9.4 压缩：标题与徽章同行、描述两行截断、改编自并入 meta 行） */}
         <div className="mb-5 sm:mb-6">
           <div className="flex items-start justify-between gap-2 flex-wrap mb-1.5">

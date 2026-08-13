@@ -75,6 +75,12 @@ function useMobileTabs(userId: string | undefined) {
 export default function Navbar({ children, actions, mobileActions }: NavbarProps) {
   const pathname = usePathname();
   const { user, loading, configured, signOut } = useAuth();
+  // 管理员判断（M1.5）：与 api-auth.ts 的 ADMIN_EMAILS 保持一致
+  const isAdminUser = !!user && (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "1015790590@qq.com,zhaoqian970525@gmail.com")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+    .includes((user.email ?? "").toLowerCase());
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -146,6 +152,15 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
                   >
                     我的主页
                   </Link>
+                  {isAdminUser && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      管理后台
+                    </Link>
+                  )}
                   <button
                     onClick={() => {
                       signOut();

@@ -10,6 +10,19 @@ function getServerConfig() {
 export interface AuthedContext {
   supabase: SupabaseClient;
   userId: string;
+  email?: string;
+  /** 管理员：邮箱在 ADMIN_EMAILS 环境变量（逗号分隔）中，默认站长邮箱 */
+  isAdmin: boolean;
+}
+
+/** 管理员邮箱列表（服务端环境变量可覆盖；邮箱非机密，用于管理后台权限判定） */
+export function isAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  const list = (process.env.ADMIN_EMAILS || "1015790590@qq.com,zhaoqian970525@gmail.com")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return list.includes(email.toLowerCase());
 }
 
 /**
@@ -29,7 +42,12 @@ export async function getAuthedSupabase(request: NextRequest): Promise<AuthedCon
     const supabase = createClient(url, key, {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
-    return { supabase, userId: data.user.id };
+    return {
+      supabase,
+      userId: data.user.id,
+      email: data.user.email ?? undefined,
+      isAdmin: isAdminEmail(data.user.email),
+    };
   } catch {
     return null;
   }

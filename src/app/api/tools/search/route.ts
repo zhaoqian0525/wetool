@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     .from("tools")
     .select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count")
     .eq("visibility", "public")
+    .eq("is_banned", false)
     .or(`title.ilike.${pattern},description.ilike.${pattern},author.ilike.${pattern}`)
     .order("created_at", { ascending: false })
     .limit(50);

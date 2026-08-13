@@ -6,6 +6,21 @@
 
 ---
 
+## [2.0.1] - 2026-08-14
+
+### Added（M1.5 审核底线落地）
+- 已下架工具（is_banned）从公开入口隐藏：公共列表、服务端搜索、首页广场 / 最近使用 / 相关推荐均过滤；作者个人页仍可见自己的工具
+- 工具详情页：非作者访问已下架工具显示「该工具已下架」；作者可见下架提示横幅（仅自己可见，可联系管理员申诉恢复）
+- 管理后台 /admin：管理员（邮箱白名单 ADMIN_EMAILS，默认站长邮箱）登录后可查看举报队列、下架 / 恢复工具、标记已处理 / 驳回举报；导航栏用户菜单仅管理员显示「管理后台」入口
+- 管理 API：POST /api/admin/tools/[id]/ban、GET /api/admin/reports?status=pending|all、POST /api/admin/reports/[id]/resolve，均需管理员 Bearer token 校验
+
+### Fixed
+- 管理举报列表接口 TypeScript 类型错误（titleMap 类型收窄），本地 build 通过
+
+### Notes
+- 前置 SQL supabase_v2_audit.sql 已在 Supabase 执行（reports 表 + RLS + tools.is_banned 列，RLS 已实测：匿名写入被拒）
+- 管理员邮箱可用环境变量 ADMIN_EMAILS（服务端）/ NEXT_PUBLIC_ADMIN_EMAILS（前端入口显示）覆盖
+---
 ## [2.0.0] - 2026-08-13
 
 ### Added（M1 容量地基 + 权限透明反馈）
