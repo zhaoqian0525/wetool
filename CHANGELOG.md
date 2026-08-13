@@ -6,6 +6,21 @@
 
 ---
 
+## [2.0.3] - 2026-08-14
+
+### Added（M2 零风险 API 第一批）
+- `__wewoo.copyText(text, cb)`：沙盒内一键复制文本（优先 `navigator.clipboard.writeText`，不可用时父页面 execCommand 兜底），**只写不读**
+- `__wewoo.download(filename, content, mime, cb)`：文件导出（txt/csv/json/html 等），父页面 Blob + a.click 下载
+- `__wewoo.share({title, text, url}, cb)`：调用系统分享面板（`navigator.share`），不支持时回退复制文案
+- `__wewoo.getUser(cb)`：只读登录用户昵称/头像（未登录返回 null），不暴露邮箱与 ID
+- `__wewoo.speak(text, opts, cb)`：语音朗读（speechSynthesis），支持 lang/rate/pitch
+- Web Worker 支持：沙盒 CSP `script-src` 增加 `blob:`，新增 `worker-src blob:`，大数据计算不再卡 UI
+- AI 系统提示词同步更新：告知模型可用零风险 API 与 Worker 写法，把「复制结果/导出文件」从受限清单移出
+
+### Fixed
+- 修复沙盒桥接脚本 `STORAGE_API` 中 `loadState` 结尾多出闭合大括号导致的语法错误：该错误会使整个 `__wewoo` 桥接脚本无法执行（所有工具的复制/记忆 API 失效），已修正并通过预览实测
+
+---
 ## [2.0.2] - 2026-08-14
 
 ### Fixed

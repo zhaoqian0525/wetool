@@ -8,8 +8,9 @@ export const GUIDE_REQ_TEXT =
 export const AI_PROMPT_TEMPLATE = `请帮我写一个完整、独立的单文件 HTML 应用，用于[工具功能]。要求：
 1. 移动端优先，适配 375px 宽度，所有按钮和输入框至少 44px，方便手指点击。
 2. 自带 CSS 样式，设计简洁现代、颜色柔和；界面要有清晰的标题和操作提示，第一次用的人也知道怎么操作。
-3. 完全自包含：不引用外部 CDN 或图片，不使用网络请求（fetch/XHR）、cookie、弹窗、跳转、外部链接。
+3. 完全自包含：不引用外部 CDN 或图片，不使用网络请求（fetch/XHR）、cookie、弹窗、跳转、外部链接；如需复制结果、导出文件、分享或读取用户昵称，使用平台提供的零风险 API（见 3.5 条）。
 4. 需要记住用户数据时（如打卡记录、游戏进度、表单内容），用 localStorage 保存和读取。微坞会自动持久化这些数据：刷新页面、切换全屏、下次进入都能恢复。
+3.5 平台零风险 API（回调风格，均可用）：复制文本 __wewoo.copyText('文本', cb)；导出文件 __wewoo.download('文件名.txt', '内容', 'text/plain', cb)（也支持 csv/json/html，文件名带扩展名即可）；分享 __wewoo.share({ title, text, url }, cb)；读取登录用户信息 __wewoo.getUser(function(err, user){ user.name / user.avatar })（未登录返回 null，不要依赖它做核心功能）；语音朗读 __wewoo.speak('文字', { lang: 'zh-CN' }, cb) 或直接用原生 speechSynthesis；大量计算可用 new Worker(URL.createObjectURL(new Blob(['...'])))。
 5. 用户输入无效数据时给出友好提示，不要直接报错。
 6. 代码要精简可靠，能直接运行。
 7. 把完整代码放在一个 HTML 文件里，用 \`\`\`html 代码块输出。`;
@@ -65,8 +66,8 @@ export const AI_SYSTEM_PROMPT = `你是微坞 WeWoo 平台（we-woo.net）的 AI
 对话与多版本规则：
 6. 这是多轮对话：用户会先描述需求，之后可能要求修改（例如"换个配色""加个历史记录""改成上下布局"）。每次都要基于最新上下文输出完整的新 HTML 文件，不要只给片段或 diff。
 7. 用户说"换个版本""另一种风格""再生成一个"时，保持核心功能不变，输出一个布局、配色或交互风格不同的完整替代版本。
-8. 权限边界与安抚：如果用户需要的功能超出微坞沙盒能力（网络请求 fetch/XHR/WebSocket、服务器、数据库、登录注册、支付、文件下载、弹窗、跳转、外部链接、上传等），不要只说"做不了"。先用一两句话温和说明原因（例如"这个功能需要网络/服务器权限，微坞的工具沙盒里暂时无法运行"），再给出一个能在沙盒里运行的替代方案（例如用 localStorage 模拟数据、本地计算近似实现），并照常输出完整代码。
-9. 生成结果必须符合沙盒：不包含 fetch/XHR/WebSocket、cookie、弹窗、跳转、外部链接、外部 CDN 或图片资源；需要保存数据时一律用 localStorage。`;
+8. 权限边界与安抚：如果用户需要的功能超出微坞沙盒能力（网络请求 fetch/XHR/WebSocket、服务器、数据库、登录注册、支付、弹窗、跳转、外部链接、上传、读取剪贴板等），不要只说"做不了"。先用一两句话温和说明原因（例如"这个功能需要网络/服务器权限，微坞的工具沙盒里暂时无法运行"），再给出一个能在沙盒里运行的替代方案（例如用 localStorage 模拟数据、本地计算近似实现），并照常输出完整代码。
+9. 生成结果必须符合沙盒：不包含 fetch/XHR/WebSocket、cookie、弹窗、跳转、外部链接、外部 CDN 或图片资源；需要保存数据时一律用 localStorage；需要复制/导出/分享时使用 3.5 条的平台 API，不要自己用 navigator.clipboard.readText 或直接发起下载到外部。`;
 
 /** 敏感内容检测：返回命中的分类，未命中则 hit=false */
 export interface SensitiveCheckResult {

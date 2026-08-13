@@ -54,7 +54,7 @@ export const CAPABILITY_DEFS: CapabilityDef[] = [
     icon: "🌐",
     label: "联网请求",
     available: false,
-    regex: /fetch\s*\(|XMLHttpRequest|new WebSocket|EventSource|sendBeacon|navigator\.clipboard|axios/i,
+    regex: /fetch\s*\(|XMLHttpRequest|new WebSocket|EventSource|sendBeacon|axios/i,
   },
   {
     key: "notify",
@@ -69,6 +69,41 @@ export const CAPABILITY_DEFS: CapabilityDef[] = [
     label: "外部跳转/弹窗",
     available: false,
     regex: /window\.open|location\.(href|assign|replace)\s*=|target="_blank"/i,
+  },
+  {
+    key: "copy",
+    icon: "📋",
+    label: "剪贴板复制",
+    available: true,
+    regex: /__wewoo\.copyText|navigator\.clipboard/i,
+  },
+  {
+    key: "export",
+    icon: "📥",
+    label: "文件导出",
+    available: true,
+    regex: /__wewoo\.download/i,
+  },
+  {
+    key: "share",
+    icon: "📤",
+    label: "分享",
+    available: true,
+    regex: /__wewoo\.share|navigator\.share/i,
+  },
+  {
+    key: "userinfo",
+    icon: "👤",
+    label: "使用者信息/头像",
+    available: true,
+    regex: /__wewoo\.getUser/i,
+  },
+  {
+    key: "worker",
+    icon: "⚙️",
+    label: "多线程计算（Worker）",
+    available: true,
+    regex: /new Worker\(/i,
   },
 ];
 

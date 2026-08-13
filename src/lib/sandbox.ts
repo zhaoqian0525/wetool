@@ -434,7 +434,39 @@ const STORAGE_API = `<script>
         }
         if (cb) cb(null, data);
       });
+    },
+    // ---- v2.0.3 M2 零风险 API：剪贴板/文件导出/分享/用户信息/语音朗读 ----
+    copyText: function(text, cb) {
+      _send({ type: 'WEWOO_COPY_TEXT', text: String(text == null ? '' : text) }, cb || function(){});
+    },
+    download: function(filename, content, mime, cb) {
+      if (typeof mime === 'function') { cb = mime; mime = 'text/plain'; }
+      _send({ type: 'WEWOO_DOWNLOAD', filename: String(filename || 'download.txt'), content: String(content == null ? '' : content), mime: String(mime || 'text/plain') }, cb || function(){});
+    },
+    share: function(opts, cb) {
+      opts = opts || {};
+      _send({ type: 'WEWOO_SHARE', title: String(opts.title || ''), text: String(opts.text || ''), url: String(opts.url || '') }, cb || function(){});
+    },
+    getUser: function(cb) {
+      _send({ type: 'WEWOO_USER_GET' }, function(err, val) {
+        if (cb) cb(null, val ? JSON.parse(val) : null);
+      });
+    },
+    speak: function(text, opts, cb) {
+      if (typeof opts === 'function') { cb = opts; opts = {}; }
+      opts = opts || {};
+      try {
+        if (!window.speechSynthesis) { if (cb) cb('unsupported'); return; }
+        var u = new SpeechSynthesisUtterance(String(text == null ? '' : text));
+        u.lang = opts.lang || 'zh-CN';
+        if (opts.rate) u.rate = Number(opts.rate);
+        if (opts.pitch) u.pitch = Number(opts.pitch);
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+        if (cb) cb(null, 'ok');
+      } catch(e) { if (cb) cb(String((e && e.message) || 'error')); }
     }
+
   };
 
   // 自动监听输入变化 — 防抖 800ms 保存草稿，5s 保存状态
@@ -559,11 +591,12 @@ export function wrapSecureSrcDoc(rawCode: string, lsSeed?: Record<string, string
     '<meta http-equiv="Content-Security-Policy" content="' +
     "default-src 'none'; " +
     "style-src 'unsafe-inline'; " +
-    "script-src 'unsafe-inline'; " +
+    "script-src 'unsafe-inline' blob:; " +
     "img-src data: https:; " +
     "font-src 'none'; " +
     "connect-src 'none'; " +
     "frame-src 'none'; " +
+    "worker-src blob:; " +
     "media-src 'none'; " +
     "object-src 'none'; " +
     "base-uri 'none'; " +

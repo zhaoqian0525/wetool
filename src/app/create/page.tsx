@@ -984,7 +984,7 @@ function CreatePageInner() {
     : {};
 
   // 工具数据持久化（预览用）
-  useToolStorage("preview", user?.id);
+  useToolStorage("preview", user?.id, user);
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">

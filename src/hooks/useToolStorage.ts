@@ -76,7 +76,14 @@ function writeDraftCloud(toolId: string, draft: Record<string, unknown>) {
   }).catch(() => {});
 }
 
-export function useToolStorage(toolId?: string, userId?: string) {
+/** 沙盒内可见的最小用户信息（只暴露昵称/头像，不暴露邮箱与 ID） */
+export interface ToolSandboxUser {
+  id?: string;
+  email?: string;
+  user_metadata?: { name?: string; avatar_url?: string } | null;
+}
+
+export function useToolStorage(toolId?: string, userId?: string, user?: ToolSandboxUser | null) {
   const handleMessage = useCallback(
     (e: MessageEvent) => {
       if (!e.data || typeof e.data.type !== "string") return;
@@ -263,9 +270,102 @@ export function useToolStorage(toolId?: string, userId?: string) {
             });
           break;
         }
+        // --- v2.0.3 M2：剪贴板写入（仅写，永不读） ---
+        case "WEWOO_COPY_TEXT": {
+          const text = String(msg.text ?? "");
+          if (!text) { respond("empty_text"); break; }
+          const copyDone = (err: string | null) => respond(err, err ? undefined : "ok");
+          const fallbackCopy = () => {
+            try {
+              const ta = document.createElement("textarea");
+              ta.value = text;
+              ta.setAttribute("readonly", "");
+              ta.style.position = "fixed";
+              ta.style.top = "-9999px";
+              ta.style.opacity = "0";
+              document.body.appendChild(ta);
+              ta.select();
+              ta.setSelectionRange(0, text.length);
+              const ok = document.execCommand("copy");
+              ta.remove();
+              copyDone(ok ? null : "copy_failed");
+            } catch {
+              copyDone("copy_failed");
+            }
+          };
+          if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(text).then(() => copyDone(null)).catch(fallbackCopy);
+          } else {
+            fallbackCopy();
+          }
+          break;
+        }
+        // --- v2.0.3 M2：文件导出 ---
+        case "WEWOO_DOWNLOAD": {
+          const filename = String(msg.filename || "download.txt");
+          const content = String(msg.content ?? "");
+          const mime = String(msg.mime || "text/plain");
+          try {
+            const blob = new Blob([content], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+            respond(null, "ok");
+          } catch {
+            respond("download_failed");
+          }
+          break;
+        }
+        // --- v2.0.3 M2：分享（Web Share + 桌面复制兜底） ---
+        case "WEWOO_SHARE": {
+          const shareText = msg.text ? String(msg.text) : "";
+          const shareUrl = msg.url ? String(msg.url) : window.location.href;
+          if (navigator.share) {
+            navigator.share({
+              title: msg.title ? String(msg.title) : document.title,
+              text: shareText || undefined,
+              url: msg.url ? shareUrl : undefined,
+            })
+              .then(() => respond(null, "ok"))
+              .catch(() => respond("cancelled"));
+          } else {
+            const copyStr = [shareText, shareUrl].filter(Boolean).join("\n");
+            try {
+              const ta = document.createElement("textarea");
+              ta.value = copyStr;
+              ta.setAttribute("readonly", "");
+              ta.style.position = "fixed";
+              ta.style.top = "-9999px";
+              ta.style.opacity = "0";
+              document.body.appendChild(ta);
+              ta.select();
+              ta.setSelectionRange(0, copyStr.length);
+              const ok = document.execCommand("copy");
+              ta.remove();
+              respond(ok ? null : "copy_failed", ok ? "copied" : undefined);
+            } catch {
+              respond("copy_failed");
+            }
+          }
+          break;
+        }
+        // --- v2.0.3 M2：只读用户信息（昵称/头像，不暴露邮箱与 ID） ---
+        case "WEWOO_USER_GET": {
+          if (!user) { respond(null, "null"); break; }
+          respond(null, JSON.stringify({
+            name: user.user_metadata?.name || user.email?.split("@")[0] || "用户",
+            avatar: user.user_metadata?.avatar_url || null,
+          }));
+          break;
+        }
       }
     },
-    [toolId, userId]
+    [toolId, userId, user]
   );
 
   useEffect(() => {

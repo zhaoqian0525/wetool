@@ -1,6 +1,6 @@
 {
-  "version": "2.0.2",
+  "version": "2.0.3",
   "buildDate": "2026-08-14",
-  "buildTimestamp": "2026-08-14T12:00:00.000+08:00",
-  "description": "v2.0.2 修复：广场封面不显示（mapRow 兼容 camelCase）+ 管理后台下架/举报处理失效（改用 service_role）"
+  "buildTimestamp": "2026-08-14 01:37:57.000+08:00",
+  "description": "v2.0.3 M2 零风险 API 第一批：__wewoo.copyText 复制 / download 文件导出 / share 分享 / getUser 只读用户信息 / speak 语音朗读 + Web Worker 支持（CSP 开放 blob:）+ AI 提示词同步更新"
 }

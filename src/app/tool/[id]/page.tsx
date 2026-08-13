@@ -36,7 +36,7 @@ export default function ToolDetailPage() {
   const [loadRetry, setLoadRetry] = useState(0);
 
   // 工具数据持久化
-  useToolStorage(id, user?.id);
+  useToolStorage(id, user?.id, user);
   const [isJustPublished, setIsJustPublished] = useState(false);
   const [toolVisibility, setToolVisibility] = useState(tool?.visibility ?? "public");
   const [loading, setLoading] = useState(true);
