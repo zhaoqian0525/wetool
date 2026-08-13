@@ -6,6 +6,16 @@
 
 ---
 
+## [1.15.5] - 2026-08-13
+
+### Fixed
+- 上传封面「图片读取失败」（手机+电脑均有）：dataUrlToBlob 改用 atob 同步解码。旧实现 fetch(dataURL) 会被本站 CSP connect-src（不含 data:）拦截，导致所有设备的「上传图片」封面路径一律失败。
+- 自动截图 iPhone Safari 仍失败：封面截图改为服务端 Puppeteer 无头浏览器渲染（375x667 PNG），浏览器原生渲染与设备无关，canvas 直接入图；客户端 html2canvas 降级为兜底。
+- iOS 渐变封面兜底失效：canvas.toBlob 永不回调（iOS Safari）时回退 canvas.toDataURL + atob 解码，保证渐变封面在 iOS 上也能生成并上传。
+- 更换封面后首页不刷新：封面 URL 加版本参数（?v=时间戳）绕过浏览器/next-image 旧图缓存，并失效首页列表、详情、个人页本地缓存，保存后立即生效。
+
+### Notes
+- 新增接口：POST /api/cover/screenshot（需登录；Vercel 生产用 @sparticuz/chromium，本地开发用 puppeteer 本机 Chrome），失败自动回退原 html2canvas 路径，不影响既有功能。
 ## [1.15.4] - 2026-08-12
 
 ### Fixed

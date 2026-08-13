@@ -9,6 +9,7 @@
  */
 
 import { getSupabase } from "./supabase";
+import { authedFetch } from "./api-client";
 
 const COVER_WIDTH = 375;
 const COVER_HEIGHT = 667;
@@ -21,11 +22,48 @@ const HTML2CANVAS_TIMEOUT_MS = 15000;
 const TO_BLOB_TIMEOUT_MS = 8000;
 // v1.15.4：封面上传阶段加超时，避免网络挂起导致界面无限等待
 const UPLOAD_TIMEOUT_MS = 25000;
+// v1.15.5：服务端截图的客户端超时（含浏览器冷启动）
+const SERVER_SCREENSHOT_TIMEOUT_MS = 40000;
 
 // ---- Screenshot ----
 
-/** 将 HTML 代码渲染为隐藏 DOM 并截图，返回 Blob */
+/**
+ * 将 HTML 代码渲染为封面图并返回 Blob。
+ * v1.15.5 起：优先请求服务端 Puppeteer 截图（浏览器原生渲染，规避 iOS Safari 上
+ * html2canvas/toBlob 永不返回的问题）；失败后回退本地 html2canvas 截图，再失败返回 null 由调用方走渐变封面兜底。
+ */
 export async function captureCover(htmlCode: string): Promise<Blob | null> {
+  try {
+    const serverBlob = await serverCaptureCover(htmlCode);
+    if (serverBlob) return serverBlob;
+  } catch (err) {
+    console.warn("Server cover screenshot failed:", err);
+  }
+  return clientCaptureCover(htmlCode);
+}
+
+/** 调用服务端无头浏览器截图（自动携带登录 token） */
+async function serverCaptureCover(htmlCode: string): Promise<Blob | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SERVER_SCREENSHOT_TIMEOUT_MS);
+  try {
+    const res = await authedFetch("/api/cover/screenshot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html: htmlCode }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error("server screenshot status " + res.status);
+    const blob = await res.blob();
+    if (!blob || blob.size === 0) throw new Error("server screenshot empty");
+    return blob;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** 本地用 html2canvas 截图（iOS Safari 可能永不返回，但已有超时保护） */
+async function clientCaptureCover(htmlCode: string): Promise<Blob | null> {
   let runIframe: HTMLIFrameElement | null = null;
   let snapIframe: HTMLIFrameElement | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -101,7 +139,7 @@ export async function captureCover(htmlCode: string): Promise<Blob | null> {
       "cover html2canvas timeout"
     );
 
-    return canvasToBlobWithTimeout(canvas, TO_BLOB_TIMEOUT_MS, "cover canvas toBlob timeout");
+    return canvasToBlobReliable(canvas, "cover canvas toBlob timeout");
   } catch (err) {
     console.warn("Cover screenshot failed:", err);
     return null;
@@ -247,17 +285,41 @@ function canvasToBlobWithTimeout(
   );
 }
 
-/** v1.15.4：将 dataURL 转为 Blob（带超时，iOS Safari 大图可能长时间无回调） */
-export async function dataUrlToBlob(dataUrl: string): Promise<Blob | null> {
+/**
+ * v1.15.5：将 dataURL 转为 Blob（atob 同步解码，不再用 fetch）。
+ * 旧实现 fetch(dataURL) 会被本站 CSP connect-src（不含 data:）拦截，
+ * 导致手机/电脑上传封面一律「图片读取失败」。
+ */
+export function dataUrlToBlob(dataUrl: string): Blob | null {
   try {
-    return await withTimeout(
-      fetch(dataUrl).then((res) => res.blob()),
-      TO_BLOB_TIMEOUT_MS,
-      "cover dataURL to blob timeout"
-    );
+    const comma = dataUrl.indexOf(",");
+    if (comma < 0) return null;
+    const meta = dataUrl.slice(0, comma);
+    let b64 = dataUrl.slice(comma + 1);
+    const mime = /data:([^;]+)/.exec(meta)?.[1] || "image/png";
+    if (b64.includes("%")) b64 = decodeURIComponent(b64);
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
   } catch (err) {
     console.warn("Cover dataURL conversion failed:", err);
     return null;
+  }
+}
+
+/**
+ * v1.15.5：canvas 转 Blob 的可靠版本——toBlob 超时（iOS Safari 可能永不回调）时
+ * 回退 canvas.toDataURL + atob 解码，保证渐变封面在 iOS 上也能生成。
+ */
+async function canvasToBlobReliable(canvas: HTMLCanvasElement, message: string): Promise<Blob> {
+  try {
+    return await canvasToBlobWithTimeout(canvas, TO_BLOB_TIMEOUT_MS, message);
+  } catch (err) {
+    console.warn(message + ", fallback to toDataURL:", err);
+    const blob = dataUrlToBlob(canvas.toDataURL("image/png"));
+    if (!blob) throw new Error(message + " (toDataURL fallback failed)");
+    return blob;
   }
 }
 
@@ -382,7 +444,7 @@ export async function generateDefaultCoverBlob(
   ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
   ctx.fillText("微坞 WeWoo", canvas.width / 2, canvas.height - 30);
 
-  return canvasToBlobWithTimeout(canvas, TO_BLOB_TIMEOUT_MS, "fallback cover canvas toBlob timeout");
+  return canvasToBlobReliable(canvas, "fallback cover canvas toBlob timeout");
 }
 
 /** 从渐变 CSS 中解析两个十六进制颜色，供 Canvas 绘制使用 */
@@ -435,7 +497,7 @@ export async function generateCustomCoverBlob(
   ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
   ctx.fillText("微坞 WeWoo", canvas.width / 2, canvas.height - 30);
 
-  return canvasToBlobWithTimeout(canvas, TO_BLOB_TIMEOUT_MS, "custom cover canvas toBlob timeout");
+  return canvasToBlobReliable(canvas, "custom cover canvas toBlob timeout");
 }
 
 // ---- Upload ----

@@ -13,7 +13,7 @@ import { ToolPageErrorBoundary } from "@/components/ToolPageErrorBoundary";
 import { ToolHistoryDrawer } from "@/components/ToolHistoryDrawer";
 import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
-import { fetchToolById, readToolDetailCache, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, fetchReviewLikeCounts, type Tool, type Review, type LikeTargetType, type Visibility } from "@/lib/data";
+import { fetchToolById, readToolDetailCache, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, fetchReviewLikeCounts, type Tool, type Review, type LikeTargetType, type Visibility, invalidateToolCaches } from "@/lib/data";
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
 import { authedFetch } from "@/lib/api-client";
 import { getLsSnapshot, setLsSnapshot } from "@/lib/toolStateBridge";
@@ -640,9 +640,13 @@ export default function ToolDetailPage() {
       }
       const url = await uploadCoverToStorage(blob, tool.id, client);
       if (!url) throw new Error("封面上传失败，请稍后重试");
-      const { error } = await client.from("tools").update({ cover_url: url }).eq("id", tool.id);
+      // v1.15.5：URL 加版本参数，绕过浏览器/next-image 对旧封面的 HTTP 缓存
+      const versionedUrl = url.includes("?") ? `${url}&v=${Date.now()}` : `${url}?v=${Date.now()}`;
+      const { error } = await client.from("tools").update({ cover_url: versionedUrl }).eq("id", tool.id);
       if (error) throw new Error(error.message || "保存失败");
-      setTool({ ...tool, coverUrl: url });
+      setTool({ ...tool, coverUrl: versionedUrl });
+      // 失效首页/详情/个人页本地缓存，新封面立即生效
+      invalidateToolCaches(tool.id, user.id);
       setCoverEditOpen(false);
       toast.success("封面已更新");
     } catch (e: unknown) {

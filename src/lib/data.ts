@@ -371,6 +371,14 @@ function writeToolDetailCache(tool: Tool): void {
   }
 }
 
+/** v1.15.5：更换封面后失效相关本地缓存，保证首页/详情/个人页立即展示新封面 */
+export function invalidateToolCaches(toolId: string, userId: string): void {
+  if (typeof localStorage === "undefined") return;
+  try { localStorage.removeItem(TOOLS_CACHE_KEY); } catch { /* ignore */ }
+  try { localStorage.removeItem(TOOL_DETAIL_CACHE_PREFIX + toolId); } catch { /* ignore */ }
+  try { localStorage.removeItem("wewoo-user-tools-" + userId); } catch { /* ignore */ }
+}
+
 
 function ensureCover(tool: Tool | null): Tool | null {
   if (tool && !tool.coverUrl && MOCK_TOOLS.some((m) => m.id === tool.id)) {

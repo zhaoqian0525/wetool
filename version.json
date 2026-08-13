@@ -1,6 +1,6 @@
 {
-  "version": "1.15.4",
-  "buildDate": "2026-08-12",
-  "buildTimestamp": "2026-08-12T22:37:00.000+08:00",
-  "description": "v1.15.4 修复：iPhone Safari 封面生成仍然卡死——canvas.toBlob 阶段补 8s 超时、dataURL 转 Blob 加超时、Supabase 封面上传加 25s 超时，任一步骤挂起都会自动走渐变封面兜底，发布与更换封面流程不再永久卡住；同时修复 srcdoc 以 <!DOCTYPE 开头在 Safari 下的兼容问题。"
+  "version": "1.15.5",
+  "buildDate": "2026-08-13",
+  "buildTimestamp": "2026-08-13T00:00:00.000+08:00",
+  "description": "v1.15.5 修复：上传封面「图片读取失败」（fetch(data:) 被 CSP 拦截 → atob 解码）；自动截图服务端化（Puppeteer 无头浏览器渲染，iOS/桌面一致）；iOS canvas.toBlob 永不回调兜底 toDataURL。"
 }
