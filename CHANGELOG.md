@@ -6,6 +6,25 @@
 
 ---
 
+## [2.0.0] - 2026-08-13
+
+### Added（M1 容量地基 + 权限透明反馈）
+- 公开工具列表 CDN 缓存接口 `GET /api/tools/public`：只取列表字段（不含完整 HTML code，网络体积 -80%+），`Cache-Control: s-maxage=60 + stale-while-revalidate=300`，首页并发访问不再每个客户端直查 Supabase；`fetchTools()` 优先走该接口，失败自动回退原直查逻辑
+- 首页最近使用加载提速：`fetchRecentTools` 不再 `select("*")` 拉取完整 code，改用列表字段
+- 封面上传自动压缩为 WebP（Canvas 重绘 375x667，quality 0.85，约省 50-70% 体积）并声明 `cache-control: max-age=86400`；压缩失败自动回退原图，不阻断上传
+- 工具能力徽章：详情页/发布弹窗/AI 生成后自动展示「能做什么（✅ 本地记忆/音效/绘图/定时）/ 不能做什么（⛔ 联网/系统通知/外部跳转）」，由代码静态扫描生成（src/lib/capabilities.ts + CapabilityBadges 组件）
+- 运行时越权反馈升级：沙盒内 fetch/XHR/WebSocket/EventSource/sendBeacon/Notification/window.open 被拦截时，顶部横幅给出具体权限提示（如「此工具没有联网权限，网络请求已被拦截」），不再只是笼统警告
+- 举报入口：工具页新增「🚩 举报」（匿名点击跳登录），原因含垃圾广告/侵权内容/违法信息/色情低俗/其他；5 分钟防重复；配套 SQL `supabase_v2_audit.sql`（reports 表 + RLS + tools.is_banned 列）需在 Supabase 执行一次
+
+### Changed
+- 注册表单简化：移除「确认密码」字段（保留昵称可选、邮箱、密码），减少注册门槛
+
+### Notes
+- M1 剩余：is_banned 列表过滤接入（执行 SQL 后）、管理侧下架操作，见 ROADMAP M1.5
+- 版本号从 1.x 系列进入 2.0 大版本（v2.0 里程碑：M1 基础设施/权限透明 → M2 零风险 API → M3 AI 网关+联网代理 → M4 社区收尾）
+
+---
+
 ## [1.15.6] - 2026-08-13
 
 ### Fixed

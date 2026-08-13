@@ -19,6 +19,7 @@ import { captureCover, dataUrlToBlob, generateCustomCoverBlob, generateDefaultCo
 import { AI_PROMPT_TEMPLATE, aiPrompts, containsSensitiveContent, extractHtmlFromAiOutput } from "@/lib/aiPrompts";
 import { getLsSnapshot } from "@/lib/toolStateBridge";
 import { Modal } from "@/components/ui";
+import CapabilityBadges from "@/components/CapabilityBadges";
 
 // --- Constants ---
 
@@ -1151,9 +1152,16 @@ function CreatePageInner() {
                         {m.streaming && (
                           <span className="inline-block w-1.5 h-3.5 ml-1 align-middle bg-indigo-500 animate-pulse" />
                         )}
-                        {!m.streaming && m.role === "assistant" && extractHtmlFromAiOutput(m.content) && (
-                          <div className="mt-1.5 text-xs text-emerald-600">✅ 代码已自动填入编辑器，点版本按钮可切换</div>
-                        )}
+                        {!m.streaming && m.role === "assistant" && (() => {
+                          const html = extractHtmlFromAiOutput(m.content);
+                          if (!html) return null;
+                          return (
+                            <>
+                              <div className="mt-1.5 text-xs text-emerald-600">✅ 代码已自动填入编辑器，点版本按钮可切换</div>
+                              <CapabilityBadges code={html} className="mt-2" />
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   ))}
@@ -1583,6 +1591,11 @@ function CreatePageInner() {
                     </>
                   );
                 })()}
+
+                <div className="pt-1">
+                  <p className="text-xs font-medium text-gray-500 mb-1.5">工具能力（发布后展示给用户）</p>
+                  <CapabilityBadges code={code} showEmpty />
+                </div>
 
                 {!isSupabaseConfigured() && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-600">

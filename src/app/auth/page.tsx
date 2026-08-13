@@ -66,8 +66,7 @@ function AuthForm() {
   const [tab, setTab] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [nickname, setNickname] = useState("");
+    const [nickname, setNickname] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState(""); // 成功提示（如"请验证邮箱"）
   const [submitting, setSubmitting] = useState(false);
@@ -111,11 +110,6 @@ function AuthForm() {
 
     if (!email || !password) {
       setError("请填写邮箱和密码");
-      return;
-    }
-
-    if (tab === "register" && password !== confirmPassword) {
-      setError("两次输入的密码不一致");
       return;
     }
 
@@ -164,7 +158,6 @@ function AuthForm() {
           // 切换到登录页签，保留邮箱
           setTab("login");
           setPassword("");
-          setConfirmPassword("");
         } else {
           // 无需验证——直接跳转首页（AuthProvider 的 onAuthStateChange 会触发）
           router.push(redirectTo);
@@ -338,26 +331,6 @@ function AuthForm() {
                 required
               />
             </div>
-
-            {tab === "register" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor="confirmPassword">
-                  确认密码
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="再次输入密码"
-                  className="input-base min-h-[48px]"
-                  style={{ fontSize: "16px" }}
-                  disabled={submitting || !configured}
-                  autoComplete="new-password"
-                  required
-                />
-              </div>
-            )}
 
             <button
               type="submit"

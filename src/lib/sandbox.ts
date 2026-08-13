@@ -170,31 +170,54 @@ const SECURITY_SHIM = `<script>
 (function(){
   // ===== 警告横幅 =====
   var _bannerShown = false;
-  function _showBanner() {
+  function _showBanner(msg) {
     if (_bannerShown) return;
     _bannerShown = true;
     var b = document.createElement('div');
-    b.textContent = '\\u26a0 \\u8be5\\u5de5\\u5177\\u5c1d\\u8bd5\\u4f7f\\u7528\\u4e86\\u4e0d\\u88ab\\u652f\\u6301\\u7684\\u529f\\u80fd';
+    b.textContent = msg || '\u26a0 \u8be5\u5de5\u5177\u5c1d\u8bd5\u4f7f\u7528\u4e86\u4e0d\u88ab\u652f\u6301\u7684\u529f\u80fd';
     b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;padding:6px 14px;text-align:center;font-size:12px;font-family:system-ui,-apple-system,sans-serif;line-height:1.4;pointer-events:none;';
     document.body.insertBefore(b, document.body.firstChild);
     setTimeout(function(){ b.style.opacity = '0.6'; }, 4000);
   }
+  // v2.0.0 权限透明反馈：越权调用给出具体权限提示（不再只是笼统警告）
   // fetch 拦截
   try {
     var _origFetch = window.fetch;
-    window.fetch = function() { _showBanner(); return _origFetch.apply(this, arguments); };
+    window.fetch = function() { _showBanner('\u26a0 \u6b64\u5de5\u5177\u6ca1\u6709\u8054\u7f51\u6743\u9650\uff0c\u7f51\u7edc\u8bf7\u6c42\u5df2\u88ab\u62e6\u622a'); return _origFetch.apply(this, arguments); };
   } catch(_) {}
   // XMLHttpRequest 拦截
   try {
     var _OrigXHR = window.XMLHttpRequest;
-    window.XMLHttpRequest = function() { _showBanner(); return new _OrigXHR(); };
+    window.XMLHttpRequest = function() { _showBanner('\u26a0 \u6b64\u5de5\u5177\u6ca1\u6709\u8054\u7f51\u6743\u9650\uff0c\u7f51\u7edc\u8bf7\u6c42\u5df2\u88ab\u62e6\u622a'); return new _OrigXHR(); };
     window.XMLHttpRequest.prototype = _OrigXHR.prototype;
   } catch(_) {}
   // WebSocket 拦截
   try {
     var _OrigWS = window.WebSocket;
-    window.WebSocket = function() { _showBanner(); return new _OrigWS(); };
+    window.WebSocket = function() { _showBanner('\u26a0 \u6b64\u5de5\u5177\u6ca1\u6709\u8054\u7f51\u6743\u9650\uff0c\u7f51\u7edc\u8fde\u63a5\u5df2\u88ab\u62e6\u622a'); return new _OrigWS(); };
     window.WebSocket.prototype = _OrigWS.prototype;
+  } catch(_) {}
+  // EventSource 拦截
+  try {
+    var _OrigES = window.EventSource;
+    window.EventSource = function() { _showBanner('\u26a0 \u6b64\u5de5\u5177\u6ca1\u6709\u8054\u7f51\u6743\u9650\uff0c\u5b9e\u65f6\u8fde\u63a5\u5df2\u88ab\u62e6\u622a'); return new _OrigES(); };
+    window.EventSource.prototype = _OrigES.prototype;
+  } catch(_) {}
+  // 系统通知拦截（沙盒内 Notification 不可用，给出明确提示而非报错）
+  try {
+    window.Notification = function() { _showBanner('\u26a0 \u6b64\u5de5\u5177\u6ca1\u6709\u7cfb\u7edf\u901a\u77e5\u6743\u9650'); return { permission: 'denied', close: function(){} }; };
+    window.Notification.permission = 'denied';
+    window.Notification.requestPermission = function() { return Promise.resolve('denied'); };
+  } catch(_) {}
+  // 外部跳转/弹窗拦截
+  try {
+    var _OrigOpen = window.open;
+    window.open = function() { _showBanner('\u26a0 \u6b64\u5de5\u5177\u6ca1\u6709\u5916\u90e8\u8df3\u8f6c\u6743\u9650\uff0c\u5f39\u7a97\u5df2\u88ab\u62e6\u622a'); return null; };
+  } catch(_) {}
+  // sendBeacon 拦截
+  try {
+    var _OrigBeacon = navigator.sendBeacon;
+    navigator.sendBeacon = function() { _showBanner('\u26a0 \u6b64\u5de5\u5177\u6ca1\u6709\u8054\u7f51\u6743\u9650\uff0c\u6570\u636e\u4e0a\u4f20\u5df2\u88ab\u62e6\u622a'); return false; };
   } catch(_) {}
 
   // ===== 持久化 Storage mock — 拦截 null-origin 下的 SecurityError，并自动同步到父页面 =====

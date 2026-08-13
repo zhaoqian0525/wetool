@@ -1,6 +1,6 @@
 {
-  "version": "1.15.6",
+  "version": "2.0.0",
   "buildDate": "2026-08-13",
   "buildTimestamp": "2026-08-13T00:00:00.000+08:00",
-  "description": "v1.15.6 修复：自动截图生产 500（@sparticuz/chromium 外部化 + bin/fonts 打进函数包）；新增服务端渐变封面 POST /api/cover/gradient（无头浏览器原生渲染，修复 iOS 渐变封面无 emoji）；Vercel 无头环境注入中文字体 + emoji 字体（FONTCONFIG_PATH）；错误响应附 detail 便于诊断。"
+  "description": "v2.0.0 M1：容量地基（公开列表 CDN 缓存接口 + 最近使用字段瘦身 + 封面 WebP 压缩/长缓存）+ 权限透明反馈（能力徽章/发布能力清单/AI 生成能力说明/越权具体提示）+ 审核底线（举报入口与 API，supabase_v2_audit.sql）+ 注册表单简化（移除确认密码）"
 }

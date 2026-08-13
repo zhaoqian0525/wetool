@@ -252,37 +252,65 @@ function saveToolsCache(tools: Tool[]) {
   }
 }
 
+/** v2.0.0：服务端 CDN 缓存接口获取公开工具列表（不含完整 code，网络体积小） */
+async function fetchToolsFromPublicApi(): Promise<Tool[]> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    try {
+      const res = await fetch("/api/tools/public", { signal: controller.signal });
+      if (!res.ok) return [];
+      const data = (await res.json()) as { tools?: Array<Record<string, unknown>> };
+      if (!Array.isArray(data.tools)) return [];
+      const tools = data.tools
+        .map((row) => mapRow(row))
+        .filter((t) => t.visibility === "public");
+      return tools.length > 0 ? tools : [];
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchTools(): Promise<Tool[]> {
-  const supabase = await getSupabaseClient();
-  let dbTools: Tool[] = [];
-  if (supabase) {
-    // 网络慢时给足时间（6s），超时/失败重试一次；仍失败则用本地缓存兜底
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const result = await queryWithTimeout(
-        supabase.from("tools").select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count").order("created_at", { ascending: false }),
-        6000
-      );
-      if (result && !(result as { error: unknown }).error) {
-        const rows = (result as { data: Record<string, unknown>[] }).data;
-        if (rows && rows.length > 0) {
-          dbTools = rows.map(mapRow);
-          saveToolsCache(dbTools);
-          break;
+  // v2.0.0??????? CDN ???? /api/tools/public?s-maxage=60 + SWR??
+  // ???????????????? Supabase????????????
+  let dbTools: Tool[] = await fetchToolsFromPublicApi();
+  if (dbTools.length === 0) {
+    const supabase = await getSupabaseClient();
+    if (supabase) {
+      // ?????????6s????/??????????????????
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const result = await queryWithTimeout(
+          supabase.from("tools").select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count").order("created_at", { ascending: false }),
+          6000
+        );
+        if (result && !(result as { error: unknown }).error) {
+          const rows = (result as { data: Record<string, unknown>[] }).data;
+          if (rows && rows.length > 0) {
+            dbTools = rows.map(mapRow);
+            saveToolsCache(dbTools);
+            break;
+          }
         }
       }
+      if (dbTools.length === 0) dbTools = loadCachedTools();
     }
-    if (dbTools.length === 0) dbTools = loadCachedTools();
+  } else {
+    saveToolsCache(dbTools);
   }
-  // 合并本地发布的公开工具
+  // ???????????
   const localPublic = loadLocalTools().filter((t) => t.visibility === "public");
   const merged = [...localPublic, ...dbTools, ...MOCK_TOOLS];
-  // 去重
+  // ??
   const seen = new Set<string>();
   const builtinIds = new Set(MOCK_TOOLS.map((m) => m.id));
   return merged.filter((t) => {
     if (seen.has(t.id)) return false;
     seen.add(t.id);
-    // 默认封面：仅内置工具存在公共封面文件，用户工具无封面时前端显示渐变占位
+    // ???????????????????????????????????
     if (!t.coverUrl && builtinIds.has(t.id)) t.coverUrl = `/covers/${t.id}.webp`;
     return true;
   });
@@ -799,7 +827,7 @@ export async function fetchRecentTools(userId: string, limit = 6): Promise<Tool[
       const allTools: Tool[] = [];
       for (const chunk of chunks) {
         const result = await queryWithTimeout(
-          supabase.from("tools").select("*").in("id", chunk)
+          supabase.from("tools").select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count").in("id", chunk)
         );
         if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
           allTools.push(...((result as { data: Record<string, unknown>[] }).data).map(mapRow));

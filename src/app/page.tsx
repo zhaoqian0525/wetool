@@ -68,9 +68,17 @@ export default function HomePage() {
       ]);
       if (cancelled) return;
       setTools(data);
-      setViewCounts((prev) => ({ ...cachedCounts, ...prev }));
+// v2.0.0：列表接口已带 view_count，直接并入状态（减少一次额外查询）；
+      // ????????? viewCount ??? fetchViewCounts ??
+      const countsFromList: Record<string, number> = {};
+      for (const t of data) {
+        if (t.viewCount !== undefined) countsFromList[t.id] = t.viewCount;
+      }
+      setViewCounts((prev) => ({ ...countsFromList, ...cachedCounts, ...prev }));
       setLoading(false);
-      const freshIds = data.map((t) => t.id).filter((id) => !(id in cachedCounts));
+      const freshIds = data
+        .map((t) => t.id)
+        .filter((id) => !(id in cachedCounts) && !(id in countsFromList));
       if (freshIds.length > 0) {
         fetchViewCounts(freshIds).then((extra) => {
           if (!cancelled) setViewCounts((prev) => ({ ...prev, ...extra }));
@@ -464,7 +472,7 @@ export default function HomePage() {
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {filtered.map((tool) => (
-                <ToolCard key={tool.id} tool={tool} viewCount={viewCounts[tool.id]} />
+                <ToolCard key={tool.id} tool={tool} viewCount={viewCounts[tool.id] ?? tool.viewCount} />
               ))}
             </div>
           </>

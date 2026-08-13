@@ -568,15 +568,21 @@ async function doUploadCover(
   blob: Blob,
   toolId: string
 ): Promise<string | null> {
-  // 确保 bucket 存在
+  // ?? bucket ??
   await ensureBucket(supabase);
 
-  const filePath = "public/" + toolId + ".png";
+  // v2.0.0：上传前压缩为 WebP（约 50-70% 体积），并声明 CDN 长缓存（1 天），
+  // 减少首页/广场首屏带宽；压缩失败回退原图。
+  const compressed = await compressCoverBlob(blob);
+  const isWebp = compressed.type === "image/webp";
+  const ext = isWebp ? "webp" : "png";
+  const filePath = "public/" + toolId + "." + ext;
 
   const { error } = await supabase.storage
     .from(COVER_BUCKET)
-    .upload(filePath, blob, {
-      contentType: "image/png",
+    .upload(filePath, compressed, {
+      contentType: compressed.type || (isWebp ? "image/webp" : "image/png"),
+      cacheControl: "max-age=86400",
       upsert: true,
     });
 
@@ -585,12 +591,48 @@ async function doUploadCover(
     return null;
   }
 
-  // 获取公开 URL
+  // ???? URL
   const { data: urlData } = supabase.storage
     .from(COVER_BUCKET)
     .getPublicUrl(filePath);
 
   return urlData?.publicUrl ?? null;
+}
+
+/**
+ * v2.0.0???????Canvas ??? WebP?quality 0.85??? 375x667 ??????
+ * WebP ??????????????????????????????
+ */
+async function compressCoverBlob(blob: Blob): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(blob);
+    const targetRatio = COVER_WIDTH / COVER_HEIGHT; // 375/667
+    const ratio = bitmap.width / bitmap.height;
+    let sx = 0, sy = 0, sw = bitmap.width, sh = bitmap.height;
+    if (ratio > targetRatio) {
+      sw = Math.round(bitmap.height * targetRatio);
+      sx = Math.round((bitmap.width - sw) / 2);
+    } else if (ratio < targetRatio) {
+      sh = Math.round(bitmap.width / targetRatio);
+      sy = Math.round((bitmap.height - sh) / 2);
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = COVER_WIDTH;
+    canvas.height = COVER_HEIGHT;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) { bitmap.close(); return blob; }
+    ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, COVER_WIDTH, COVER_HEIGHT);
+    bitmap.close();
+    return await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(
+        (out) => resolve(out),
+        "image/webp",
+        0.85
+      );
+    }).then((out) => (out && out.size > 0 ? out : blob));
+  } catch {
+    return blob;
+  }
 }
 
 // ---- Helpers ----

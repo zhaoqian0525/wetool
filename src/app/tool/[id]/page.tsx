@@ -22,6 +22,7 @@ import { captureCover, dataUrlToBlob, generateCustomCoverBlob, generateDefaultCo
 import { getSupabase } from "@/lib/supabase";
 import ToolInstallButton from "@/components/ToolInstallButton";
 import { Modal, Badge } from "@/components/ui";
+import CapabilityBadges from "@/components/CapabilityBadges";
 
 
 export default function ToolDetailPage() {
@@ -74,6 +75,8 @@ export default function ToolDetailPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [coverEditOpen, setCoverEditOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const [coverSaving, setCoverSaving] = useState(false);
   const [coverChoice, setCoverChoice] = useState<CoverChoice>(DEFAULT_COVER_CHOICE);
   const [deleting, setDeleting] = useState(false);
@@ -674,7 +677,34 @@ export default function ToolDetailPage() {
       setToolVisibility(prev);
       toast.error(e instanceof Error ? e.message : "更新失败，请重试");
     }
+  }
+  const handleReport = async (reason: string) => {
+    if (!user) {
+      window.location.href = `/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`;
+      return;
+    }
+    if (reporting) return;
+    setReporting(true);
+    try {
+      const res = await authedFetch(`/api/tools/${id}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (res.ok && data.ok) {
+        toast.success("举报已提交，我们会尽快处理");
+        setReportOpen(false);
+      } else {
+        toast.error(data.error || "举报提交失败，请稍后重试");
+      }
+    } catch {
+      toast.error("网络异常，请稍后重试");
+    } finally {
+      setReporting(false);
+    }
   };
+;
 
   if (loading) {
     return (
@@ -842,6 +872,7 @@ export default function ToolDetailPage() {
               </>
             )}
           </div>
+          <CapabilityBadges code={tool.code ?? ""} className="mt-3" showEmpty />
         </div>
 
         {/* Preview & Actions */}
@@ -944,11 +975,15 @@ export default function ToolDetailPage() {
             <ToolInstallButton compact />
           </div>
           {/* 次要操作：使用记录 / 作者管理（v1.9.3 与主操作分离，降低视觉噪音） */}
-          {(user || isAuthor) && (
-            <div className="flex items-center gap-4 pb-3 text-xs text-gray-400">
+          <div className="flex items-center gap-4 pb-3 text-xs text-gray-400">
               {user && (
                 <button onClick={() => setHistoryOpen(true)} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
                   📋 使用记录
+                </button>
+              )}
+              {!isAuthor && (
+                <button onClick={() => setReportOpen((v) => !v)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
+                  🚩 举报
                 </button>
               )}
               {isAuthor && (
@@ -961,6 +996,26 @@ export default function ToolDetailPage() {
                   </button>
                 </>
               )}
+            </div>
+          {reportOpen && (
+            <div className="relative z-20">
+              <div className="absolute left-0 bottom-0 w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2">
+                <p className="text-xs font-medium text-gray-700 px-2 py-1.5">选择举报原因</p>
+                {["垃圾广告", "侵权内容", "违法信息", "色情低俗", "其他"].map((r) => (
+                  <button
+                    key={r}
+                    disabled={reporting}
+                    onClick={() => handleReport(r)}
+                    className="w-full text-left px-2 py-2 text-xs text-gray-600 hover:bg-gray-50 rounded-lg disabled:opacity-50 flex items-center justify-between"
+                  >
+                    <span>{r}</span>
+                    <span className="text-gray-300">{reporting ? "…" : "›"}</span>
+                  </button>
+                ))}
+                <button onClick={() => setReportOpen(false)} className="w-full text-center px-2 py-1.5 text-xs text-gray-400 hover:bg-gray-50 rounded-lg">
+                  取消
+                </button>
+              </div>
             </div>
           )}
 
