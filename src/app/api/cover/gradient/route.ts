@@ -76,6 +76,7 @@ async function renderDiagnostics(
 ): Promise<Record<string, unknown>> {
   const fontsDir = join(tmpdir(), "fonts");
   const srcDir = join(process.cwd(), "fonts");
+  const browser = await getCoverBrowser();
   const info: Record<string, unknown> = {
     cwd: process.cwd(),
     fontconfigPath: process.env.FONTCONFIG_PATH || null,
@@ -87,7 +88,6 @@ async function renderDiagnostics(
       ? readdirSync(fontsDir).slice(0, 20)
       : null,
   };
-  const browser = await getCoverBrowser();
   const page = await browser.newPage();
   try {
     await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1 });

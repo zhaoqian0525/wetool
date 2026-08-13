@@ -33,14 +33,43 @@ let fontsPromise: Promise<void> | null = null;
  * 并设置 FONTCONFIG_PATH 指向该目录的 fonts.conf，让 Chromium 的
  * fontconfig 能匹配到中文字体与彩色 emoji。
  */
+/**
+ * 写入 fonts.conf 并设置 FONTCONFIG_PATH。
+ * 注意：FONTCONFIG_PATH 必须是「目录」（fontconfig 会在其中读取 fonts.conf），
+ * 传文件路径会导致 fontconfig 找不到配置，Chromium 无字体可渲染（文字空白）。
+ * @sparticuz/chromium 解压 fonts.tar.br 会覆盖 /tmp/fonts/fonts.conf，
+ * 因此在 executablePath() 解压完成后需要再次调用本函数。
+ */
+function ensureFontsConf(): void {
+  try {
+    const fontsDir = join(tmpdir(), "fonts");
+    mkdirSync(fontsDir, { recursive: true });
+    mkdirSync(join(tmpdir(), "fonts-cache"), { recursive: true });
+    const conf = [
+      '<?xml version="1.0"?>',
+      '<!DOCTYPE fontconfig SYSTEM "fonts.dtd">',
+      "<fontconfig>",
+      "  <dir>/tmp/fonts</dir>",
+      "  <cachedir>/tmp/fonts-cache</cachedir>",
+      "  <config></config>",
+      "</fontconfig>",
+    ].join("\n");
+    writeFileSync(join(fontsDir, "fonts.conf"), conf, "utf8");
+    process.env.FONTCONFIG_PATH = fontsDir;
+  } catch (err) {
+    console.warn("[cover-server] fonts.conf setup failed:", err);
+  }
+}
+
+/**
+ * 把 CJK / emoji 字体复制到 /tmp/fonts（一次即可，重复调用幂等）。
+ */
 function ensureServerFonts(): Promise<void> {
   if (!fontsPromise) {
     fontsPromise = (async () => {
       try {
         const fontsDir = join(tmpdir(), "fonts");
         mkdirSync(fontsDir, { recursive: true });
-        mkdirSync(join(tmpdir(), "fonts-cache"), { recursive: true });
-
         const srcDir = join(process.cwd(), "fonts");
         for (const name of ["NotoSansSC.ttf", "NotoColorEmoji.ttf"]) {
           const from = join(srcDir, name);
@@ -48,22 +77,8 @@ function ensureServerFonts(): Promise<void> {
             copyFileSync(from, join(fontsDir, name));
           }
         }
-
-        // 自写一份 fonts.conf（解压出的可能被覆盖，内容等价），
-        // 确保 fontconfig 只扫描 /tmp/fonts，缓存写入 /tmp/fonts-cache。
-        const conf = [
-          '<?xml version="1.0"?>',
-          '<!DOCTYPE fontconfig SYSTEM "fonts.dtd">',
-          "<fontconfig>",
-          "  <dir>/tmp/fonts</dir>",
-          "  <cachedir>/tmp/fonts-cache</cachedir>",
-          "  <config></config>",
-          "</fontconfig>",
-        ].join("\n");
-        writeFileSync(join(fontsDir, "fonts.conf"), conf, "utf8");
-        process.env.FONTCONFIG_PATH = join(fontsDir, "fonts.conf");
       } catch (err) {
-        console.warn("[cover-server] font setup failed:", err);
+        console.warn("[cover-server] font copy failed:", err);
       }
     })();
   }
@@ -78,10 +93,14 @@ export async function getCoverBrowser(): Promise<Browser> {
         // 必须等字体就绪再启动，环境变量才会被 Chromium 子进程继承
         await ensureServerFonts();
         const chromium = (await import("@sparticuz/chromium")).default;
+        // executablePath() 内部解压 chromium.br / fonts.tar.br / swiftshader，
+        // fonts.tar.br 会覆盖 /tmp/fonts/fonts.conf，解压后必须重写配置
+        const executablePath = await chromium.executablePath();
+        ensureFontsConf();
         const { default: puppeteerCore } = await import("puppeteer-core");
         return puppeteerCore.launch({
           args: chromium.args,
-          executablePath: await chromium.executablePath(),
+          executablePath,
           headless: "shell",
         });
       }
