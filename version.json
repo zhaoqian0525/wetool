@@ -1,6 +1,6 @@
 {
-  "version": "1.15.5",
+  "version": "1.15.6",
   "buildDate": "2026-08-13",
   "buildTimestamp": "2026-08-13T00:00:00.000+08:00",
-  "description": "v1.15.5 修复：上传封面「图片读取失败」（fetch(data:) 被 CSP 拦截 → atob 解码）；自动截图服务端化（Puppeteer 无头浏览器渲染，iOS/桌面一致）；iOS canvas.toBlob 永不回调兜底 toDataURL。"
+  "description": "v1.15.6 修复：自动截图生产 500（@sparticuz/chromium 外部化 + bin/fonts 打进函数包）；新增服务端渐变封面 POST /api/cover/gradient（无头浏览器原生渲染，修复 iOS 渐变封面无 emoji）；Vercel 无头环境注入中文字体 + emoji 字体（FONTCONFIG_PATH）；错误响应附 detail 便于诊断。"
 }

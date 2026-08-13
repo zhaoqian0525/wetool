@@ -23,7 +23,9 @@ const TO_BLOB_TIMEOUT_MS = 8000;
 // v1.15.4：封面上传阶段加超时，避免网络挂起导致界面无限等待
 const UPLOAD_TIMEOUT_MS = 25000;
 // v1.15.5：服务端截图的客户端超时（含浏览器冷启动）
-const SERVER_SCREENSHOT_TIMEOUT_MS = 40000;
+const SERVER_SCREENSHOT_TIMEOUT_MS = 75000;
+// v1.15.6?????????????????????
+const SERVER_GRADIENT_TIMEOUT_MS = 75000;
 
 // ---- Screenshot ----
 
@@ -455,12 +457,49 @@ function parseGradientCss(css: string): [string, string] {
 }
 
 /** 生成自定义封面 Blob：渐变 + 大表情 + 标题（发布/更换封面共用） */
+/** ??????????????????????????? iOS canvas emoji ??? */
+async function serverGradientCover(
+  title: string,
+  seed: number,
+  emoji: string,
+  gradientCss?: string
+): Promise<Blob | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SERVER_GRADIENT_TIMEOUT_MS);
+  try {
+    const colors = gradientCss
+      ? parseGradientCss(gradientCss)
+      : GRADIENT_PAIRS[seed % GRADIENT_PAIRS.length];
+    const res = await authedFetch("/api/cover/gradient", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, emoji, colors }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error("server gradient status " + res.status);
+    const blob = await res.blob();
+    if (!blob || blob.size === 0) throw new Error("server gradient empty");
+    return blob;
+  } catch (err) {
+    console.warn("Server gradient cover failed:", err);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** ??????? Blob??? + ??? + ?????/??????? */
 export async function generateCustomCoverBlob(
   title: string,
   seed: number,
   emoji: string,
   gradientCss?: string
 ): Promise<Blob> {
+  // v1.15.6???????? Puppeteer ?????iOS Safari ? canvas ??
+  // emoji ??????????????????????????? canvas?
+  const serverBlob = await serverGradientCover(title, seed, emoji, gradientCss);
+  if (serverBlob) return serverBlob;
+
   const [c1, c2] = gradientCss
     ? parseGradientCss(gradientCss)
     : GRADIENT_PAIRS[seed % GRADIENT_PAIRS.length];
@@ -470,20 +509,20 @@ export async function generateCustomCoverBlob(
   canvas.height = COVER_HEIGHT;
   const ctx = canvas.getContext("2d")!;
 
-  // 渐变背景
+  // ????
   const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
   grad.addColorStop(0, c1);
   grad.addColorStop(1, c2);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // 大表情
+  // ???
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.font = "76px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillText(emoji || "🛠️", canvas.width / 2, 280);
+  ctx.fillText(emoji || "??", canvas.width / 2, 280);
 
-  // 标题
+  // ??
   ctx.fillStyle = "rgba(255,255,255,0.95)";
   ctx.font = "bold 20px -apple-system, BlinkMacSystemFont, sans-serif";
   const lines = wrapText(ctx, title, 280);
@@ -492,10 +531,10 @@ export async function generateCustomCoverBlob(
     ctx.fillText(line, canvas.width / 2, startY + i * 28);
   });
 
-  // 品牌角标
+  // ????
   ctx.fillStyle = "rgba(255,255,255,0.6)";
   ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillText("微坞 WeWoo", canvas.width / 2, canvas.height - 30);
+  ctx.fillText("?? WeWoo", canvas.width / 2, canvas.height - 30);
 
   return canvasToBlobReliable(canvas, "custom cover canvas toBlob timeout");
 }

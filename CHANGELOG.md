@@ -6,6 +6,18 @@
 
 ---
 
+## [1.15.6] - 2026-08-13
+
+### Fixed
+- 自动截图生产环境 500（手机/电脑均提示「截图失败」）：`@sparticuz/chromium` 依赖相对路径定位 bin/ 下的 brotli 二进制（chromium.br 等），被 Next.js 打包后目录丢失导致启动即失败。已将其加入 `serverExternalPackages` 保持外部化，并把 `node_modules/@sparticuz/chromium/bin/**` 与 `fonts/**` 显式打进截图/渐变函数包（`outputFileTracingIncludes`）；错误响应附带 detail 字段便于诊断
+- 渐变封面只有背景没有 emoji（iPhone Safari）：iOS 上 canvas 绘制 emoji 不可靠。新增服务端接口 POST /api/cover/gradient，用无头浏览器原生渲染渐变封面（渐变 + emoji + 标题 + 品牌角标）；客户端 `generateCustomCoverBlob` 服务端优先，失败自动回退本地 canvas，不影响既有三条封面路径
+- Vercel 无头环境缺少中文字体与 emoji 字体（只有 Open Sans）：截图函数附带 NotoSansSC + NotoColorEmoji（约 27MB，随函数包分发），启动时复制到 /tmp/fonts 并设置 FONTCONFIG_PATH，用户工具 HTML 中的中文/emoji 与渐变封面均能正常渲染
+
+### Notes
+- 服务端截图/渐变超时放宽至 90s（Vercel Hobby 上限 300s），客户端对应超时提到 75s；冷启动首次截图会慢一些，属正常现象
+
+---
+
 ## [1.15.5] - 2026-08-13
 
 ### Fixed

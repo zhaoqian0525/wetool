@@ -20,6 +20,13 @@ const CSP_VALUE = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  // v1.15.6：@sparticuz/chromium 依赖相对路径定位 bin/ 二进制，必须保持外部化（不打进 bundle）
+  serverExternalPackages: ["@sparticuz/chromium"],
+  // v1.15.6：截图函数附带中文字体/emoji 字体（无头环境无系统字体）
+  outputFileTracingIncludes: {
+    "/api/cover/screenshot": ["./fonts/**", "./node_modules/@sparticuz/chromium/bin/**"],
+    "/api/cover/gradient": ["./fonts/**", "./node_modules/@sparticuz/chromium/bin/**"],
+  },
   // 隐藏 X-Powered-By: Next.js 头，减少信息泄露
   poweredByHeader: false,
   // 生产环境强制压缩
