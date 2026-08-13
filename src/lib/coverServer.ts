@@ -1,11 +1,11 @@
 /**
- * ????????????v1.15.6?
+ * 服务端封面渲染共享模块（v1.15.6）
  *
- * ? /api/cover/screenshot ? /api/cover/gradient ???
- * - ?????????Vercel ???puppeteer-core + @sparticuz/chromium?
- *   ??????? puppeteer ???? Chrome?
- * - ?????? CJK / emoji ???fontconfig??????????? emoji
- *   ?????????
+ * 供 /api/cover/screenshot 与 /api/cover/gradient 共用：
+ * - 懒加载无头浏览器（Vercel 生产：puppeteer-core + @sparticuz/chromium；
+ *   本地开发：完整 puppeteer 使用本机 Chrome）
+ * - 生产环境注入 CJK / emoji 字体（fontconfig），解决无头环境中文与 emoji
+ *   渲染成豆腐块的问题
  */
 
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -16,22 +16,22 @@ import type { Browser } from "puppeteer-core";
 export const COVER_WIDTH = 375;
 export const COVER_HEIGHT = 667;
 
-/** ?? load ???? */
+/** 页面 load 事件超时 */
 export const LOAD_TIMEOUT_MS = 20000;
-/** load ?????????? */
+/** load 后等待渲染稳定的时间 */
 export const RENDER_DELAY_MS = 1200;
 
 let browserPromise: Promise<Browser> | null = null;
 let fontsPromise: Promise<void> | null = null;
 
 /**
- * Vercel ?????? Open Sans???? emoji ???????
- * ?????fonts/NotoSansSC.ttf?fonts/NotoColorEmoji.ttf??
- * next.config.ts ? outputFileTracingIncludes ??????
+ * Vercel 无头环境只有 Open Sans，中文与 emoji 需要额外字体。
+ * 字体文件（fonts/NotoSansSC.ttf、fonts/NotoColorEmoji.ttf）由
+ * next.config.ts 的 outputFileTracingIncludes 打进函数包。
  *
- * ????????? @sparticuz/chromium ???? /tmp/fonts ???
- * ??? FONTCONFIG_PATH ?????? fonts.conf?? Chromium ?
- * fontconfig ??????????? emoji?
+ * 做法：把字体复制到 @sparticuz/chromium 解压出的 /tmp/fonts 目录，
+ * 并设置 FONTCONFIG_PATH 指向该目录的 fonts.conf，让 Chromium 的
+ * fontconfig 能匹配到中文字体与彩色 emoji。
  */
 function ensureServerFonts(): Promise<void> {
   if (!fontsPromise) {
@@ -49,8 +49,8 @@ function ensureServerFonts(): Promise<void> {
           }
         }
 
-        // ???? fonts.conf?????????????????
-        // ?? fontconfig ??? /tmp/fonts????? /tmp/fonts-cache?
+        // 自写一份 fonts.conf（解压出的可能被覆盖，内容等价），
+        // 确保 fontconfig 只扫描 /tmp/fonts，缓存写入 /tmp/fonts-cache。
         const conf = [
           '<?xml version="1.0"?>',
           '<!DOCTYPE fontconfig SYSTEM "fonts.dtd">',
@@ -70,12 +70,12 @@ function ensureServerFonts(): Promise<void> {
   return fontsPromise;
 }
 
-/** ???????????????????????? */
-async function getBrowser(): Promise<Browser> {
+/** 懒启动无头浏览器；启动失败时清空缓存允许下次重试 */
+export async function getCoverBrowser(): Promise<Browser> {
   if (!browserPromise) {
     browserPromise = (async () => {
       if (process.env.VERCEL === "1") {
-        // ?????????????????? Chromium ?????
+        // 必须等字体就绪再启动，环境变量才会被 Chromium 子进程继承
         await ensureServerFonts();
         const chromium = (await import("@sparticuz/chromium")).default;
         const { default: puppeteerCore } = await import("puppeteer-core");
@@ -95,9 +95,9 @@ async function getBrowser(): Promise<Browser> {
   return browserPromise;
 }
 
-/** ? HTML ??? 375x667 ?????? PNG */
+/** 将 HTML 渲染到 375x667 视口并截图为 PNG */
 export async function renderCoverPng(html: string): Promise<Uint8Array> {
-  const browser = await getBrowser();
+  const browser = await getCoverBrowser();
   const page = await browser.newPage();
   try {
     await page.setViewport({
@@ -105,11 +105,11 @@ export async function renderCoverPng(html: string): Promise<Uint8Array> {
       height: COVER_HEIGHT,
       deviceScaleFactor: 1,
     });
-    // ?????? alert/confirm ???????????????
-    page.on("dialog", (dialog) => {
+    // 工具代码里的 alert/confirm 在无头环境会阻塞渲染，一律忽略
+    page.on("dialog", (dialog: { dismiss: () => Promise<void> }) => {
       dialog.dismiss().catch(() => {});
     });
-    page.on("pageerror", (err) => {
+    page.on("pageerror", (err: unknown) => {
       console.warn("[cover-server] pageerror:", String(err));
     });
     await page.setContent(html, {

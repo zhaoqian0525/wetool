@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedSupabase, unauthorizedResponse } from "@/lib/api-auth";
-import { renderCoverPng } from "@/lib/coverServer";
+import { renderCoverPng, getCoverBrowser, RENDER_DELAY_MS, LOAD_TIMEOUT_MS } from "@/lib/coverServer";
+import { existsSync, readdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -64,6 +67,64 @@ function buildGradientDocument(title: string, emoji: string, colors: [string, st
 </html>`;
 }
 
+
+/** 调试模式：返回字体/渲染诊断信息（仅 ?debug=1 时启用，不影响正常流程） */
+async function renderDiagnostics(
+  title: string,
+  emoji: string,
+  colors: [string, string]
+): Promise<Record<string, unknown>> {
+  const fontsDir = join(tmpdir(), "fonts");
+  const srcDir = join(process.cwd(), "fonts");
+  const info: Record<string, unknown> = {
+    cwd: process.cwd(),
+    fontconfigPath: process.env.FONTCONFIG_PATH || null,
+    fontsInPackage: {
+      NotoSansSC: existsSync(join(srcDir, "NotoSansSC.ttf")),
+      NotoColorEmoji: existsSync(join(srcDir, "NotoColorEmoji.ttf")),
+    },
+    tmpFontsDir: existsSync(fontsDir)
+      ? readdirSync(fontsDir).slice(0, 20)
+      : null,
+  };
+  const browser = await getCoverBrowser();
+  const page = await browser.newPage();
+  try {
+    await page.setViewport({ width: 375, height: 667, deviceScaleFactor: 1 });
+    await page.setContent(buildGradientDocument(title, emoji, colors), {
+      waitUntil: "load",
+      timeout: LOAD_TIMEOUT_MS,
+    });
+    await new Promise((r) => setTimeout(r, RENDER_DELAY_MS));
+    const dom = await page.evaluate(() => {
+      const titleEl = document.querySelector(".title") as HTMLElement | null;
+      const emojiEl = document.querySelector(".emoji") as HTMLElement | null;
+      const brandEl = document.querySelector(".brand") as HTMLElement | null;
+      return {
+        bodyText: document.body ? document.body.innerText.slice(0, 120) : null,
+        bodySize: document.body
+          ? [document.body.clientWidth, document.body.clientHeight]
+          : null,
+        titleFont: titleEl ? getComputedStyle(titleEl).fontFamily : null,
+        titleColor: titleEl ? getComputedStyle(titleEl).color : null,
+        emojiFont: emojiEl ? getComputedStyle(emojiEl).fontFamily : null,
+        brandText: brandEl ? brandEl.textContent : null,
+        fontFaces: (document.fonts ? document.fonts.size : 0) as number,
+        checkSC: document.fonts
+          ? document.fonts.check("22px \"Noto Sans SC\"")
+          : false,
+        checkEmoji: document.fonts
+          ? document.fonts.check("88px \"Noto Color Emoji\"")
+          : false,
+      };
+    });
+    info.dom = dom;
+  } finally {
+    await page.close().catch(() => {});
+  }
+  return info;
+}
+
 /**
  * POST /api/cover/gradient
  * Body: { title: string, emoji?: string, colors?: [string, string] }
@@ -97,6 +158,13 @@ export async function POST(request: NextRequest) {
     HEX_RE.test(body.colors[1])
   ) {
     colors = [body.colors[0].toLowerCase(), body.colors[1].toLowerCase()];
+  }
+
+
+  // 调试模式：?debug=1 返回字体/渲染诊断（不截图）
+  if (request.nextUrl.searchParams.get("debug") === "1") {
+    const info = await renderDiagnostics(title, emoji, colors);
+    return NextResponse.json({ debug: info });
   }
 
   try {
