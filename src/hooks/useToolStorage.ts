@@ -2,6 +2,36 @@
 
 import { useEffect, useCallback } from "react";
 import { authedFetch } from "@/lib/api-client";
+
+/** v2.1.0 M3：沙盒内工具调用平台代理接口（联网 / AI 网关），统一处理鉴权与超时 */
+async function callToolApi(
+  path: string,
+  payload: Record<string, unknown>,
+  respond: (error: string | null, value?: string | null) => void
+) {
+  try {
+    const res = await authedFetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(25000),
+    });
+    let j: { error?: string } & Record<string, unknown> = {};
+    try {
+      j = (await res.json()) as typeof j;
+    } catch {
+      j = {};
+    }
+    if (!res.ok || typeof j.error === "string") {
+      respond(j.error || `请求失败（${res.status}）`, null);
+      return;
+    }
+    respond(null, JSON.stringify(j));
+  } catch (e) {
+    const msg = e instanceof Error && e.name === "TimeoutError" ? "请求超时，请稍后重试" : "网络错误，请检查连接";
+    respond(msg, null);
+  }
+}
 import { getLsSnapshot, setLsSnapshot, getDraftSnapshot, setDraftSnapshot } from "@/lib/toolStateBridge";
 
 /**
@@ -363,6 +393,24 @@ export function useToolStorage(toolId?: string, userId?: string, user?: ToolSand
           }));
           break;
         }
+        // --- v2.1.0 M3：白名单联网代理（__wewoo.fetch） ---
+        case "WEWOO_FETCH": {
+          const fUrl = String(msg.url ?? "");
+          const fMethod = String(msg.method ?? "GET").toUpperCase();
+          const fBody = String(msg.body ?? "");
+          if (!fUrl) { respond("url 不能为空", null); break; }
+          callToolApi("/api/proxy", { toolId, url: fUrl.slice(0, 500), method: fMethod, body: fBody.slice(0, 8000) }, respond);
+          break;
+        }
+        // --- v2.1.0 M3：工具内 AI 网关（__wewoo.ai.chat） ---
+        case "WEWOO_AI_CHAT": {
+          const aPrompt = String(msg.prompt ?? "").trim();
+          const aContext = String(msg.context ?? "");
+          if (!aPrompt) { respond("prompt 不能为空", null); break; }
+          callToolApi("/api/ai/tool", { toolId, prompt: aPrompt.slice(0, 2000), context: aContext.slice(0, 4000) }, respond);
+          break;
+        }
+
       }
     },
     [toolId, userId, user]

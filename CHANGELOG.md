@@ -6,6 +6,19 @@
 
 ---
 
+## [2.1.0] - 2026-08-14
+
+### Added（M3 AI 网关 + 白名单联网代理）
+- `__wewoo.fetch(url, opts, cb)`：工具内白名单联网（回调返回 { status, data, contentType }）。仅 https + 域名白名单（汇率/天气/词典/翻译/二维码/名言等公开 API，可用 PROXY_ALLOWED_HOSTS 覆盖）+ 仅 GET + 响应 256KB 上限 + 10s 超时 + 内容类型白名单（拒绝 HTML 防 XSS）+ 限流 + 审计日志 proxy_log
+- `__wewoo.ai.chat({ prompt, context? }, cb)`：工具内 AI 问答（支持字符串/对象两种调用）。服务端持有 DeepSeek key（绝不下发浏览器）、模型钉死 flash 档、输入/输出敏感词检查、余额保护、每日配额（登录 10 次 / 游客 5 次）、usage 记账 ai_usage
+- 管理后台新增「用量看板」tab：今日 AI 调用/tokens、按工具聚合、最近调用记录、最近代理请求
+- 能力徽章更新：`联网（白名单）` 与 `内置 AI 问答` 变为可用能力；裸 fetch/XHR 等仍显示为受限并拦截
+- AI 系统提示词新增 3.6 条：平台联网与 AI API 用法、特性检测与降级写法；联网边界措辞同步调整
+
+### Notes
+- 需在 Supabase 执行 `supabase_v21_m3.sql`（ai_usage / proxy_log 表 + RLS），未执行前用量看板显示「未初始化」提示，日志降级为服务端 console
+
+---
 ## [2.0.3] - 2026-08-14
 
 ### Added（M2 零风险 API 第一批）

@@ -52,9 +52,23 @@ export const CAPABILITY_DEFS: CapabilityDef[] = [
   {
     key: "network",
     icon: "🌐",
-    label: "联网请求",
+    label: "联网（白名单）",
+    available: true,
+    regex: /__wewoo\.fetch/i,
+  },
+  {
+    key: "blockedNetwork",
+    icon: "🚫",
+    label: "受限联网（已拦截）",
     available: false,
-    regex: /fetch\s*\(|XMLHttpRequest|new WebSocket|EventSource|sendBeacon|axios/i,
+    regex: /(?<![\w.])fetch\s*\(|XMLHttpRequest|new WebSocket|EventSource|sendBeacon|axios/i,
+  },
+  {
+    key: "ai",
+    icon: "🤖",
+    label: "内置 AI 问答",
+    available: true,
+    regex: /__wewoo\.ai/i,
   },
   {
     key: "notify",

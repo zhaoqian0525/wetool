@@ -465,8 +465,49 @@ const STORAGE_API = `<script>
         window.speechSynthesis.speak(u);
         if (cb) cb(null, 'ok');
       } catch(e) { if (cb) cb(String((e && e.message) || 'error')); }
+    },
+    // ---- v2.1.0 M3：白名单联网代理（仅白名单域名 + GET，回调 (err, {status,data,contentType})） ----
+    fetch: function(url, opts, cb) {
+      if (typeof opts === 'function') { cb = opts; opts = {}; }
+      opts = opts || {};
+      _send({
+        type: 'WEWOO_FETCH',
+        url: String(url || ''),
+        method: String((opts.method || 'GET').toUpperCase()),
+        body: opts.body != null ? String(opts.body) : ''
+      }, function(err, val) {
+        if (cb) {
+          if (err) { cb(err); return; }
+          try { cb(null, val ? JSON.parse(val) : null); } catch(_) { cb(null, val); }
+        }
+      });
+    },
+    // ---- v2.1.0 M3：工具内 AI 网关（回调 (err, {reply})；支持字符串或 { prompt, context } 两种调用） ----
+    ai: {
+      chat: function(input, opts, cb) {
+        if (typeof opts === 'function') { cb = opts; opts = {}; }
+        opts = opts || {};
+        var prompt = '';
+        var context = '';
+        if (input != null && typeof input === 'object') {
+          prompt = String(input.prompt || '');
+          context = String(input.context != null ? input.context : '');
+        } else {
+          prompt = String(input || '');
+          context = String(opts.context != null ? opts.context : '');
+        }
+        _send({
+          type: 'WEWOO_AI_CHAT',
+          prompt: prompt.slice(0, 2000),
+          context: context.slice(0, 4000)
+        }, function(err, val) {
+          if (cb) {
+            if (err) { cb(err); return; }
+            try { cb(null, val ? JSON.parse(val) : null); } catch(_) { cb(null, val); }
+          }
+        });
+      }
     }
-
   };
 
   // 自动监听输入变化 — 防抖 800ms 保存草稿，5s 保存状态
