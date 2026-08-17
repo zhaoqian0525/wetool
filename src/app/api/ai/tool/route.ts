@@ -22,8 +22,8 @@ const MAX_REPLY_TOKENS = 1500;
 const MAX_REPLY_TOKENS_LIMIT = 4000;
 const MAX_HISTORY_ITEMS = 10;
 const MAX_HISTORY_ITEM_LENGTH = 2000;
-const DAY_QUOTA_USER = 10;
-const DAY_QUOTA_GUEST = 5;
+const DAY_QUOTA_USER = 1000;
+const DAY_QUOTA_GUEST = 1000;
 
 /** 内存配额（DB 不可用时的回退） */
 const quotaMap = new Map<string, { day: string; count: number }>();
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
   const limit = ctx ? DAY_QUOTA_USER : DAY_QUOTA_GUEST;
   if (used >= limit) {
     return new Response(
-      JSON.stringify({ error: ctx ? "今日 AI 使用次数已达上限（10 次），明天再来吧" : "游客每日 AI 使用次数有限（5 次），登录后可获得更多额度" }),
+      JSON.stringify({ error: ctx ? "今日 AI 使用次数已达上限（1000 次），明天再来吧" : "今日 AI 使用次数已达上限（1000 次），明天再来吧" }),
       { status: 429, headers: { "Content-Type": "application/json; charset=utf-8" } }
     );
   }
