@@ -1,6 +1,6 @@
 {
-  "version": "2.1.6",
+  "version": "2.1.7",
   "buildDate": "2026-08-17",
-  "buildTimestamp": "2026-08-17 22:56:56.767+08:00",
-  "description": "v2.1.6：教程第 2 步示例提示词改为默认折叠、点击展开"
+  "buildTimestamp": "2026-08-17 23:05:37.730+08:00",
+  "description": "v2.1.7：联网代理自动解析 JSON 并返回 res.json（兼容 text/plain JSON 如 wttr.in），修复 AI 天气工具数据格式异常"
 }
