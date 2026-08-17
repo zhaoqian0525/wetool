@@ -142,10 +142,15 @@ export default function GuidePage() {
 
               {/* AI Prompt Examples for Step 2 */}
               {step.code && (
-                <div className="border-t border-gray-100 bg-gray-50 p-5 lg:p-6">
-                  <p className="text-sm font-medium text-gray-700 mb-3">
-                    下面这些话可以直接发给 AI（长按可以复制），都已按微坞的要求写好（手机适配 + localStorage 记忆），照用就能做出功能完整的工具。也可以先复制下面的「微坞通用创作要求」，再随意组合你的想法：
-                  </p>
+                <details className="border-t border-gray-100 bg-gray-50">
+                  <summary className="flex items-center justify-between px-5 lg:px-6 py-4 cursor-pointer select-none text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <span className="flex items-center gap-1.5">💡 展开示例提示词（长按可复制）</span>
+                    <svg className="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                  </summary>
+                  <div className="px-5 lg:px-6 pb-5">
+                    <p className="text-sm font-medium text-gray-700 mb-3">
+                      下面这些话可以直接发给 AI（长按可以复制），都已按微坞的要求写好（手机适配 + localStorage 记忆），照用就能做出功能完整的工具。也可以先复制下面的「微坞通用创作要求」，再随意组合你的想法：
+                    </p>
                   <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-indigo-700">📋 微坞通用创作要求（建议每条都加上）</span>
@@ -190,7 +195,8 @@ export default function GuidePage() {
                       </div>
                     ))}
                   </div>
-                </div>
+                  </div>
+                </details>
               )}
 
               {/* Visual illustration for step 4 */}
