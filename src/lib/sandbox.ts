@@ -482,24 +482,36 @@ const STORAGE_API = `<script>
         }
       });
     },
-    // ---- v2.1.0 M3：工具内 AI 网关（回调 (err, {reply})；支持字符串或 { prompt, context } 两种调用） ----
+    // ---- v2.1.0 M3：工具内 AI 网关（回调 (err, {reply[, json]})；支持字符串或 { prompt, context, history, maxTokens, json } 调用） ----
     ai: {
       chat: function(input, opts, cb) {
         if (typeof opts === 'function') { cb = opts; opts = {}; }
         opts = opts || {};
         var prompt = '';
         var context = '';
+        var history = [];
+        var maxTokens = 0;
+        var wantJson = false;
         if (input != null && typeof input === 'object') {
           prompt = String(input.prompt || '');
           context = String(input.context != null ? input.context : '');
+          history = Array.isArray(input.history) ? input.history : (Array.isArray(opts.history) ? opts.history : []);
+          maxTokens = input.maxTokens != null ? Number(input.maxTokens) : (opts.maxTokens != null ? Number(opts.maxTokens) : 0);
+          wantJson = input.json != null ? !!input.json : !!opts.json;
         } else {
           prompt = String(input || '');
           context = String(opts.context != null ? opts.context : '');
+          history = Array.isArray(opts.history) ? opts.history : [];
+          maxTokens = opts.maxTokens != null ? Number(opts.maxTokens) : 0;
+          wantJson = !!opts.json;
         }
         _send({
           type: 'WEWOO_AI_CHAT',
           prompt: prompt.slice(0, 2000),
-          context: context.slice(0, 4000)
+          context: context.slice(0, 4000),
+          history: history,
+          maxTokens: maxTokens > 0 ? maxTokens : undefined,
+          json: wantJson
         }, function(err, val) {
           if (cb) {
             if (err) { cb(err); return; }
