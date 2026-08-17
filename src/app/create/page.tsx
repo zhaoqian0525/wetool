@@ -1209,7 +1209,7 @@ function CreatePageInner() {
                   )}
                 </div>
                 <div className="mt-1.5 text-xs text-gray-400 leading-relaxed">
-                  需要服务器/网络等沙盒外能力时，AI 会说明原因并给出可运行的替代方案
+                  平台已支持白名单联网和内置 AI，AI 会自动使用；超出沙盒范围的需求，AI 会说明原因并给出替代方案
                 </div>
               </div>
               
