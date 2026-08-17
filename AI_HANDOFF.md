@@ -276,6 +276,7 @@ git push https://YOUR_GITHUB_TOKEN@github.com/zhaoqian0525/wetool.git main
 - 已关闭思考模式（v1.8.5）：请求体显式 `thinking: { type: "disabled" }`；换非推理模型需移除该参数
 - 长度限制（v1.8.7）：max_tokens 默认 16000、currentCode 上限 32000 字符、上下文护栏 48000 字符；长代码（3 万字）完整生成约 40-60 秒属正常
 - 若 Vercel 设置了 AI_MAX_TOKENS，注意同步调整，否则覆盖默认值
+- **权限同步红线**：任何新增/变更沙盒权限或 __wewoo.* API 时，必须同步更新 `AI_SYSTEM_PROMPT`（内置 AI 的能力说明与禁用边界）、`AI_PROMPT_TEMPLATE`、`GUIDE_REQ_TEXT`、教程 FAQ 与默认示例，确保内置 AI 清楚自己能做什么、不能做什么（例如麦克风/摄像头暂不可用必须明确写出）
 
 ### DELETE API
 - `src/app/api/tools/[id]/route.ts` 使用 service_role key 绕过 RLS
