@@ -406,8 +406,22 @@ export function useToolStorage(toolId?: string, userId?: string, user?: ToolSand
         case "WEWOO_AI_CHAT": {
           const aPrompt = String(msg.prompt ?? "").trim();
           const aContext = String(msg.context ?? "");
+          const aHistory = Array.isArray(msg.history) ? msg.history.slice(0, 10) : [];
+          const aMaxTokens = Number(msg.maxTokens) > 0 ? Number(msg.maxTokens) : undefined;
+          const aJson = !!msg.json;
           if (!aPrompt) { respond("prompt 不能为空", null); break; }
-          callToolApi("/api/ai/tool", { toolId, prompt: aPrompt.slice(0, 2000), context: aContext.slice(0, 4000) }, respond);
+          callToolApi(
+            "/api/ai/tool",
+            {
+              toolId,
+              prompt: aPrompt.slice(0, 2000),
+              context: aContext.slice(0, 4000),
+              history: aHistory,
+              ...(aMaxTokens ? { maxTokens: aMaxTokens } : {}),
+              ...(aJson ? { json: true } : {}),
+            },
+            respond
+          );
           break;
         }
 
