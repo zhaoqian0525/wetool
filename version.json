@@ -1,6 +1,6 @@
 {
-  "version": "2.1.1",
+  "version": "2.1.2",
   "buildDate": "2026-08-17",
-  "buildTimestamp": "2026-08-17 20:37:33.063+08:00",
-  "description": "v2.1.1：工具内 AI 网关能力扩展 __wewoo.ai.chat（history 多轮记忆、maxTokens 输出长度、json 结构化输出），完全向后兼容 v2.1.0 用法"
+  "buildTimestamp": "2026-08-17 21:05:01.124+08:00",
+  "description": "v2.1.2：工具内 AI 每日配额提升至 1000 次 + AI 调用失败时沙盒顶部错误提示（不再依赖工具自行处理错误）"
 }
