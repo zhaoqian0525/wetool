@@ -6,6 +6,14 @@
 
 ---
 
+## [2.1.7] - 2026-08-17
+
+### Fixed
+- `__wewoo.fetch` 返回增加 `res.json`（自动解析后的对象）：不再依赖上游 Content-Type，只要响应内容能被 JSON.parse 成功就提供；修复 wttr.in 等返回 JSON 但标记为 text/plain 的接口导致 AI 天气工具「数据格式异常」
+- AI 提示词与天气示例同步更新为标准写法（`res.json.current_condition[0].temp_C` 等）
+
+---
+
 ## [2.1.6] - 2026-08-17
 
 ### Changed
