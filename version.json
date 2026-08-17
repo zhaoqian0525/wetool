@@ -1,6 +1,6 @@
 {
-  "version": "2.1.0",
-  "buildDate": "2026-08-14",
-  "buildTimestamp": "2026-08-14 09:11:00.000+08:00",
-  "description": "v2.1.0 M3：白名单联网代理 __wewoo.fetch（汇率/天气/词典等公开 API，仅白名单+GET+限流+审计）+ 工具内 AI 网关 __wewoo.ai.chat（DeepSeek flash、每日配额、敏感词、余额保护、usage 记账）+ 管理后台用量看板 + 能力徽章/提示词同步"
+  "version": "2.1.1",
+  "buildDate": "2026-08-17",
+  "buildTimestamp": "2026-08-17 20:37:33.063+08:00",
+  "description": "v2.1.1：工具内 AI 网关能力扩展 __wewoo.ai.chat（history 多轮记忆、maxTokens 输出长度、json 结构化输出），完全向后兼容 v2.1.0 用法"
 }
