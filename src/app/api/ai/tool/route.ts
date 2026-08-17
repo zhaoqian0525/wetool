@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
   const fwd = request.headers.get("x-forwarded-for");
   const ip = fwd ? (fwd.split(",").pop()?.trim() || "unknown") : "unknown";
   const ctx = await getAuthedSupabase(request);
+  const isAdmin = !!ctx?.isAdmin;
 
   let body: { toolId?: unknown; prompt?: unknown; context?: unknown; history?: unknown; maxTokens?: unknown; json?: unknown };
   try {
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
   const svc = getAdminServiceClient();
   const used = await usedToday(svc, ctx?.userId ?? null, ip);
   const limit = ctx ? DAY_QUOTA_USER : DAY_QUOTA_GUEST;
-  if (used >= limit) {
+  if (!isAdmin && used >= limit) {
     return new Response(
       JSON.stringify({ error: ctx ? "今日 AI 使用次数已达上限（1000 次），明天再来吧" : "今日 AI 使用次数已达上限（1000 次），明天再来吧" }),
       { status: 429, headers: { "Content-Type": "application/json; charset=utf-8" } }
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
 
   // 余额保护
   const balance = await getBalanceCny(apiKey);
-  if (balance != null && balance < MIN_BALANCE_CNY) {
+  if (!isAdmin && balance != null && balance < MIN_BALANCE_CNY) {
     return new Response(JSON.stringify({ error: "AI 服务额度即将用尽，请稍后再试" }), {
       status: 429,
       headers: { "Content-Type": "application/json; charset=utf-8" },
