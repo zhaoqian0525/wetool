@@ -158,10 +158,20 @@ export async function POST(request: NextRequest) {
     // 审计失败不阻断
   }
 
+  // 内容只要能被 JSON.parse 成功，就自动解析一份给 res.json（res.data 仍保留原始文本，向后兼容）；
+  // 不依赖上游 Content-Type，因为 wttr.in 等接口返回 JSON 内容但标记为 text/plain。
+  let parsedData: unknown;
+  try {
+    parsedData = JSON.parse(text);
+  } catch {
+    parsedData = undefined;
+  }
+
   return NextResponse.json({
     ok: true,
     status: upstream.status,
     data: text,
     contentType,
+    ...(parsedData !== undefined ? { json: parsedData } : {}),
   });
 }
