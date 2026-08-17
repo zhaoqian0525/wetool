@@ -19,7 +19,7 @@ const steps = [
     icon: "🤖",
     color: "from-indigo-400 to-purple-500",
     desc: "打开创作页会自动展开「和 AI 对话生成」，直接描述你想做的工具（比如：做一个纪念日记录器，能添加重要日子、显示倒数天数），点「发送」，AI 会边聊边生成代码版本（V1、V2…）。",
-    tip: "生成后点版本按钮即可载入完整代码查看/修改；可以继续对话调整：「换个配色」「加个历史记录」「再生成一个更简约的版本」；需要服务器/网络等沙盒外功能时，AI 会说明原因并给出可运行的替代方案",
+    tip: "生成后点版本按钮即可载入完整代码查看/修改；可以继续对话调整：「换个配色」「加个历史记录」「再生成一个更简约的版本」；平台支持白名单联网和内置 AI，超出沙盒范围时 AI 会说明原因并给替代方案",
     code: true,
   },
   {
@@ -308,6 +308,24 @@ export default function GuidePage() {
               </summary>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
                 可以！微坞有「记忆功能」：只要工具代码里用 localStorage 保存数据，刷新页面、切换全屏、回到主页再进来，数据都能自动恢复。做工具时告诉 AI「数据用 localStorage 保存」就行。未登录用户的数据保存在本机；登录后还会同步到云端，换设备也不丢。
+              </p>
+            </details>
+            <details className="panel p-5 group">
+              <summary className="font-medium text-gray-800 cursor-pointer flex items-center justify-between">
+                <span>工具能联网获取数据吗？</span>
+                <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                可以，但只能访问微坞白名单里的公开数据源（汇率、天气、词典、翻译、二维码、名言等）。工具代码里用 __wewoo.fetch 调用，例如查汇率、查天气。不能随意访问任意网站，这是为了保护用户隐私和控制成本。做工具时告诉 AI「用 __wewoo.fetch 获取公开数据」就行。
+              </p>
+            </details>
+            <details className="panel p-5 group">
+              <summary className="font-medium text-gray-800 cursor-pointer flex items-center justify-between">
+                <span>工具能使用 AI 吗？</span>
+                <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                可以！工具内可以用 __wewoo.ai.chat 做问答、总结、分类、写文案。支持多轮对话（history）、结构化 JSON 输出（json:true）、自定义回复长度（maxTokens），每天 1000 次额度。做工具时告诉 AI「用 __wewoo.ai.chat 做 AI 总结，json:true 返回结构化结果」即可。
               </p>
             </details>
           </div>
