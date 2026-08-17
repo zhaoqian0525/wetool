@@ -309,6 +309,21 @@ const STORAGE_API = `<script>
 (function(){
   var _callbacks = {};
   var _cbId = 0;
+  // v2.1.1：AI 调用失败的非侵入式顶部提示（即使工具不处理回调错误也能看到）
+  var _aiBanner = null;
+  function _showAiError(msg) {
+    try {
+      if (!_aiBanner) {
+        _aiBanner = document.createElement('div');
+        _aiBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#d97706;color:#fff;padding:8px 14px;text-align:center;font-size:13px;font-family:system-ui,-apple-system,sans-serif;line-height:1.5;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.2);';
+        (document.body || document.documentElement).appendChild(_aiBanner);
+      }
+      _aiBanner.textContent = msg || 'AI 调用失败，请稍后重试';
+      _aiBanner.style.display = 'block';
+      clearTimeout(_aiBanner.__t);
+      _aiBanner.__t = setTimeout(function() { if (_aiBanner) _aiBanner.style.display = 'none'; }, 5000);
+    } catch(_) {}
+  }
   function _send(msg, cb) {
     var id = ++_cbId;
     if (cb) _callbacks[id] = cb;
@@ -513,6 +528,7 @@ const STORAGE_API = `<script>
           maxTokens: maxTokens > 0 ? maxTokens : undefined,
           json: wantJson
         }, function(err, val) {
+          if (err) { _showAiError(String(err)); }
           if (cb) {
             if (err) { cb(err); return; }
             try { cb(null, val ? JSON.parse(val) : null); } catch(_) { cb(null, val); }
