@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { MOCK_TOOLS } from "@/lib/data";
 import { createClient } from "@supabase/supabase-js";
+import ToolManifestLink from "@/components/ToolManifestLink";
 
 const SUPABASE_URL = "https://cvacrykzcppiflmvwwfe.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_HedSPsepnDWtvd3IuQhlWw_JPeVevVu";
@@ -91,7 +92,8 @@ export default async function ToolLayout({
   return (
     <>
       {/* v1.8.8 每个工具注入独立 PWA manifest，支持添加到主屏幕后打开即全屏 */}
-      <link rel="manifest" href={`/tool/${id}/manifest.webmanifest?v=2`} />
+      <link rel="manifest" href={`/tool/${id}/manifest.webmanifest?v=3`} />
+      <ToolManifestLink id={id} />
       {children}
     </>
   );

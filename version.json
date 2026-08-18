@@ -1,6 +1,6 @@
 {
-  "version": "2.1.7",
-  "buildDate": "2026-08-17",
-  "buildTimestamp": "2026-08-17 23:05:37.730+08:00",
-  "description": "v2.1.7：联网代理自动解析 JSON 并返回 res.json（兼容 text/plain JSON 如 wttr.in），修复 AI 天气工具数据格式异常"
+  "version": "2.1.9",
+  "buildDate": "2026-08-18",
+  "buildTimestamp": "2026-08-18 23:34:22.435+08:00",
+  "description": "v2.1.9：修复 iPhone 添加到主屏幕链接不对（工具页 manifest 强制刷新，避免 iOS 用缓存的站点 manifest）"
 }
