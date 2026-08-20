@@ -372,7 +372,7 @@ export default function ToolDetailPage() {
     setReviewError("");
     try {
       const reply = await addReview(id, user.id, user.user_metadata?.name || user.email?.split("@")[0] || "匿名用户", replyingTo.rating, replyContent.trim(), {
-        parentId: replyingTo.id,
+        parentId: replyingTo.parentId ?? replyingTo.id,
         replyToName: replyingTo.userName,
         avatarUrl: user.user_metadata?.avatar_url ?? null,
       });
@@ -1437,12 +1437,12 @@ export default function ToolDetailPage() {
                             )}
                           </div>
                           {/* 回复输入框 */}
-                          {replyingTo?.id === review.id && (
+                          {replyingTo && (replyingTo.id === review.id || replyingTo.parentId === review.id) && (
                             <div className="mt-3 bg-gray-50 rounded-xl p-3">
                               <textarea
                                 value={replyContent}
                                 onChange={(e) => { setReplyContent(e.target.value); setReviewError(""); }}
-                                placeholder={"回复 @" + review.userName + "..."}
+                                placeholder={"回复 @" + replyingTo.userName + "..."}
                                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50"
                                 rows={2}
                                 autoFocus
@@ -1481,6 +1481,9 @@ export default function ToolDetailPage() {
                                       </div>
                                     )}
                                     <span className="text-xs font-medium text-gray-700">{reply.userName}</span>
+                                    {reply.replyToName && (
+                                      <span className="text-[10px] text-gray-400">回复 @{reply.replyToName}</span>
+                                    )}
                                     {reply.userId === tool.authorId && (
                                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[10px] font-medium">
                                         作者
@@ -1499,6 +1502,18 @@ export default function ToolDetailPage() {
                                     )}
                                   </div>
                                   <p className="text-xs text-gray-600 leading-relaxed mt-1.5">{renderReviewContent(reply.content)}</p>
+                                  {user && (
+                                    <button
+                                      onClick={() => {
+                                        setReplyingTo(reply);
+                                        setReplyContent("");
+                                        setReviewError("");
+                                      }}
+                                      className="mt-1.5 text-[10px] text-gray-400 hover:text-indigo-600 transition-colors"
+                                    >
+                                      回复
+                                    </button>
+                                  )}
                                 </div>
                               ))}
                             </div>
