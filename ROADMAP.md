@@ -117,7 +117,8 @@
 | P1 | 通知（wewoo.notify → 父页面 Notification/Web Push） | 喝水/用药/番茄钟/纪念日提醒类工具变「活」的 | 用户逐工具授权、可撤销 |
 | P1 | 只读用户信息（wewoo.user） | 个性化问候、排行榜、「我的数据」 | 只暴露昵称/头像，不暴露邮箱/ID |
 | P1 | 分享卡片（wewoo.share） | 工具结果一键生成分享文案/图片，配合微信生态 | 父页面拼装分享 |
-| P2 | 摄像头/麦克风/定位（allow="camera/microphone/geolocation"） | 扫码查件、语音输入、天气打卡 | 必须用户手势触发 + 逐次授权 |
+| P1 | 拍照/上传/扫码替代（`input type=file` + capture） | 拍照上传、拍二维码解析、本地图片处理 | `<input type="file" accept="image/*" capture>` 调系统相机/相册 + FileReader，不碰 getUserMedia；需先验证沙盒 iframe 是否放行文件选择器（可能需 allow-forms） |
+| P2 | 摄像头/麦克风/定位（allow="camera/microphone/geolocation"） | 实时扫码、语音输入、天气打卡 | 必须用户手势触发 + 逐次授权；⚠️ 摄像头受 opaque origin 限制（getUserMedia 被拒），真正开放需 allow-same-origin（红线）或父页面代持，iOS Safari/standalone 支持差 |
 | P2 | 全屏 + 指针锁定（allow="fullscreen; pointer-lock"） | 游戏沉浸体验 | 仅游戏类工具声明 |
 | P3 | 外部模式（L3） | 完整权限复杂工具，新标签页运行 | 显式同意 + 风险提示 |
 
@@ -524,7 +525,7 @@
 | 分享卡片（`__wewoo.share`） | P1 | 父页面拼装分享文案/图片，与 v1.16「微信分享卡片/复制文案优化」合并落地：`__wewoo.share({ text })` → 父页面唤起原生分享 / 复制 | 工具结果一键生成分享文案，微信生态可触达 |
 | 只读用户信息（`__wewoo.user`） | P1 | 仅暴露昵称/头像（读自 user_metadata），不暴露邮箱/ID/登录态；用于个性化问候、榜单 | 工具可显示「你好，昵称」；隐私零泄露 |
 
-> 明确**不取**（保留暂缓）：通知 `wewoo.notify`（中风险 + Web Push 复杂度，等真实需求）；摄像头/麦克风/定位（中高风险 + iOS Safari iframe 支持差）；指针锁定（仅游戏类，需求未现）；外部模式 L3（已有长期规划，高风险，上线策略见第十节）。
+> 明确**不取**（保留暂缓）：通知 `wewoo.notify`（中风险 + Web Push 复杂度，等真实需求）；摄像头/麦克风/定位（中高风险 + iOS Safari iframe 支持差；摄像头还受 opaque origin 限制，真正开放需 allow-same-origin 红线或父页面代持，成本高）；指针锁定（仅游戏类，需求未现）；外部模式 L3（已有长期规划，高风险，上线策略见第十节）。拍照/上传/扫码优先走 `input type=file` + capture 低风险替代，验证沙盒文件选择器可用性后再决定是否开放摄像头。
 
 ### v1.9 全站视觉大升级（UI，见第十一章 11.2）
 > 纯界面层改动，不涉及沙盒/注入内核，按规范放 minor（1.x.0）。
