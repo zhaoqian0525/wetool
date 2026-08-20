@@ -1131,17 +1131,15 @@ function CreatePageInner() {
               <span className="text-xs text-gray-400 hidden sm:inline">内置 DeepSeek</span>
             </div>
             <div className="flex items-center gap-1.5">
-              {drafts.length > 0 && (
-                <button
-                  onClick={() => setDraftsOpen((v) => !v)}
-                  className={`min-h-[40px] px-2.5 py-1 text-xs transition-colors ${
-                    draftsOpen ? "text-indigo-600" : "text-gray-500 hover:text-indigo-600"
-                  }`}
-                  style={{ touchAction: "manipulation" }}
-                >
-                  📁 草稿{drafts.length > 0 ? `（${drafts.length}）` : ""}
-                </button>
-              )}
+              <button
+                onClick={() => setDraftsOpen((v) => !v)}
+                className={`min-h-[40px] px-2.5 py-1 text-xs transition-colors ${
+                  draftsOpen ? "text-indigo-600" : "text-gray-500 hover:text-indigo-600"
+                }`}
+                style={{ touchAction: "manipulation" }}
+              >
+                📁 草稿{drafts.length > 0 ? `（${drafts.length}）` : ""}
+              </button>
               {aiMessages.length > 0 && (
                 <button
                   onClick={handleAiClear}
@@ -1160,28 +1158,32 @@ function CreatePageInner() {
               </button>
             </div>
           </div>
-          {draftsOpen && drafts.length > 0 && (
+          {draftsOpen && (
             <div className="flex-shrink-0 max-h-[180px] overflow-y-auto bg-white border-b border-gray-100 px-3 py-2 space-y-1">
-              {drafts.map((d) => (
-                <div key={d.id} className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => restoreDraft(d.id)}
-                    className="flex-1 min-w-0 text-left px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                    style={{ touchAction: "manipulation" }}
-                  >
-                    <div className="text-xs font-medium text-gray-700 truncate">{d.title}</div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">{formatTime(d.updatedAt)}</div>
-                  </button>
-                  <button
-                    onClick={() => deleteDraft(d.id)}
-                    className="flex-shrink-0 w-7 h-7 flex items-center justify-center text-gray-300 hover:text-rose-500 text-xs rounded-lg hover:bg-rose-50 transition-colors"
-                    style={{ touchAction: "manipulation" }}
-                    aria-label="删除草稿"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
+              {drafts.length > 0 ? (
+                drafts.map((d) => (
+                  <div key={d.id} className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => restoreDraft(d.id)}
+                      className="flex-1 min-w-0 text-left px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                      style={{ touchAction: "manipulation" }}
+                    >
+                      <div className="text-xs font-medium text-gray-700 truncate">{d.title}</div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">{formatTime(d.updatedAt)}</div>
+                    </button>
+                    <button
+                      onClick={() => deleteDraft(d.id)}
+                      className="flex-shrink-0 w-7 h-7 flex items-center justify-center text-gray-300 hover:text-rose-500 text-xs rounded-lg hover:bg-rose-50 transition-colors"
+                      style={{ touchAction: "manipulation" }}
+                      aria-label="删除草稿"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-gray-400 text-center py-3">暂无草稿，新建对话时会自动保存</p>
+              )}
             </div>
           )}
           <div className="flex-1 overflow-y-auto px-3 lg:px-4 py-3 space-y-3">
@@ -1340,7 +1342,7 @@ function CreatePageInner() {
                       }
                     }}
                     className="flex-1 min-h-[44px] max-h-[96px] bg-white border border-gray-200 rounded-lg p-2.5 text-sm text-gray-700 placeholder-gray-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 resize-none"
-                    placeholder="描述需求或修改意见，例如：做一个纪念日记录器，能添加重要日子、显示倒数天数…"
+                    placeholder="描述需求或修改意见…"
                     aria-label="AI 对话输入"
                   />
                   {aiGenerating ? (
