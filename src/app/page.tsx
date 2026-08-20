@@ -189,14 +189,6 @@ export default function HomePage() {
     return list;
   }, [tools, activeCategory, search, sortBy, viewCounts, serverResults]);
 
-  // v2.3.0 热门榜：按浏览量取前 5（有浏览数据才展示，避免新站空榜）
-  const hotTools = useMemo(() => {
-    return [...tools]
-      .filter((t) => (t.viewCount ?? 0) > 0)
-      .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
-      .slice(0, 5);
-  }, [tools]);
-
   // 常用工具（从所有工具中筛选 pinned 的 ID）
   const pinnedTools = useMemo(() => {
     if (pinnedToolIds.length === 0) return [];
@@ -436,53 +428,6 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* 热门榜 Top 5（v2.3.0：按浏览量排名，搜索时隐藏） */}
-      {!isSearching && hotTools.length >= 3 && (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-3">
-          <h2 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
-            <span>🔥</span>热门榜
-            <span className="text-xs font-normal text-gray-400">· 按使用热度</span>
-          </h2>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-1 px-1">
-            {hotTools.map((t, idx) => (
-              <Link
-                key={t.id}
-                href={`/tool/${t.id}`}
-                className="flex-shrink-0 w-[76px] sm:w-[88px] group"
-              >
-                <div className="relative aspect-square rounded-xl overflow-hidden bg-white shadow-sm border border-gray-100">
-                  {t.coverUrl ? (
-                    <Image
-                      src={t.coverUrl}
-                      alt={t.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 640px) 20vw, 10vw"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div
-                      className="absolute inset-0"
-                      style={{ background: t.thumbnailGradient || "linear-gradient(135deg, #5046e5, #8b5cf6)" }}
-                    />
-                  )}
-                  <div
-                    className={`absolute top-1 left-1 w-5 h-5 rounded-md flex items-center justify-center text-[11px] font-bold text-white shadow ${
-                      ["bg-amber-500", "bg-slate-400", "bg-orange-700", "bg-gray-500", "bg-gray-500"][idx]
-                    }`}
-                  >
-                    {idx + 1}
-                  </div>
-                </div>
-                <p className="mt-1.5 text-[11px] font-medium text-gray-700 truncate text-center group-hover:text-indigo-600 transition-colors">
-                  {t.title}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* 为你推荐（v2.7.0：根据收藏分类推荐同分类热门工具） */}
       {!isSearching && user && recommendedTools.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-3">
@@ -578,8 +523,13 @@ export default function HomePage() {
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {filtered.map((tool) => (
-                <ToolCard key={tool.id} tool={tool} viewCount={viewCounts[tool.id] ?? tool.viewCount} />
+              {filtered.map((tool, idx) => (
+                <ToolCard
+                  key={tool.id}
+                  tool={tool}
+                  viewCount={viewCounts[tool.id] ?? tool.viewCount}
+                  rank={sortBy === "popular" && !isSearching ? idx + 1 : undefined}
+                />
               ))}
             </div>
           </>
@@ -602,7 +552,7 @@ export default function HomePage() {
 
 // ---- ToolCard — React.memo 防止不必要的重渲染 ----
 
-const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewCount?: number }) {
+const ToolCard = memo(function ToolCard({ tool, viewCount, rank }: { tool: Tool; viewCount?: number; rank?: number }) {
   return (
     <Link
       href={`/tool/${tool.id}`}
@@ -610,6 +560,15 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
     >
       {/* Thumbnail: 纯净封面，不叠加任何徽章（v1.9.2） */}
       <div className="relative aspect-[4/3] overflow-hidden">
+        {rank != null && rank <= 3 && (
+          <div
+            className={`absolute top-2 left-2 z-10 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white shadow ${
+              rank === 1 ? "bg-amber-500" : rank === 2 ? "bg-slate-400" : "bg-orange-700"
+            }`}
+          >
+            {rank}
+          </div>
+        )}
         {tool.coverUrl ? (
           <Image
             src={tool.coverUrl}
