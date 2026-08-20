@@ -13,7 +13,7 @@ import { ToolPageErrorBoundary } from "@/components/ToolPageErrorBoundary";
 import { ToolHistoryDrawer } from "@/components/ToolHistoryDrawer";
 import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
-import { fetchToolById, readToolDetailCache, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, fetchReviewLikeCounts, type Tool, type Review, type LikeTargetType, type Visibility, invalidateToolCaches } from "@/lib/data";
+import { fetchToolById, readToolDetailCache, resolveSourceTool, fetchReviews, fetchAverageRating, addReview, deleteReview, fetchTools, fetchViewCounts, incrementToolView, toggleLike, fetchUserLikes, fetchLikeCount, fetchReviewLikeCounts, type Tool, type Review, type LikeTargetType, type Visibility, invalidateToolCaches } from "@/lib/data";
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
 import { authedFetch } from "@/lib/api-client";
 import { getLsSnapshot, setLsSnapshot } from "@/lib/toolStateBridge";
@@ -302,16 +302,12 @@ export default function ToolDetailPage() {
     }
     setUploadingImage(true);
     try {
-      const supabase = getSupabase();
-      if (!supabase) throw new Error("上传服务不可用");
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${user.id}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage
-        .from("review-images")
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (error) throw new Error(error.message);
-      const { data } = supabase.storage.from("review-images").getPublicUrl(path);
-      setNewImageUrl(data?.publicUrl ?? null);
+      const form = new FormData();
+      form.append("file", file);
+      const res = await authedFetch("/api/upload-review-image", { method: "POST", body: form });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.url) throw new Error(j.error || "图片上传失败");
+      setNewImageUrl(j.url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "图片上传失败");
     } finally {
@@ -390,6 +386,22 @@ export default function ToolDetailPage() {
       setSubmitting(false);
     }
   }, [user, id, submitting, replyingTo, replyContent, toast]);
+
+  // v2.8.1：删除自己的评论/回复
+  const handleDeleteReview = useCallback(async (reviewId: string) => {
+    if (!user) return;
+    try {
+      const ok = await deleteReview(reviewId, user.id);
+      if (ok) {
+        setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+        toast.success("已删除");
+      } else {
+        toast.error("删除失败，只能删除自己的内容");
+      }
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "删除失败");
+    }
+  }, [user, toast]);
 
   // 🔥 使用 Blob URL 替代 srcdoc（兼容微信/QQ 等内嵌浏览器）
   // srcDoc 用于标准浏览器（Safari/Chrome/Firefox），blobUrl 仅用于微信/QQ/X5
@@ -1415,6 +1427,14 @@ export default function ToolDetailPage() {
                                 回复
                               </button>
                             )}
+                            {user && review.userId === user.id && (
+                              <button
+                                onClick={() => handleDeleteReview(review.id)}
+                                className="inline-flex items-center text-xs px-2 py-1 rounded-lg text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                              >
+                                删除
+                              </button>
+                            )}
                           </div>
                           {/* 回复输入框 */}
                           {replyingTo?.id === review.id && (
@@ -1469,6 +1489,14 @@ export default function ToolDetailPage() {
                                     <span className="text-[10px] text-gray-400">
                                       {new Date(reply.createdAt).toLocaleDateString("zh-CN")}
                                     </span>
+                                    {user && reply.userId === user.id && (
+                                      <button
+                                        onClick={() => handleDeleteReview(reply.id)}
+                                        className="ml-auto text-[10px] text-gray-400 hover:text-rose-500 transition-colors"
+                                      >
+                                        删除
+                                      </button>
+                                    )}
                                   </div>
                                   <p className="text-xs text-gray-600 leading-relaxed mt-1.5">{renderReviewContent(reply.content)}</p>
                                 </div>

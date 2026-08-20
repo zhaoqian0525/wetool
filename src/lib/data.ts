@@ -601,6 +601,21 @@ export async function addReview(
   return newReview;
 }
 
+/** v2.8.1：删除自己的评论（含回复），校验 user_id */
+export async function deleteReview(reviewId: string, userId: string): Promise<boolean> {
+  const supabase = await getSupabaseClient();
+  if (supabase) {
+    const result = await queryWithTimeout(
+      supabase.from("reviews").delete().eq("id", reviewId).eq("user_id", userId)
+    );
+    if (result && !(result as { error: unknown }).error) return true;
+    if (result && (result as { error: unknown }).error) return false;
+  }
+  // Mock mode
+  setMockReviews(getMockReviews().filter((r) => r.id !== reviewId));
+  return true;
+}
+
 // ---- Likes (替代收藏，支持工具和评论点赞) ----
 
 export type LikeTargetType = "tool" | "review" | "save";
