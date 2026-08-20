@@ -1122,7 +1122,7 @@ function CreatePageInner() {
                               <button
                                 key={cat}
                                 onClick={() => setSceneCategory(cat)}
-                                className={`min-h-[30px] px-2.5 py-1 text-xs font-medium rounded-full transition-all ${
+                                className={`min-h-[32px] px-3 py-1 text-xs font-medium rounded-full transition-all ${
                                   sceneCategory === cat
                                     ? "bg-indigo-600 text-white"
                                     : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
@@ -1143,7 +1143,7 @@ function CreatePageInner() {
                                     if (aiGenerating) return;
                                     runAiSend(t.prompt);
                                   }}
-                                  className="min-h-[34px] px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full hover:bg-indigo-100 active:scale-95 transition-all"
+                                  className="min-h-[32px] px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full hover:bg-indigo-100 active:scale-95 transition-all"
                                   style={{ touchAction: "manipulation" }}
                                 >
                                   {t.emoji} {t.label}
