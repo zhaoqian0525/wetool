@@ -1,6 +1,6 @@
 {
-  "version": "2.5.0",
+  "version": "2.6.0",
   "buildDate": "2026-08-20",
-  "buildTimestamp": "2026-08-20 23:47:19.698+08:00",
-  "description": "v2.5.0：M4 评论 @/图片——评论内容 @昵称 高亮 + 评论配图上传与显示（需执行 supabase_v25_review_images.sql）"
+  "buildTimestamp": "2026-08-20 23:51:21.673+08:00",
+  "description": "v2.6.0：M4 通知中心——评论触发通知、导航栏未读铃铛、通知列表与全部已读（需执行 supabase_v26_notifications.sql）"
 }

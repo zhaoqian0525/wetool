@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { authedFetch } from "@/lib/api-client";
 import { WewooMark } from "@/components/WewooLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import Avatar from "@/components/Avatar";
@@ -83,6 +84,7 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
     .includes((user.email ?? "").toLowerCase());
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [unread, setUnread] = useState(0);
 
   const tabs = useMobileTabs(user?.id);
 
@@ -96,6 +98,22 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  // v2.6.0 通知未读数
+  useEffect(() => {
+    if (!user) {
+      setUnread(0);
+      return;
+    }
+    authedFetch("/api/notifications")
+      .then(async (res) => {
+        if (res.ok) {
+          const j = await res.json();
+          setUnread(j.unread || 0);
+        }
+      })
+      .catch(() => {});
+  }, [user]);
 
   /* ======== Desktop Top Navbar ======== */
   const desktopNav = (
@@ -121,7 +139,23 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
           ) : user ? (
             /* Logged in */
-            <div className="relative" ref={menuRef}>
+            <div className="flex items-center gap-1">
+              <Link
+                href="/notifications"
+                className="relative min-w-[40px] min-h-[40px] flex items-center justify-center text-gray-500 hover:text-indigo-600 transition-colors"
+                aria-label="通知"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.7 21a2 2 0 01-3.4 0" />
+                </svg>
+                {unread > 0 && (
+                  <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold text-white bg-rose-500 rounded-full">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
+              </Link>
+              <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -172,6 +206,7 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
                   </button>
                 </div>
               )}
+              </div>
             </div>
           ) : (
             /* Not logged in */
@@ -244,6 +279,21 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
           ) : user ? (
             <div className="flex items-center gap-2">
+              <Link
+                href="/notifications"
+                className="relative min-w-[32px] min-h-[32px] flex items-center justify-center text-gray-500 hover:text-indigo-600 transition-colors"
+                aria-label="通知"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.7 21a2 2 0 01-3.4 0" />
+                </svg>
+                {unread > 0 && (
+                  <span className="absolute top-0 right-0 min-w-[14px] h-3.5 px-0.5 flex items-center justify-center text-[9px] font-bold text-white bg-rose-500 rounded-full">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
+              </Link>
               <Link href={`/user/${user.id}`} className="flex items-center gap-1.5 min-h-[32px]">
                 <Avatar
                   url={user.user_metadata?.avatar_url as string | undefined}

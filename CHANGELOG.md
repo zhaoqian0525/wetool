@@ -6,6 +6,14 @@
 
 ---
 
+## [2.6.0] - 2026-08-20
+
+### Added（M4 通知中心）
+- 评论他人工具时自动通知工具作者；导航栏新增未读铃铛（桌面 + 移动）；新增 /notifications 通知页，支持全部已读
+- 需在 Supabase 执行 `supabase_v26_notifications.sql`（notifications 表 + RLS）
+
+---
+
 ## [2.5.0] - 2026-08-20
 
 ### Added（M4 评论 @/图片）

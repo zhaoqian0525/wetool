@@ -345,10 +345,25 @@ export default function ToolDetailPage() {
       setNewRating(0);
       setNewContent("");
       setNewImageUrl(null);
+      // v2.6.0 通知：评论了别人的工具时通知作者
+      if (tool?.authorId && tool.authorId !== user.id) {
+        authedFetch("/api/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: tool.authorId,
+            type: "comment",
+            actorName: user.user_metadata?.name || user.email?.split("@")[0] || "匿名用户",
+            toolId: id,
+            toolTitle: tool.title,
+            content: newContent.trim(),
+          }),
+        }).catch(() => {});
+      }
     } finally {
       setSubmitting(false);
     }
-  }, [user, id, newRating, newContent, newImageUrl, submitting]);
+  }, [user, id, newRating, newContent, newImageUrl, submitting, tool]);
 
   // v1.14.0 评论回复
   const handleSubmitReply = useCallback(async () => {
