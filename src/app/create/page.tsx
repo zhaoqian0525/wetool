@@ -16,7 +16,7 @@ import { useBlobSrcDoc } from "@/hooks/useBlobSrcDoc";
 import { useToolStorage } from "@/hooks/useToolStorage";
 import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } from "@/components/CoverPicker";
 import { captureCover, dataUrlToBlob, generateCustomCoverBlob, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
-import { AI_PROMPT_TEMPLATE, aiPrompts, containsSensitiveContent, extractHtmlFromAiOutput } from "@/lib/aiPrompts";
+import { AI_PROMPT_TEMPLATE, aiPrompts, containsSensitiveContent, extractHtmlFromAiOutput, sceneTemplates } from "@/lib/aiPrompts";
 import { getLsSnapshot } from "@/lib/toolStateBridge";
 import { Modal } from "@/components/ui";
 import CapabilityBadges from "@/components/CapabilityBadges";
@@ -1105,38 +1105,42 @@ function CreatePageInner() {
                   )}
                   {aiMessages.length === 0 && (
                     <>
-                    <div className="flex flex-wrap gap-1.5">
-                      {[
-                        "纪念日记录器",
-                        "喝水打卡",
-                        "倒计时器",
-                        "记账本",
-                        "随机点名",
-                        "BMI 计算器",
-                      ].map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => {
-                            const t = `帮我做一个${s}，界面简洁好用，手机适配，数据用 localStorage 保存`;
-                            setAiInput(t);
-                            runAiSend(t);
-                          }}
-                          className="min-h-[32px] px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full hover:bg-indigo-100 active:scale-95 transition-all"
-                          style={{ touchAction: "manipulation" }}
+                      <div className="space-y-2.5">
+                        {Object.entries(
+                          sceneTemplates.reduce<Record<string, typeof sceneTemplates>>((acc, t) => {
+                            (acc[t.category] ||= []).push(t);
+                            return acc;
+                          }, {})
+                        ).map(([cat, items]) => (
+                          <div key={cat}>
+                            <div className="text-[11px] text-gray-400 mb-1">{cat}</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {items.map((t) => (
+                                <button
+                                  key={t.id}
+                                  onClick={() => {
+                                    if (aiGenerating) return;
+                                    runAiSend(t.prompt);
+                                  }}
+                                  className="min-h-[32px] px-2.5 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full hover:bg-indigo-100 active:scale-95 transition-all"
+                                  style={{ touchAction: "manipulation" }}
+                                >
+                                  {t.emoji} {t.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-center pt-1">
+                        <Link
+                          href="/guide"
+                          target="_blank"
+                          className="text-xs text-indigo-500 hover:text-indigo-700 underline underline-offset-2"
                         >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex justify-center pt-0.5">
-                      <Link
-                        href="/guide"
-                        target="_blank"
-                        className="text-xs text-indigo-500 hover:text-indigo-700 underline underline-offset-2"
-                      >
-                        📖 不会写？看看教程，5 分钟上手
-                      </Link>
-                    </div>
+                          📖 不会写？看看教程，5 分钟上手
+                        </Link>
+                      </div>
                     </>
                   )}
                   {aiMessages.map((m) => (

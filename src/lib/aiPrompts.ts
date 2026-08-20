@@ -72,6 +72,146 @@ export const aiPrompts: AiPromptExample[] = [
   },
 ];
 
+export interface SceneTemplate {
+  id: string;
+  label: string;
+  emoji: string;
+  category: string;
+  prompt: string;
+}
+
+/** v2.2.0 场景模板库：创作者点一下直接生成，全部基于现有沙盒能力 */
+export const sceneTemplates: SceneTemplate[] = [
+  {
+    id: "accounting",
+    label: "记账本",
+    emoji: "💰",
+    category: "生活实用",
+    prompt:
+      "帮我写一个简单好用的记账本：可以添加收入和支出（金额+分类+备注），显示总余额、本月收支统计和最近账单列表，可以删除单条记录；数据用 localStorage 保存，刷新不丢。界面简洁、适配 375px 手机，按钮至少 44px。完全自包含、不使用裸网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "habit",
+    label: "习惯打卡",
+    emoji: "✅",
+    category: "生活实用",
+    prompt:
+      "帮我写一个习惯打卡工具：可以添加多个习惯（如喝水、运动、读书），每天点一下完成打卡，显示连续打卡天数和完成率；数据用 localStorage 保存，跨天自动归零但保留历史记录。界面可爱一点，按钮至少 44px，适配 375px 手机。完全自包含、不使用裸网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "anniversary",
+    label: "纪念日倒数日",
+    emoji: "📅",
+    category: "生活实用",
+    prompt:
+      "帮我写一个纪念日倒数日工具：可以添加重要日子（名称+日期），显示距离那天还有多少天，支持正数和已经过去的纪念日；数据用 localStorage 保存，刷新不丢。界面温馨好看，按钮至少 44px，适配 375px 手机。完全自包含、不使用裸网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "pomodoro",
+    label: "番茄钟",
+    emoji: "🍅",
+    category: "生活实用",
+    prompt:
+      "帮我写一个番茄钟专注计时器：默认 25 分钟专注 + 5 分钟休息，可以开始/暂停/重置，结束后有提示；记录今天完成了几个番茄；数据用 localStorage 保存。界面简洁，按钮至少 44px，适配 375px 手机。完全自包含、不使用裸网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "mortgage",
+    label: "房贷/复利计算器",
+    emoji: "🏠",
+    category: "生活实用",
+    prompt:
+      "帮我写一个房贷计算器：输入贷款金额、年利率、贷款年限，计算月供、总利息和还款总额，支持等额本息和等额本金两种方式；再附一个复利计算器（本金+利率+年限）。界面专业简洁，按钮至少 44px，适配 375px 手机。完全自包含、不使用网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "unit",
+    label: "单位换算",
+    emoji: "📐",
+    category: "生活实用",
+    prompt:
+      "帮我写一个单位换算大全：支持长度、重量、面积、温度、速度等常见单位互相换算，输入数值即时显示结果；可以收藏常用换算。界面清爽，按钮至少 44px，适配 375px 手机。完全自包含、不使用网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "poetry",
+    label: "古诗词抽查",
+    emoji: "📜",
+    category: "学习成长",
+    prompt:
+      "帮我写一个古诗词抽查工具：内置约 20 首小学常见古诗词，随机抽题考上一句/下一句填空，答完显示正确答案，记录得分；数据用 localStorage 保存。界面雅致，按钮至少 44px，适配 375px 手机。完全自包含、不使用网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "vocab",
+    label: "单词测验",
+    emoji: "📝",
+    category: "学习成长",
+    prompt:
+      "帮我写一个英语单词测验工具：内置一组常用单词，随机出题（看中文选英文或看英文选中文），答完显示正确率和错题；数据用 localStorage 保存。界面清爽，按钮至少 44px，适配 375px 手机。完全自包含、不使用网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "mental",
+    label: "口算练习",
+    emoji: "➗",
+    category: "学习成长",
+    prompt:
+      "帮我写一个口算练习工具：可选加减乘除和难度，随机出题，输入答案即时判断，记录正确率；数据用 localStorage 保存。界面活泼，按钮至少 44px，适配 375px 手机。完全自包含、不使用网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "2048",
+    label: "2048",
+    emoji: "🎮",
+    category: "趣味游戏",
+    prompt:
+      "帮我写一个 2048 小游戏：标准 4x4 棋盘，上下左右滑动（手机触摸滑动 + 电脑方向键）合并数字，显示当前分数和历史最高分；游戏进度用 localStorage 保存，刷新可继续。界面精致，适配 375px 手机。完全自包含、不使用网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "sudoku",
+    label: "数独",
+    emoji: "🔢",
+    category: "趣味游戏",
+    prompt:
+      "帮我写一个数独小游戏：9x9 标准数独，支持简单/中等/困难难度，可以填数字、检查对错、自动判断完成；当前进度用 localStorage 保存，刷新可继续。界面清晰，按钮至少 44px，适配 375px 手机。完全自包含、不使用网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "minesweeper",
+    label: "扫雷",
+    emoji: "💣",
+    category: "趣味游戏",
+    prompt:
+      "帮我写一个扫雷小游戏：9x9 经典扫雷，点开格子、长按插旗，显示剩余雷数和计时；最好成绩用 localStorage 保存。界面精致，适配 375px 手机。完全自包含、不使用网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "memory",
+    label: "记忆翻牌",
+    emoji: "🃏",
+    category: "趣味游戏",
+    prompt:
+      "帮我写一个记忆翻牌小游戏：多张卡片背面朝上，点开两张配对，配对所有卡片即完成，记录用时和步数；最好成绩用 localStorage 保存。界面可爱，按钮至少 44px，适配 375px 手机。完全自包含、不使用网络请求。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "weather",
+    label: "天气查询",
+    emoji: "🌤️",
+    category: "联网查询",
+    prompt:
+      "帮我写一个天气查询工具：输入城市名，显示当前温度、湿度和天气描述。用平台白名单联网 __wewoo.fetch('https://wttr.in/城市名?format=j1', function(err, res){ var w = res.json.current_condition[0]; w.temp_C 是温度、w.humidity 是湿度、w.weatherDesc[0].value 是天气描述 })（调用前特性检测 if (window.__wewoo && __wewoo.fetch)，失败时友好提示在微坞内打开）。界面漂亮，按钮至少 44px，适配 375px 手机。完全自包含、不使用裸 fetch。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "exchange",
+    label: "汇率换算",
+    emoji: "💱",
+    category: "联网查询",
+    prompt:
+      "帮我写一个汇率换算器：输入金额、选择或输入两个币种，点换算显示实时汇率和换算结果。用平台白名单联网 __wewoo.fetch('https://open.er-api.com/v6/latest/CNY', function(err, res){ var data = res.json; })（调用前特性检测，失败时提示在微坞内打开）。界面简洁，按钮至少 44px，适配 375px 手机。完全自包含、不使用裸 fetch。把完整代码放在 ```html 代码块里。",
+  },
+  {
+    id: "ai-bill",
+    label: "AI 账单整理",
+    emoji: "🤖",
+    category: "AI 助手",
+    prompt:
+      "帮我写一个 AI 记账整理工具：可以添加日常开销条目（金额+备注），点「AI 整理」后把账单按类别汇总并给出省钱建议。用平台内置 AI __wewoo.ai.chat({ prompt: '把以下开销分类汇总…', json: true }, function(err, res){ res.json 是分类好的对象 }) 获取结构化结果，再用 localStorage 保存账单。按钮至少 44px，适配 375px 手机。完全自包含。把完整代码放在 ```html 代码块里。",
+  },
+];
+
 
 /** DeepSeek 内置 AI 生成的系统提示词：强制沙盒合规白名单 + 安全红线 */
 export const AI_SYSTEM_PROMPT = `你是微坞 WeWoo 平台（we-woo.net）的 AI 工具生成助手。用户会描述一个想要的小工具，你需要输出一个完整、独立、可直接运行的单文件 HTML 应用。硬性要求：

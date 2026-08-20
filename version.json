@@ -1,6 +1,6 @@
 {
-  "version": "2.1.9",
-  "buildDate": "2026-08-18",
-  "buildTimestamp": "2026-08-18 23:34:22.435+08:00",
-  "description": "v2.1.9：修复 iPhone 添加到主屏幕链接不对（工具页 manifest 强制刷新，避免 iOS 用缓存的站点 manifest）"
+  "version": "2.2.0",
+  "buildDate": "2026-08-20",
+  "buildTimestamp": "2026-08-20 23:09:36.813+08:00",
+  "description": "v2.2.0：场景模板库首批——创作页 16 个场景模板（生活/学习/游戏/联网/AI 五类），点一下直接生成工具"
 }
