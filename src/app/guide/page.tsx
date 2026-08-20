@@ -7,68 +7,68 @@ import { WewooMark } from "@/components/WewooLogo";
 const steps = [
   {
     num: 1,
-    title: "找到你想要的工具",
+    title: "想好做什么工具",
     icon: "💡",
     color: "from-amber-400 to-orange-500",
-    desc: "先想好你要做什么工具。比如：一个倒计时器、一个颜色转换器、一个BMI计算器……什么都可以！",
-    tip: "想不出来？可以看看首页别人做的工具找灵感",
+    desc: "先想一个需求：倒计时、记账、计算器……都可以。",
+    tip: "没想法？看看首页别人的工具找灵感",
   },
   {
     num: 2,
     title: "和 AI 对话生成",
     icon: "🤖",
     color: "from-indigo-400 to-purple-500",
-    desc: "打开创作页会自动展开「和 AI 对话生成」，直接描述你想做的工具（比如：做一个纪念日记录器，能添加重要日子、显示倒数天数），点「发送」，AI 会边聊边生成代码版本（V1、V2…）。",
-    tip: "生成后点版本按钮即可载入完整代码查看/修改；可以继续对话调整：「换个配色」「加个历史记录」「再生成一个更简约的版本」；平台支持白名单联网和内置 AI，超出沙盒范围时 AI 会说明原因并给替代方案",
+    desc: "在创作页直接描述你的想法，点发送，AI 会边聊边生成代码。",
+    tip: "可继续对话调整：「换个配色」「加个历史记录」。平台支持白名单联网和内置 AI，超出沙盒范围 AI 会说明并给替代方案",
     code: true,
   },
   {
     num: 3,
-    title: "载入完整代码",
+    title: "载入代码",
     icon: "📋",
     color: "from-blue-400 to-cyan-500",
-    desc: "点对话上方的版本按钮（V1、V2…），对应版本的完整代码会自动填入左边的编辑器，随时可以手动修改、对照右侧实时预览。",
-    tip: "多轮对话会产生多个版本，点不同版本按钮可以来回切换对比",
+    desc: "点版本按钮（V1、V2…），完整代码会自动填入编辑器。",
+    tip: "多轮对话产生多个版本，可来回切换对比",
   },
   {
     num: 4,
-    title: "外部 AI 代码（可选）",
+    title: "外部 AI（可选）",
     icon: "📋",
     color: "from-green-400 to-teal-500",
-    desc: "想用 ChatGPT、Kimi 等外部 AI 也可以：展开「想用外部 AI？复制这段提示词」，把代码复制后粘贴到左边黑色的编辑器里（Ctrl+V 或长按粘贴）。",
-    tip: "如果编辑器里已经有代码，先全选删除再粘贴",
+    desc: "想用 ChatGPT、Kimi 等外部 AI，就把提示词复制过去，再把代码粘贴回来。",
+    tip: "编辑器里有旧代码就先清空再粘贴",
   },
   {
     num: 5,
     title: "预览效果",
     icon: "👁️",
     color: "from-pink-400 to-rose-500",
-    desc: "右边的手机框里会实时显示你的工具效果。你可以试试点击、输入，看看好不好用。",
-    tip: "手机上点「全屏预览」可以看到完整效果；工具用 localStorage 保存的数据，刷新页面也会保留",
+    desc: "右侧手机框实时显示效果，可以直接点击试用。",
+    tip: "数据用 localStorage 保存，刷新也不会丢",
   },
   {
     num: 6,
     title: "保存快照",
     icon: "💾",
     color: "from-amber-400 to-yellow-500",
-    desc: "满意了就点「保存快照」按钮（或者按 Ctrl+S），这样即使关掉页面也不会丢失。",
-    tip: "可以保存多个版本，随时切换回去",
+    desc: "满意就点「保存快照」，关掉页面也不丢。",
+    tip: "可保存多个版本，随时切换",
   },
   {
     num: 7,
-    title: "发布并分享",
+    title: "发布",
     icon: "🚀",
     color: "from-indigo-500 to-blue-500",
-    desc: "点「发布」按钮，填写工具名称和简介，选择分类，点确认。发布后会自动生成分享链接和二维码！",
-    tip: "需要先登录才能发布哦",
+    desc: "点「发布」，填名称、简介、选分类，即可生成分享链接和二维码。",
+    tip: "需要先登录",
   },
   {
     num: 8,
     title: "分享给朋友",
     icon: "🎉",
     color: "from-purple-400 to-pink-500",
-    desc: "发布成功后，可以复制链接发给朋友，或者让他们扫二维码。所有人都能在手机上直接打开使用！",
-    tip: "链接在微信、QQ 里也能直接打开",
+    desc: "把链接或二维码发给朋友，用手机浏览器打开就能用。",
+    tip: "微信里打开可能受限，建议引导朋友用浏览器打开",
   },
 ];
 
@@ -259,7 +259,7 @@ export default function GuidePage() {
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
               </summary>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                当然可以！你只需要告诉 AI 你想要什么工具，AI 会帮你写出全部代码。你只要把代码复制粘贴到微坞就行了。就像让厨师做菜，你只需要点菜，不用自己炒。
+                能。告诉 AI 你想要什么工具，它会帮你写全部代码。
               </p>
             </details>
             <details className="panel p-5 group">
@@ -268,7 +268,7 @@ export default function GuidePage() {
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
               </summary>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                推荐用 ChatGPT、Kimi、豆包、文心一言、通义千问等任意一个都可以。免费版就够用了。关键是把你的需求说清楚，比如"帮我做一个 XXX，要好看，适配手机"。
+                直接用微坞内置 AI 就行；也可以把提示词复制到 ChatGPT、Kimi 等外部 AI。
               </p>
             </details>
             <details className="panel p-5 group">
@@ -277,7 +277,7 @@ export default function GuidePage() {
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
               </summary>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                是的，发布工具需要先登录。注册很简单，用邮箱就行。不登录也可以在编辑器里写代码和预览，只是不能发布到广场分享给别人。
+                发布要登录，邮箱注册即可；不登录也能写代码和预览。
               </p>
             </details>
             <details className="panel p-5 group">
@@ -286,7 +286,7 @@ export default function GuidePage() {
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
               </summary>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                可能是代码不完整或者有错误。可以回到 AI 那里，让它检查一下代码。也可以先试试点「试试示例」按钮，加载一个能用的示例代码看看效果，确保编辑器正常工作。
+                多半是代码不完整或出错。让 AI 检查一下，或从场景模板生成一个能跑的示例。
               </p>
             </details>
             <details className="panel p-5 group">
@@ -295,7 +295,7 @@ export default function GuidePage() {
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
               </summary>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                可以！在任意工具详情页点「改编」按钮，就会把别人的代码复制到你的编辑器里，你可以随便修改后发布自己的版本。这是微坞的特色功能 —— 大家互相学习、互相改进。
+                可以。详情页点「改编」，代码会复制到你的编辑器，改完发布自己的版本。
               </p>
             </details>
             <details className="panel p-5 group">
@@ -304,7 +304,7 @@ export default function GuidePage() {
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
               </summary>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                发布后工具会出现在首页广场，所有人都能看到。你也可以把生成的链接或二维码分享给朋友，他们在手机上直接打开就能用，不需要安装任何东西。
+                发布后出现在首页广场；把链接或二维码发给朋友，手机浏览器打开即用。
               </p>
             </details>
             <details className="panel p-5 group">
@@ -313,7 +313,7 @@ export default function GuidePage() {
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
               </summary>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                可以！微坞有「记忆功能」：只要工具代码里用 localStorage 保存数据，刷新页面、切换全屏、回到主页再进来，数据都能自动恢复。做工具时告诉 AI「数据用 localStorage 保存」就行。未登录用户的数据保存在本机；登录后还会同步到云端，换设备也不丢。
+                能。代码里用 localStorage 保存，刷新、重进都能恢复；登录后同步到云端。
               </p>
             </details>
             <details className="panel p-5 group">
@@ -322,7 +322,7 @@ export default function GuidePage() {
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
               </summary>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                可以，但只能访问微坞白名单里的公开数据源（汇率、天气、词典、翻译、二维码、名言等）。工具代码里用 __wewoo.fetch 调用，例如查汇率、查天气。不能随意访问任意网站，这是为了保护用户隐私和控制成本。做工具时告诉 AI「用 __wewoo.fetch 获取公开数据」就行。
+                能，但仅限白名单公开数据（汇率、天气、词典等），用 __wewoo.fetch 调用。
               </p>
             </details>
             <details className="panel p-5 group">
@@ -331,7 +331,7 @@ export default function GuidePage() {
                 <span className="text-indigo-400 group-open:rotate-180 transition-transform">⌄</span>
               </summary>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                可以！工具内可以用 __wewoo.ai.chat 做问答、总结、分类、写文案。支持多轮对话（history）、结构化 JSON 输出（json:true）、自定义回复长度（maxTokens），每天 1000 次额度。做工具时告诉 AI「用 __wewoo.ai.chat 做 AI 总结，json:true 返回结构化结果」即可。
+                能。用 __wewoo.ai.chat 做问答、总结、分类，每天 1000 次。
               </p>
             </details>
           </div>

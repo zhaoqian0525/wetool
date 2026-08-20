@@ -1271,11 +1271,11 @@ function CreatePageInner() {
                                     if (aiGenerating) return;
                                     runAiSend(t.prompt);
                                   }}
-                                  className="min-h-[40px] flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:border-indigo-300 hover:text-indigo-600 active:scale-[0.98] transition-all"
+                                  className="min-h-[40px] flex items-center gap-1.5 px-2.5 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:border-indigo-300 hover:text-indigo-600 active:scale-[0.98] transition-all"
                                   style={{ touchAction: "manipulation" }}
                                 >
-                                  <span className="text-base leading-none">{t.emoji}</span>
-                                  <span className="truncate">{t.label}</span>
+                                  <span className="text-base leading-none flex-shrink-0">{t.emoji}</span>
+                                  <span className="leading-snug text-left">{t.label}</span>
                                 </button>
                               ))}
                           </div>
