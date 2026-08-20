@@ -23,6 +23,8 @@ import CapabilityBadges from "@/components/CapabilityBadges";
 
 // --- Constants ---
 
+const SCENE_CATEGORIES = ["生活实用", "学习成长", "趣味游戏", "联网查询", "AI 助手"];
+
 const DEFAULT_CODE = "";
 
 const TEMPLATE_CODE = `<!DOCTYPE html>
@@ -310,6 +312,8 @@ function CreatePageInner() {
   const [aiActiveVersion, setAiActiveVersion] = useState<number | null>(null);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [sceneTemplatesOpen, setSceneTemplatesOpen] = useState(false);
+  const [sceneCategory, setSceneCategory] = useState("生活实用");
 
   const debouncedCode = useDebounce(code, 500);
   const debouncedCodeRef = useRef(debouncedCode);
@@ -1099,39 +1103,55 @@ function CreatePageInner() {
 
                 <div ref={aiChatScrollRef} className="space-y-2 max-h-[280px] overflow-y-auto pr-1 mb-2">
                   {aiMessages.length === 0 && (
-                    <div className="text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2 leading-relaxed">
-                      描述你想做的工具，AI 会直接生成可运行的代码并自动填入编辑器；可以继续对话调整：「换个配色」「加个历史记录」「再生成一个更简约的版本」…
-                    </div>
-                  )}
-                  {aiMessages.length === 0 && (
                     <>
-                      <div className="space-y-2.5">
-                        {Object.entries(
-                          sceneTemplates.reduce<Record<string, typeof sceneTemplates>>((acc, t) => {
-                            (acc[t.category] ||= []).push(t);
-                            return acc;
-                          }, {})
-                        ).map(([cat, items]) => (
-                          <div key={cat}>
-                            <div className="text-[11px] text-gray-400 mb-1">{cat}</div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {items.map((t) => (
+                      <div className="text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2 leading-relaxed">
+                        描述你想做的工具，AI 会直接生成可运行的代码并自动填入编辑器；也可以从场景模板开始：
+                      </div>
+                      <button
+                        onClick={() => setSceneTemplatesOpen((v) => !v)}
+                        className="w-full min-h-[40px] flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                        style={{ touchAction: "manipulation" }}
+                      >
+                        <span className="flex items-center gap-1.5">🎨 从场景模板开始</span>
+                        <svg className={`w-4 h-4 text-gray-400 transition-transform ${sceneTemplatesOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+                      {sceneTemplatesOpen && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-1">
+                            {SCENE_CATEGORIES.map((cat) => (
+                              <button
+                                key={cat}
+                                onClick={() => setSceneCategory(cat)}
+                                className={`min-h-[30px] px-2.5 py-1 text-xs font-medium rounded-full transition-all ${
+                                  sceneCategory === cat
+                                    ? "bg-indigo-600 text-white"
+                                    : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                                }`}
+                                style={{ touchAction: "manipulation" }}
+                              >
+                                {cat}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {sceneTemplates
+                              .filter((t) => t.category === sceneCategory)
+                              .map((t) => (
                                 <button
                                   key={t.id}
                                   onClick={() => {
                                     if (aiGenerating) return;
                                     runAiSend(t.prompt);
                                   }}
-                                  className="min-h-[32px] px-2.5 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full hover:bg-indigo-100 active:scale-95 transition-all"
+                                  className="min-h-[34px] px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full hover:bg-indigo-100 active:scale-95 transition-all"
                                   style={{ touchAction: "manipulation" }}
                                 >
                                   {t.emoji} {t.label}
                                 </button>
                               ))}
-                            </div>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      )}
                       <div className="flex justify-center pt-1">
                         <Link
                           href="/guide"
