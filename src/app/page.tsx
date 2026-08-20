@@ -26,7 +26,7 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  const [sortBy, setSortBy] = useState<"latest" | "popular">("latest");
+  const [sortBy, setSortBy] = useState<"latest" | "popular" | "recommended">("latest");
   const [myTools, setMyTools] = useState<Tool[]>([]);
   const [recentTools, setRecentTools] = useState<Array<Record<string, unknown>>>([]);
   const [myToolsLoading, setMyToolsLoading] = useState(false);
@@ -163,7 +163,20 @@ export default function HomePage() {
   // 搜索时隐藏"最近使用/我的工具"等区块，让搜索结果紧跟在搜索框下方（移动端更顺手）
   const isSearching = search.trim().length > 0;
 
+  // v2.8.0 推荐：基于收藏分类推荐同分类热门工具（并入广场「推荐」排序）
+  const recommendedTools = useMemo(() => {
+    if (!user || likedTools.length === 0) return [];
+    const likedCategories = new Set(likedTools.map((t) => t.category).filter(Boolean));
+    const likedIds = new Set(likedTools.map((t) => t.id));
+    const myIds = new Set(myTools.map((t) => t.id));
+    return tools
+      .filter((t) => likedCategories.has(t.category) && !likedIds.has(t.id) && !myIds.has(t.id))
+      .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
+      .slice(0, 8);
+  }, [user, likedTools, myTools, tools]);
+
   const filtered = useMemo(() => {
+    if (sortBy === "recommended") return recommendedTools;
     let list = activeCategory === "全部" ? tools : tools.filter((t) => t.category === activeCategory);
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -187,7 +200,7 @@ export default function HomePage() {
       list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     return list;
-  }, [tools, activeCategory, search, sortBy, viewCounts, serverResults]);
+  }, [tools, activeCategory, search, sortBy, viewCounts, serverResults, recommendedTools]);
 
   // 常用工具（从所有工具中筛选 pinned 的 ID）
   const pinnedTools = useMemo(() => {
@@ -205,18 +218,6 @@ export default function HomePage() {
     }
     return combined;
   }, [myTools, likedTools]);
-
-  // v2.7.0 个性化首页：基于收藏分类推荐同分类热门工具
-  const recommendedTools = useMemo(() => {
-    if (!user || likedTools.length === 0) return [];
-    const likedCategories = new Set(likedTools.map((t) => t.category).filter(Boolean));
-    const likedIds = new Set(likedTools.map((t) => t.id));
-    const myIds = new Set(myTools.map((t) => t.id));
-    return tools
-      .filter((t) => likedCategories.has(t.category) && !likedIds.has(t.id) && !myIds.has(t.id))
-      .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
-      .slice(0, 8);
-  }, [user, likedTools, myTools, tools]);
 
   return (
     <div className="min-h-screen bg-page pb-20 lg:pb-0">
@@ -428,46 +429,6 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* 为你推荐（v2.7.0：根据收藏分类推荐同分类热门工具） */}
-      {!isSearching && user && recommendedTools.length > 0 && (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-3">
-          <h2 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
-            <span>✨</span>为你推荐
-            <span className="text-xs font-normal text-gray-400">· 根据你的收藏</span>
-          </h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none -mx-1 px-1">
-            {recommendedTools.map((t) => (
-              <Link
-                key={t.id}
-                href={`/tool/${t.id}`}
-                className="flex-shrink-0 w-[120px] sm:w-[140px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden card-hover-float group"
-              >
-                <div
-                  className="relative aspect-square overflow-hidden"
-                  style={{ background: t.thumbnailGradient || "linear-gradient(135deg, #5046e5, #8b5cf6)" }}
-                >
-                  {t.coverUrl ? (
-                    <Image
-                      src={t.coverUrl}
-                      alt={t.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 640px) 30vw, 15vw"
-                      loading="lazy"
-                    />
-                  ) : null}
-                </div>
-                <div className="p-2">
-                  <h3 className="text-xs font-medium text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
-                    {t.title}
-                  </h3>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* 分类 + 排序（v1.9.5：与广场内容在一起，位于最近使用/我的工具下方） */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-1 pb-3">
         <h2 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
@@ -511,6 +472,14 @@ export default function HomePage() {
             >
               热门
             </button>
+            <button
+              onClick={() => setSortBy("recommended")}
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center px-3 rounded-full text-xs font-medium transition-all ${
+                sortBy === "recommended" ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              推荐
+            </button>
           </div>
         </div>
       </section>
@@ -519,7 +488,25 @@ export default function HomePage() {
         {loading ? (
           <LoadingSkeleton />
         ) : filtered.length === 0 ? (
-          <EmptyState category={activeCategory} search={search} />
+          sortBy === "recommended" ? (
+            <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-center">
+              <div className="text-4xl mb-4">✨</div>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">暂无推荐</h3>
+              <p className="text-sm text-gray-500 mb-6 max-w-xs leading-relaxed">
+                {user ? "收藏一些工具后，这里会推荐同分类的内容" : "登录并收藏工具后，这里会推荐相关内容"}
+              </p>
+              {!user && (
+                <Link
+                  href="/auth"
+                  className="min-h-[44px] flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+                >
+                  登录
+                </Link>
+              )}
+            </div>
+          ) : (
+            <EmptyState category={activeCategory} search={search} />
+          )
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
