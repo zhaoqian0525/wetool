@@ -24,6 +24,13 @@ import CapabilityBadges from "@/components/CapabilityBadges";
 // --- Constants ---
 
 const SCENE_CATEGORIES = ["生活实用", "学习成长", "趣味游戏", "联网查询", "AI 助手"];
+const SCENE_CATEGORY_SHORT: Record<string, string> = {
+  "生活实用": "生活",
+  "学习成长": "学习",
+  "趣味游戏": "游戏",
+  "联网查询": "联网",
+  "AI 助手": "AI",
+};
 
 const DEFAULT_CODE = "";
 
@@ -1104,36 +1111,45 @@ function CreatePageInner() {
                 <div ref={aiChatScrollRef} className="space-y-2 max-h-[280px] overflow-y-auto pr-1 mb-2">
                   {aiMessages.length === 0 && (
                     <>
-                      <div className="text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2 leading-relaxed">
-                        描述你想做的工具，AI 会直接生成可运行的代码并自动填入编辑器；也可以从场景模板开始：
+                      <div className="text-center px-3 pt-3 pb-1">
+                        <div className="text-3xl leading-none mb-3">✨</div>
+                        <h3 className="text-[15px] font-semibold text-gray-900">想做点什么？</h3>
+                        <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                          告诉 AI 你的想法，它会生成可运行的工具
+                        </p>
                       </div>
+
                       <button
                         onClick={() => setSceneTemplatesOpen((v) => !v)}
-                        className="w-full min-h-[40px] flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                        className="w-full min-h-[44px] flex items-center justify-between px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 rounded-xl shadow-sm hover:shadow-md active:scale-[0.99] transition-all"
                         style={{ touchAction: "manipulation" }}
                       >
-                        <span className="flex items-center gap-1.5">🎨 从场景模板开始</span>
-                        <svg className={`w-4 h-4 text-gray-400 transition-transform ${sceneTemplatesOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                        <span className="flex items-center gap-2">🎨 从场景模板开始</span>
+                        <span className="flex items-center gap-1 text-xs font-normal text-white/80">
+                          16 个模板
+                          <svg className={`w-4 h-4 transition-transform ${sceneTemplatesOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                        </span>
                       </button>
+
                       {sceneTemplatesOpen && (
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-1">
+                        <div className="space-y-2.5">
+                          <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
                             {SCENE_CATEGORIES.map((cat) => (
                               <button
                                 key={cat}
                                 onClick={() => setSceneCategory(cat)}
-                                className={`min-h-[32px] px-3 py-1 text-xs font-medium rounded-full transition-all ${
+                                className={`flex-1 min-h-[34px] px-1.5 py-1.5 text-xs font-medium rounded-lg transition-all ${
                                   sceneCategory === cat
-                                    ? "bg-indigo-600 text-white"
-                                    : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
+                                    ? "bg-white text-indigo-600 shadow-sm"
+                                    : "text-gray-500 hover:text-gray-700"
                                 }`}
                                 style={{ touchAction: "manipulation" }}
                               >
-                                {cat}
+                                {SCENE_CATEGORY_SHORT[cat] ?? cat}
                               </button>
                             ))}
                           </div>
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="grid grid-cols-2 gap-2">
                             {sceneTemplates
                               .filter((t) => t.category === sceneCategory)
                               .map((t) => (
@@ -1143,22 +1159,24 @@ function CreatePageInner() {
                                     if (aiGenerating) return;
                                     runAiSend(t.prompt);
                                   }}
-                                  className="min-h-[32px] px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full hover:bg-indigo-100 active:scale-95 transition-all"
+                                  className="min-h-[40px] flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:border-indigo-300 hover:text-indigo-600 active:scale-[0.98] transition-all"
                                   style={{ touchAction: "manipulation" }}
                                 >
-                                  {t.emoji} {t.label}
+                                  <span className="text-base leading-none">{t.emoji}</span>
+                                  <span className="truncate">{t.label}</span>
                                 </button>
                               ))}
                           </div>
                         </div>
                       )}
-                      <div className="flex justify-center pt-1">
+
+                      <div className="text-center pt-0.5">
                         <Link
                           href="/guide"
                           target="_blank"
-                          className="text-xs text-indigo-500 hover:text-indigo-700 underline underline-offset-2"
+                          className="text-xs text-gray-400 hover:text-indigo-600 underline underline-offset-2"
                         >
-                          📖 不会写？看看教程，5 分钟上手
+                          📖 不会写？看看教程
                         </Link>
                       </div>
                     </>
