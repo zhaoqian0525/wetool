@@ -214,6 +214,18 @@ export default function HomePage() {
     return combined;
   }, [myTools, likedTools]);
 
+  // v2.7.0 个性化首页：基于收藏分类推荐同分类热门工具
+  const recommendedTools = useMemo(() => {
+    if (!user || likedTools.length === 0) return [];
+    const likedCategories = new Set(likedTools.map((t) => t.category).filter(Boolean));
+    const likedIds = new Set(likedTools.map((t) => t.id));
+    const myIds = new Set(myTools.map((t) => t.id));
+    return tools
+      .filter((t) => likedCategories.has(t.category) && !likedIds.has(t.id) && !myIds.has(t.id))
+      .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
+      .slice(0, 8);
+  }, [user, likedTools, myTools, tools]);
+
   return (
     <div className="min-h-screen bg-page pb-20 lg:pb-0">
       <Navbar
@@ -465,6 +477,46 @@ export default function HomePage() {
                 <p className="mt-1.5 text-[11px] font-medium text-gray-700 truncate text-center group-hover:text-indigo-600 transition-colors">
                   {t.title}
                 </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 为你推荐（v2.7.0：根据收藏分类推荐同分类热门工具） */}
+      {!isSearching && user && recommendedTools.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-3">
+          <h2 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+            <span>✨</span>为你推荐
+            <span className="text-xs font-normal text-gray-400">· 根据你的收藏</span>
+          </h2>
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none -mx-1 px-1">
+            {recommendedTools.map((t) => (
+              <Link
+                key={t.id}
+                href={`/tool/${t.id}`}
+                className="flex-shrink-0 w-[120px] sm:w-[140px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden card-hover-float group"
+              >
+                <div
+                  className="relative aspect-square overflow-hidden"
+                  style={{ background: t.thumbnailGradient || "linear-gradient(135deg, #5046e5, #8b5cf6)" }}
+                >
+                  {t.coverUrl ? (
+                    <Image
+                      src={t.coverUrl}
+                      alt={t.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 640px) 30vw, 15vw"
+                      loading="lazy"
+                    />
+                  ) : null}
+                </div>
+                <div className="p-2">
+                  <h3 className="text-xs font-medium text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
+                    {t.title}
+                  </h3>
+                </div>
               </Link>
             ))}
           </div>

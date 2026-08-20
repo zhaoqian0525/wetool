@@ -1,6 +1,6 @@
 {
-  "version": "2.6.0",
+  "version": "2.7.0",
   "buildDate": "2026-08-20",
-  "buildTimestamp": "2026-08-20 23:51:21.673+08:00",
-  "description": "v2.6.0：M4 通知中心——评论触发通知、导航栏未读铃铛、通知列表与全部已读（需执行 supabase_v26_notifications.sql）"
+  "buildTimestamp": "2026-08-20 23:53:15.442+08:00",
+  "description": "v2.7.0：M4 个性化首页——基于收藏分类推荐同分类热门工具（为你推荐）"
 }
