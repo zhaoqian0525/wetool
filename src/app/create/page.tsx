@@ -221,6 +221,12 @@ interface AiVersion {
   code: string;
   desc?: string;
 }
+
+interface DraftMeta {
+  id: string;
+  title: string;
+  updatedAt: number;
+}
 // --- Helpers ---
 
 function generateId(): string {
@@ -321,6 +327,8 @@ function CreatePageInner() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [sceneTemplatesOpen, setSceneTemplatesOpen] = useState(false);
   const [sceneCategory, setSceneCategory] = useState("生活实用");
+  const [drafts, setDrafts] = useState<DraftMeta[]>([]);
+  const [draftsOpen, setDraftsOpen] = useState(false);
 
   const debouncedCode = useDebounce(code, 500);
   const debouncedCodeRef = useRef(debouncedCode);
@@ -478,6 +486,7 @@ function CreatePageInner() {
   const aiAbortRef = useRef<AbortController | null>(null);
   const aiChatScrollRef = useRef<HTMLDivElement>(null);
   const aiChatKey = "wewoo-ai-chat" + (user?.id ? "-" + user.id : "");
+  const draftsKey = "wewoo-drafts" + (user?.id ? "-" + user.id : "");
 
   const genMsgId = () => "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
@@ -536,6 +545,18 @@ function CreatePageInner() {
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aiMessages, aiVersions, aiActiveVersion]);
+
+  // 草稿列表（按 userId 隔离）
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftsKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setDrafts(parsed.filter((d) => d && typeof d.id === "string"));
+      }
+    } catch { /* ignore */ }
+  }, [draftsKey]);
 
   // 首次进入且无历史对话时自动展开（对话优先）
 
@@ -687,6 +708,62 @@ function CreatePageInner() {
     editorRef.current?.focus();
     toast.success(`已载入 ${ver.label} 完整代码，可直接修改`);
   }, [setCode, toast]);
+
+  // v2.4.0 草稿箱：把当前对话保存为草稿
+  const saveCurrentAsDraft = useCallback(() => {
+    const firstUser = aiMessages.find((m) => m.role === "user" && m.content.trim());
+    if (!firstUser && !code.trim()) return;
+    const id = "d" + Date.now().toString(36);
+    const title = firstUser ? firstUser.content.trim().slice(0, 24) : "手动编辑的草稿";
+    try {
+      localStorage.setItem(
+        "wewoo-draft-" + id,
+        JSON.stringify({ messages: aiMessages, versions: aiVersions, code, title })
+      );
+      const next: DraftMeta[] = [{ id, title, updatedAt: Date.now() }, ...drafts.filter((d) => d.id !== id)];
+      setDrafts(next);
+      localStorage.setItem(draftsKey, JSON.stringify(next));
+    } catch { /* ignore */ }
+  }, [aiMessages, aiVersions, code, drafts, draftsKey]);
+
+  const restoreDraft = useCallback((id: string) => {
+    try {
+      const raw = localStorage.getItem("wewoo-draft-" + id);
+      if (!raw) return;
+      const content = JSON.parse(raw) as { messages?: AiChatMsg[]; versions?: AiVersion[]; code?: string };
+      setAiMessages(
+        (content.messages || []).filter(
+          (m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
+        )
+      );
+      setAiVersions((content.versions || []).filter((v) => v && typeof v.code === "string"));
+      if (content.code) setCode(content.code);
+      setAiActiveVersion(content.versions?.length ? content.versions.length - 1 : null);
+      setDraftsOpen(false);
+      toast.success("已恢复草稿");
+    } catch { /* ignore */ }
+  }, [setCode, toast]);
+
+  const deleteDraft = useCallback((id: string) => {
+    try {
+      localStorage.removeItem("wewoo-draft-" + id);
+      const next = drafts.filter((d) => d.id !== id);
+      setDrafts(next);
+      localStorage.setItem(draftsKey, JSON.stringify(next));
+    } catch { /* ignore */ }
+  }, [drafts, draftsKey]);
+
+  const handleNewChat = useCallback(() => {
+    if (aiGenerating) aiAbortRef.current?.abort();
+    saveCurrentAsDraft();
+    setAiMessages([]);
+    setAiVersions([]);
+    setAiActiveVersion(null);
+    setAiError(null);
+    setCode("");
+    try { localStorage.removeItem(aiChatKey); } catch { /* ignore */ }
+    toast.success("已新建对话，旧对话已存入草稿箱");
+  }, [aiGenerating, saveCurrentAsDraft, aiChatKey, toast]);
 
   const handleAiClear = useCallback(() => {
     if (aiGenerating) aiAbortRef.current?.abort();
@@ -1054,6 +1131,17 @@ function CreatePageInner() {
               <span className="text-xs text-gray-400 hidden sm:inline">内置 DeepSeek</span>
             </div>
             <div className="flex items-center gap-1.5">
+              {drafts.length > 0 && (
+                <button
+                  onClick={() => setDraftsOpen((v) => !v)}
+                  className={`min-h-[40px] px-2.5 py-1 text-xs transition-colors ${
+                    draftsOpen ? "text-indigo-600" : "text-gray-500 hover:text-indigo-600"
+                  }`}
+                  style={{ touchAction: "manipulation" }}
+                >
+                  📁 草稿{drafts.length > 0 ? `（${drafts.length}）` : ""}
+                </button>
+              )}
               {aiMessages.length > 0 && (
                 <button
                   onClick={handleAiClear}
@@ -1064,7 +1152,7 @@ function CreatePageInner() {
                 </button>
               )}
               <button
-                onClick={handleAiClear}
+                onClick={handleNewChat}
                 className="min-h-[40px] px-2.5 py-1 text-xs text-indigo-600 hover:text-indigo-700 transition-colors"
                 style={{ touchAction: "manipulation" }}
               >
@@ -1072,6 +1160,30 @@ function CreatePageInner() {
               </button>
             </div>
           </div>
+          {draftsOpen && drafts.length > 0 && (
+            <div className="flex-shrink-0 max-h-[180px] overflow-y-auto bg-white border-b border-gray-100 px-3 py-2 space-y-1">
+              {drafts.map((d) => (
+                <div key={d.id} className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => restoreDraft(d.id)}
+                    className="flex-1 min-w-0 text-left px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                    style={{ touchAction: "manipulation" }}
+                  >
+                    <div className="text-xs font-medium text-gray-700 truncate">{d.title}</div>
+                    <div className="text-[10px] text-gray-400 mt-0.5">{formatTime(d.updatedAt)}</div>
+                  </button>
+                  <button
+                    onClick={() => deleteDraft(d.id)}
+                    className="flex-shrink-0 w-7 h-7 flex items-center justify-center text-gray-300 hover:text-rose-500 text-xs rounded-lg hover:bg-rose-50 transition-colors"
+                    style={{ touchAction: "manipulation" }}
+                    aria-label="删除草稿"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto px-3 lg:px-4 py-3 space-y-3">
 {/* AI 对话生成 */}
               <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3">
