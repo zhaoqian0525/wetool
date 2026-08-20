@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type ChangeEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -23,6 +23,17 @@ import { getSupabase } from "@/lib/supabase";
 import ToolInstallButton from "@/components/ToolInstallButton";
 import { Modal, Badge } from "@/components/ui";
 import CapabilityBadges from "@/components/CapabilityBadges";
+
+function renderReviewContent(content: string) {
+  const parts = content.split(/(@[\w\u4e00-\u9fa5][\w\u4e00-\u9fa5-]*)/g);
+  return parts.map((part, i) =>
+    part.startsWith("@") ? (
+      <span key={i} className="text-indigo-600 font-medium">{part}</span>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
+}
 
 
 export default function ToolDetailPage() {
@@ -64,6 +75,8 @@ export default function ToolDetailPage() {
   const [avgRating, setAvgRating] = useState({ average: 0, count: 0 });
   const [newRating, setNewRating] = useState(0);
   const [newContent, setNewContent] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState("");
   // v1.14.0 评论系统完善：排序 + 回复
@@ -278,6 +291,34 @@ export default function ToolDetailPage() {
     }
   }, [tool]);
 
+  // v2.5.0 评论配图：上传到 review-images bucket
+  const handleReviewImage = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("图片不能超过 5MB");
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const supabase = getSupabase();
+      if (!supabase) throw new Error("上传服务不可用");
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("review-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (error) throw new Error(error.message);
+      const { data } = supabase.storage.from("review-images").getPublicUrl(path);
+      setNewImageUrl(data?.publicUrl ?? null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "图片上传失败");
+    } finally {
+      setUploadingImage(false);
+    }
+  }, [user, toast]);
+
   const handleSubmitReview = useCallback(async () => {
     if (!user || submitting) return;
     if (newRating === 0) {
@@ -293,6 +334,7 @@ export default function ToolDetailPage() {
     try {
       const review = await addReview(id, user.id, user.user_metadata?.name || user.email?.split("@")[0] || "匿名用户", newRating, newContent.trim(), {
         avatarUrl: user.user_metadata?.avatar_url ?? null,
+        imageUrl: newImageUrl,
       });
       setReviews((prev) => [review, ...prev]);
       setAvgRating((prev) => {
@@ -302,10 +344,11 @@ export default function ToolDetailPage() {
       });
       setNewRating(0);
       setNewContent("");
+      setNewImageUrl(null);
     } finally {
       setSubmitting(false);
     }
-  }, [user, id, newRating, newContent, submitting]);
+  }, [user, id, newRating, newContent, newImageUrl, submitting]);
 
   // v1.14.0 评论回复
   const handleSubmitReply = useCallback(async () => {
@@ -1202,6 +1245,34 @@ export default function ToolDetailPage() {
                 style={{ fontSize: "16px" }}
                 rows={3}
               />
+              {newImageUrl && (
+                <div className="relative mt-2 inline-block">
+                  <img
+                    src={newImageUrl}
+                    alt="评论配图"
+                    className="h-20 rounded-lg object-cover border border-gray-200"
+                  />
+                  <button
+                    onClick={() => setNewImageUrl(null)}
+                    className="absolute -top-1.5 -right-1.5 w-6 h-6 flex items-center justify-center bg-gray-800 text-white text-xs rounded-full hover:bg-gray-900"
+                    aria-label="移除图片"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+              <div className="mt-2">
+                <label className="inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                  📷 {uploadingImage ? "上传中..." : "添加图片"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleReviewImage}
+                    className="hidden"
+                    disabled={uploadingImage}
+                  />
+                </label>
+              </div>
               {reviewError && (
                 <p className="text-xs text-red-500 mt-1">{reviewError}</p>
               )}
@@ -1288,7 +1359,15 @@ export default function ToolDetailPage() {
                             )}
                           </div>
                           <p className="text-xs text-gray-400 mt-0.5">{new Date(review.createdAt).toLocaleDateString("zh-CN")}</p>
-                          <p className="text-sm text-gray-600 leading-relaxed mt-1.5">{review.content}</p>
+                          <p className="text-sm text-gray-600 leading-relaxed mt-1.5">{renderReviewContent(review.content)}</p>
+                          {review.imageUrl && (
+                            <img
+                              src={review.imageUrl}
+                              alt="评论图片"
+                              className="mt-2 max-h-48 rounded-xl object-cover border border-gray-100"
+                              loading="lazy"
+                            />
+                          )}
                           {/* 点赞 + 回复 */}
                           <div className="mt-2 flex items-center gap-1">
                             {user && (
@@ -1376,7 +1455,7 @@ export default function ToolDetailPage() {
                                       {new Date(reply.createdAt).toLocaleDateString("zh-CN")}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-600 leading-relaxed mt-1.5">{reply.content}</p>
+                                  <p className="text-xs text-gray-600 leading-relaxed mt-1.5">{renderReviewContent(reply.content)}</p>
                                 </div>
                               ))}
                             </div>

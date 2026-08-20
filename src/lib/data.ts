@@ -452,7 +452,7 @@ export async function resolveSourceTool(tool: Tool): Promise<Tool> {
 
 // v1.14.0 评论系统完善：支持回复（parent_id/reply_to_name）、头像（user_avatar）、点赞数（最热排序）
 const REVIEW_BASE_COLS = "id, tool_id, user_id, user_name, rating, content, created_at";
-const REVIEW_FULL_COLS = REVIEW_BASE_COLS + ", parent_id, reply_to_name, user_avatar";
+const REVIEW_FULL_COLS = REVIEW_BASE_COLS + ", parent_id, reply_to_name, user_avatar, image_url";
 
 function mapReviewRow(row: Record<string, unknown>): Review {
   return {
@@ -466,6 +466,7 @@ function mapReviewRow(row: Record<string, unknown>): Review {
     parentId: row.parent_id ? String(row.parent_id) : null,
     replyToName: row.reply_to_name ? String(row.reply_to_name) : null,
     avatarUrl: row.user_avatar ? String(row.user_avatar) : null,
+    imageUrl: row.image_url ? String(row.image_url) : null,
   };
 }
 
@@ -544,7 +545,7 @@ export async function addReview(
   userName: string,
   rating: number,
   content: string,
-  opts?: { parentId?: string | null; replyToName?: string | null; avatarUrl?: string | null }
+  opts?: { parentId?: string | null; replyToName?: string | null; avatarUrl?: string | null; imageUrl?: string | null }
 ): Promise<Review> {
   const supabase = await getSupabaseClient();
   if (supabase) {
@@ -559,6 +560,7 @@ export async function addReview(
         parent_id: opts?.parentId ?? null,
         reply_to_name: opts?.replyToName ?? null,
         user_avatar: opts?.avatarUrl ?? null,
+        image_url: opts?.imageUrl ?? null,
         created_at: new Date().toISOString(),
       },
       {
@@ -842,4 +844,3 @@ export async function fetchRecentTools(userId: string, limit = 6): Promise<Tool[
   }
   return [];
 }
-

@@ -1,6 +1,6 @@
 {
-  "version": "2.4.0",
+  "version": "2.5.0",
   "buildDate": "2026-08-20",
-  "buildTimestamp": "2026-08-20 23:40:44.885+08:00",
-  "description": "v2.4.0：M4 草稿箱——新建对话自动保存旧对话为草稿，草稿列表支持恢复与删除"
+  "buildTimestamp": "2026-08-20 23:47:19.698+08:00",
+  "description": "v2.5.0：M4 评论 @/图片——评论内容 @昵称 高亮 + 评论配图上传与显示（需执行 supabase_v25_review_images.sql）"
 }

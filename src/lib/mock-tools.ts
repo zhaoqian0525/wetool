@@ -50,6 +50,7 @@ export interface Review {
   parentId?: string | null; // 回复的父评论 id
   replyToName?: string | null; // 回复对象昵称
   avatarUrl?: string | null; // 评论者头像
+  imageUrl?: string | null; // 评论配图
   likeCount?: number; // 点赞数（最热排序用）
 }
 

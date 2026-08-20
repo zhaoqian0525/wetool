@@ -6,6 +6,15 @@
 
 ---
 
+## [2.5.0] - 2026-08-20
+
+### Added（M4 评论 @/图片）
+- 评论与回复内容中的「@昵称」自动高亮显示
+- 评论支持配图：发布评价时可上传图片（5MB 内），列表展示配图
+- 需在 Supabase 执行 `supabase_v25_review_images.sql`（reviews 加 image_url 列 + review-images 公开桶）
+
+---
+
 ## [2.4.0] - 2026-08-20
 
 ### Added（M4 草稿箱）
