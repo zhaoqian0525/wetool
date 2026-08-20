@@ -742,13 +742,10 @@ export async function fetchUserLikedTools(userId: string, targetType: LikeTarget
 
 // ---- View counts ----
 
-const MOCK_VIEW_COUNTS: Record<string, number> = {
-  "1": 1280, "2": 642, "3": 893, "4": 457, "5": 1024,
-  "6": 312, "7": 578, "8": 836, "9": 445, "10": 299,
-  "11": 671, "12": 523, "13": 188, "14": 412, "15": 2048, "16": 756,
-};
+// v2.8.3：内置模板工具不再预设假浏览量，从 0 开始真实统计
+const MOCK_VIEW_COUNTS: Record<string, number> = {};
 
-const VIEW_COUNT_KEY = "wewoo-mock-view-counts";
+const VIEW_COUNT_KEY = "wewoo-mock-view-counts-v2";
 
 function getMockViewCounts(): Record<string, number> {
   if (typeof window === "undefined") return MOCK_VIEW_COUNTS;
