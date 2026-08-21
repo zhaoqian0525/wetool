@@ -279,13 +279,15 @@ export default function ToolDetailPage() {
   // Share handler
   const handleShare = useCallback(async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
+    const shareTitle = tool?.title ? `${tool.title} | 微坞 WeWoo` : "微坞 WeWoo 小工具";
+    const shareDesc = tool?.description ? tool.description : "在线小工具，点开即用";
     if (typeof navigator !== "undefined" && navigator.share) {
-      try { await navigator.share({ title: tool?.title, url }); } catch { /* cancelled */ }
+      try { await navigator.share({ title: shareTitle, text: shareDesc, url }); } catch { /* cancelled */ }
     } else {
       try {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(`${shareTitle}\n${shareDesc}\n${url}`);
         setShareCopied(true);
-        toast.success("链接已复制");
+        toast.success("分享文案已复制");
         setTimeout(() => setShareCopied(false), 2000);
       } catch { /* ignore */ }
     }
@@ -1032,6 +1034,19 @@ export default function ToolDetailPage() {
                       const newSaved = await toggleLike(user.id, "save", id, saved);
                       setSaved(newSaved);
                       toast.success(newSaved ? "已收藏" : "已取消收藏");
+                      if (newSaved && tool?.authorId && tool.authorId !== user.id) {
+                        authedFetch("/api/notifications", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            userId: tool.authorId,
+                            type: "save",
+                            actorName: user.user_metadata?.name || user.email?.split("@")[0] || "用户",
+                            toolId: id,
+                            toolTitle: tool.title,
+                          }),
+                        }).catch(() => {});
+                      }
                     } catch (e: unknown) {
                       toast.error(e instanceof Error ? e.message : "操作失败");
                     } finally { setSaving(false); }

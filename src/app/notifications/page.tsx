@@ -19,6 +19,7 @@ interface NotificationItem {
 const TYPE_META: Record<string, { icon: string; label: string }> = {
   comment: { icon: "💬", label: "评论" },
   like: { icon: "❤️", label: "点赞" },
+  save: { icon: "⭐", label: "收藏" },
   system: { icon: "📢", label: "系统" },
 };
 
@@ -112,6 +113,8 @@ export default function NotificationsPage() {
                   ? `${n.actor_name || "有人"} 评论了你的工具${n.tool_title ? `「${n.tool_title}」` : ""}`
                   : n.type === "like"
                     ? `${n.actor_name || "有人"} 点赞了你的工具${n.tool_title ? `「${n.tool_title}」` : ""}`
+                    : n.type === "save"
+                      ? `${n.actor_name || "有人"} 收藏了你的工具${n.tool_title ? `「${n.tool_title}」` : ""}`
                     : n.content || "系统通知";
               return (
                 <div
