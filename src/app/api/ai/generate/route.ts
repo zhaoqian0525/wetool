@@ -18,9 +18,27 @@ export const runtime = "nodejs";
 
 // AI 模型：默认 flash（便宜档），可用环境变量 AI_MODEL 覆盖；严禁在生产切到 pro
 const AI_MODEL = process.env.AI_MODEL ?? "deepseek-v4-flash";
+// v2.10.0 视觉模型：用户附带图片时切换（图片理解/设计稿转工具）
+const AI_VISION_MODEL = process.env.AI_VISION_MODEL ?? "deepseek-v4-flash-vision-exp";
 
 const MAX_HISTORY = 24; // 客户端消息条数上限
 const MAX_PROMPT_LENGTH = 8000; // 单次 prompt 上限
+const MAX_IMAGES = 4; // 单次最多附带图片数
+const MAX_IMAGE_CHARS = 2_000_000; // 单张 base64 上限（约 1.5MB）
+
+type VisionPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
+type UpstreamMessage = {
+  role: "system" | "user";
+  content: string | VisionPart[];
+};
+
+function contentLength(m: UpstreamMessage): number {
+  if (typeof m.content === "string") return m.content.length;
+  return m.content.reduce((s, p) => s + (p.type === "text" ? p.text.length : p.image_url.url.length), 0);
+}
 
 /** 包装上游 SSE 流：原样透传，同时捕获最后一个 chunk 的 usage 用于记账 */
 function withUsageCapture(
@@ -97,7 +115,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  let body: { prompt?: unknown; messages?: unknown; currentCode?: unknown };
+  let body: { prompt?: unknown; messages?: unknown; currentCode?: unknown; images?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -151,6 +169,13 @@ export async function POST(request: NextRequest) {
     typeof body?.currentCode === "string" && body.currentCode.trim()
       ? body.currentCode.trim()
       : "";
+  // v2.10.0：视觉输入，仅接受 base64 data URL（客户端已压缩）
+  const images: string[] = (Array.isArray(body?.images) ? body.images : [])
+    .filter((i): i is string => typeof i === "string" && i.startsWith("data:image/") && i.length > 64)
+    .slice(0, MAX_IMAGES)
+    .map((i) => i.slice(0, MAX_IMAGE_CHARS));
+  const hasImages = images.length > 0;
+  const model = hasImages ? AI_VISION_MODEL : AI_MODEL;
   const promptChars = (history.at(-1)?.content ?? prompt).length;
 
   // 余额保护：低于阈值直接拒绝，防止余额被刷到负数
@@ -165,16 +190,30 @@ export async function POST(request: NextRequest) {
   // 压缩上下文：只保留用户需求 + 当前代码，不再重发历史完整 HTML
   const compacted = compactHistory(history);
   const system = buildSystem(currentCode, AI_SYSTEM_PROMPT);
-  const upstreamMessages: { role: "system" | "user"; content: string }[] = [
+  const upstreamMessages: UpstreamMessage[] = [
     { role: "system", content: system },
     ...(compacted.length > 0 ? compacted : [{ role: "user" as const, content: prompt }]),
   ];
 
-  // 总字符护栏：超出时丢弃更早的用户消息
-  let total = upstreamMessages.reduce((s, m) => s + m.content.length, 0);
-  while (total > MAX_CONTEXT_CHARS && upstreamMessages.length > 1) {
+  // v2.10.0：把图片附加到最近一条用户消息（多模态 content 块）
+  if (hasImages) {
+    const lastIdx = upstreamMessages.length - 1;
+    const lastText = typeof upstreamMessages[lastIdx].content === "string" ? upstreamMessages[lastIdx].content : "";
+    const parts: VisionPart[] = [
+      { type: "text" as const, text: lastText },
+      ...images.map((url) => ({ type: "image_url" as const, image_url: { url } })),
+    ];
+    upstreamMessages[lastIdx] = {
+      role: "user",
+      content: parts,
+    };
+  }
+
+  // 总字符护栏：超出时丢弃更早的用户消息（始终保留 system 与最后一条用户消息，避免丢掉图片）
+  let total = upstreamMessages.reduce((s, m) => s + contentLength(m), 0);
+  while (total > MAX_CONTEXT_CHARS && upstreamMessages.length > 2) {
     const removed = upstreamMessages.splice(1, 1)[0];
-    total -= removed.content.length;
+    total -= contentLength(removed);
   }
 
   let upstream: Response;
@@ -186,14 +225,14 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: AI_MODEL,
+        model,
         messages: upstreamMessages,
         stream: true,
         max_tokens: MAX_TOKENS,
         temperature: 0.6,
         stream_options: { include_usage: true },
         // v1.8.5: deepseek-v4 系列默认开启思考模式，会耗尽 max_tokens 导致正文为空，这里显式关闭思考
-        ...(AI_MODEL.includes("v4") ? { thinking: { type: "disabled" } } : {}),
+        ...(model.includes("v4") ? { thinking: { type: "disabled" } } : {}),
       }),
     });
   } catch {
@@ -220,7 +259,7 @@ export async function POST(request: NextRequest) {
 
   // 透传 DeepSeek 的 SSE 流，同时捕获 usage 记账
   const reader = upstream.body.getReader();
-  const stream = withUsageCapture(reader, (u) => logUsage(ip, u, currentCode.length, promptChars, AI_MODEL));
+  const stream = withUsageCapture(reader, (u) => logUsage(ip, u, currentCode.length, promptChars, model));
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream; charset=utf-8",

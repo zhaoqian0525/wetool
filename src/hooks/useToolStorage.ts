@@ -409,6 +409,7 @@ export function useToolStorage(toolId?: string, userId?: string, user?: ToolSand
           const aHistory = Array.isArray(msg.history) ? msg.history.slice(0, 10) : [];
           const aMaxTokens = Number(msg.maxTokens) > 0 ? Number(msg.maxTokens) : undefined;
           const aJson = !!msg.json;
+          const aImage = typeof msg.image === "string" ? msg.image : null;
           if (!aPrompt) { respond("prompt 不能为空", null); break; }
           callToolApi(
             "/api/ai/tool",
@@ -417,6 +418,7 @@ export function useToolStorage(toolId?: string, userId?: string, user?: ToolSand
               prompt: aPrompt.slice(0, 2000),
               context: aContext.slice(0, 4000),
               history: aHistory,
+              ...(aImage ? { image: aImage.slice(0, 2_000_000) } : {}),
               ...(aMaxTokens ? { maxTokens: aMaxTokens } : {}),
               ...(aJson ? { json: true } : {}),
             },

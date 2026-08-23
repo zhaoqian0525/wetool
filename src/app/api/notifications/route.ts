@@ -4,8 +4,8 @@ import { getAuthedSupabase, getAdminServiceClient, unauthorizedResponse } from "
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** 通知类型：评论 / 点赞 / 收藏 / 系统（后续可扩展关注） */
-const NOTIFY_TYPES = new Set(["comment", "like", "save", "system"]);
+/** 通知类型：评论 / 回复 / 点赞 / 收藏 / 系统（后续可扩展关注） */
+const NOTIFY_TYPES = new Set(["comment", "reply", "like", "save", "system"]);
 
 /**
  * GET /api/notifications —— 当前登录用户的通知列表（含未读数）

@@ -507,18 +507,21 @@ const STORAGE_API = `<script>
         var history = [];
         var maxTokens = 0;
         var wantJson = false;
+        var image = null;
         if (input != null && typeof input === 'object') {
           prompt = String(input.prompt || '');
           context = String(input.context != null ? input.context : '');
           history = Array.isArray(input.history) ? input.history : (Array.isArray(opts.history) ? opts.history : []);
           maxTokens = input.maxTokens != null ? Number(input.maxTokens) : (opts.maxTokens != null ? Number(opts.maxTokens) : 0);
           wantJson = input.json != null ? !!input.json : !!opts.json;
+          image = typeof input.image === 'string' ? input.image : (typeof opts.image === 'string' ? opts.image : null);
         } else {
           prompt = String(input || '');
           context = String(opts.context != null ? opts.context : '');
           history = Array.isArray(opts.history) ? opts.history : [];
           maxTokens = opts.maxTokens != null ? Number(opts.maxTokens) : 0;
           wantJson = !!opts.json;
+          image = typeof opts.image === 'string' ? opts.image : null;
         }
         _send({
           type: 'WEWOO_AI_CHAT',
@@ -526,7 +529,8 @@ const STORAGE_API = `<script>
           context: context.slice(0, 4000),
           history: history,
           maxTokens: maxTokens > 0 ? maxTokens : undefined,
-          json: wantJson
+          json: wantJson,
+          image: image
         }, function(err, val) {
           if (err) { _showAiError(String(err)); }
           if (cb) {

@@ -11,7 +11,7 @@ export const AI_PROMPT_TEMPLATE = `请帮我写一个完整、独立的单文件
 3. 完全自包含：不引用外部 CDN 或图片，不使用裸网络请求（fetch/XHR/WebSocket）、cookie、弹窗、跳转、外部链接。
 4. 平台能力（回调风格，按需使用，不要自己实现裸网络请求）：
    - 白名单联网：__wewoo.fetch('https://公开API地址', function(err, res){ res.status / res.json（JSON 接口时已解析好的对象，优先用）/ res.data（原始文本） })（仅白名单域名 + GET，可用于汇率/天气/词典/翻译/名言等公开数据）
-   - 内置 AI 问答：__wewoo.ai.chat({ prompt: '问题', context: '可选上下文', history: [{ role: 'user', content: '历史内容' }], maxTokens: 1500, json: false }, function(err, res){ res.reply / res.json })
+   - 内置 AI 问答：__wewoo.ai.chat({ prompt: '问题', context: '可选上下文', history: [{ role: 'user', content: '历史内容' }], image: 'data:image/...（可选，图片识别/OCR 时传入）', maxTokens: 1500, json: false }, function(err, res){ res.reply / res.json })
    - 复制文本：__wewoo.copyText('文本', cb)；导出文件：__wewoo.download('文件名.txt', '内容', 'text/plain', cb)；分享：__wewoo.share({ title, text, url }, cb)；读取用户昵称头像：__wewoo.getUser(cb)；语音朗读：__wewoo.speak('文字', { lang: 'zh-CN' }, cb)
 5. 需要记住用户数据时（如打卡记录、游戏进度、表单内容），用 localStorage 保存和读取。微坞会自动持久化这些数据：刷新页面、切换全屏、下次进入都能恢复。
 6. 用户输入无效数据时给出友好提示，不要直接报错。
@@ -215,6 +215,7 @@ export const sceneTemplates: SceneTemplate[] = [
 
 /** DeepSeek 内置 AI 生成的系统提示词：强制沙盒合规白名单 + 安全红线 */
 export const AI_SYSTEM_PROMPT = `你是微坞 WeWoo 平台（we-woo.net）的 AI 工具生成助手。用户会描述一个想要的小工具，你需要输出一个完整、独立、可直接运行的单文件 HTML 应用。硬性要求：
+0. 视觉能力：用户可以附带图片（截图、设计稿、照片、二维码、文档照片等）来辅助描述需求，请结合图片内容理解（例如"按这张设计稿做一个工具""识别图里的文字做提取工具"）。生成的工具内也可以通过 <input type="file" accept="image/*"> 让用户选择图片，并用 FileReader 转成 base64 后调用 __wewoo.ai.chat({ prompt: '问题', image: 'data:image/...' }) 让 AI 识别/分析图片（图片识别、OCR、读图回答等）。
 1. 移动端优先，适配 375px 宽度，按钮和输入框至少 44px；界面简洁现代、配色柔和，有清晰标题和操作提示。
 2. 完全自包含：不引用外部 CDN、字体或图片，不使用裸网络请求（fetch/XHR/WebSocket）、cookie、弹窗、跳转、外部链接，不使用麦克风录音或摄像头拍照（getUserMedia/MediaRecorder，沙盒暂不支持）。平台已支持白名单联网与内置 AI：需要实时公开数据（天气、汇率、词典、翻译、名言等）时，直接使用 __wewoo.fetch（见 3.6 条），不要本地模拟数据；需要 AI 问答/总结时使用 __wewoo.ai.chat。
 3. 需要记住用户数据时（打卡记录、游戏进度、表单内容等）用 localStorage 保存和读取；平台会自动持久化，刷新页面、切换全屏、下次进入都能恢复。

@@ -212,6 +212,7 @@ interface AiChatMsg {
   id: string;
   role: "user" | "assistant";
   content: string;
+  images?: string[]; // v2.10.0：用户消息附带的图片（base64 data URL）
   streaming?: boolean;
 }
 
@@ -237,6 +238,48 @@ function formatTime(ts: number): string {
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+// v2.10.0：把图片文件压缩为视觉模型可用的 base64 data URL（最长边 1024px，JPEG 0.82）
+function compressImageFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) {
+      reject(new Error("请选择图片文件"));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("图片读取失败"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("图片解析失败"));
+      img.onload = () => {
+        const maxSide = 1024;
+        let width = img.width;
+        let height = img.height;
+        if (width > maxSide || height > maxSide) {
+          const scale = Math.min(maxSide / width, maxSide / height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(String(reader.result));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        try {
+          resolve(canvas.toDataURL("image/jpeg", 0.82));
+        } catch {
+          resolve(String(reader.result));
+        }
+      };
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function loadVersions(): Version[] {
@@ -321,6 +364,7 @@ function CreatePageInner() {
   const [promptCopied, setPromptCopied] = useState(false);
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<AiChatMsg[]>([]);
+  const [aiImages, setAiImages] = useState<string[]>([]); // v2.10.0：待发送图片
   const [aiVersions, setAiVersions] = useState<AiVersion[]>([]);
   const [aiActiveVersion, setAiActiveVersion] = useState<number | null>(null);
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -337,6 +381,7 @@ function CreatePageInner() {
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const initialLoadDone = useRef(false);
+  const aiImageInputRef = useRef<HTMLInputElement>(null); // v2.10.0：图片选择
 
   const codeRef = useRef(code);
   codeRef.current = code;
@@ -567,7 +612,7 @@ function CreatePageInner() {
     if (el) el.scrollTop = el.scrollHeight;
   }, [aiMessages]);
 
-    const runAiSend = useCallback(async (reqText: string, versionDesc?: string) => {
+    const runAiSend = useCallback(async (reqText: string, versionDesc?: string, images?: string[]) => {
     const req = reqText.trim();
     if (!req || aiGenerating) return;
     const sensitive = containsSensitiveContent(req);
@@ -575,7 +620,8 @@ function CreatePageInner() {
       setAiError(`内容包含${sensitive.label ?? "违规"}描述，平台不支持生成这类工具`);
       return;
     }
-    const userMsg: AiChatMsg = { id: genMsgId(), role: "user", content: req };
+    const reqImages = (images ?? []).slice(0, 4);
+    const userMsg: AiChatMsg = { id: genMsgId(), role: "user", content: req, ...(reqImages.length ? { images: reqImages } : {}) };
     const asstMsg: AiChatMsg = { id: genMsgId(), role: "assistant", content: "", streaming: true };
     const nextMessages = [...aiMessages, userMsg, asstMsg];
     setAiMessages(nextMessages);
@@ -600,7 +646,7 @@ function CreatePageInner() {
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, currentCode }),
+        body: JSON.stringify({ messages: history, currentCode, ...(reqImages.length ? { images: reqImages } : {}) }),
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -688,8 +734,32 @@ function CreatePageInner() {
     const t = aiInput.trim();
     if (!t) return;
     setAiInput("");
-    runAiSend(t);
-  }, [aiInput, runAiSend]);
+    const images = aiImages;
+    setAiImages([]);
+    runAiSend(t, undefined, images);
+  }, [aiInput, aiImages, runAiSend]);
+
+  // v2.10.0：选择/拍照导入图片（压缩后附带进 AI 对话）
+  const handleAiPickImages = useCallback(async (e: { target: HTMLInputElement }) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!files.length) return;
+    const room = 4 - aiImages.length;
+    if (room <= 0) {
+      toast.error("最多附带 4 张图片");
+      return;
+    }
+    const picked = files.slice(0, room);
+    const next: string[] = [];
+    for (const f of picked) {
+      try {
+        next.push(await compressImageFile(f));
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "图片处理失败");
+      }
+    }
+    if (next.length) setAiImages((prev) => [...prev, ...next]);
+  }, [aiImages, toast]);
 
   const handleAiNewVersion = useCallback(() => {
     if (aiGenerating) return;
@@ -1304,6 +1374,18 @@ function CreatePageInner() {
                             : "bg-white text-gray-700 border border-gray-200 rounded-bl-sm"
                         }`}
                       >
+                        {m.role === "user" && m.images && m.images.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-1.5">
+                            {m.images.map((src, idx) => (
+                              <img
+                                key={idx}
+                                src={src}
+                                alt="附带图片"
+                                className="w-16 h-16 object-cover rounded-lg bg-white/20"
+                              />
+                            ))}
+                          </div>
+                        )}
                         {m.content || (m.streaming ? "思考中…" : "")}
                         {m.streaming && (
                           <span className="inline-block w-1.5 h-3.5 ml-1 align-middle bg-indigo-500 animate-pulse" />
@@ -1329,7 +1411,43 @@ function CreatePageInner() {
                   </div>
                 )}
 
+                {aiImages.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {aiImages.map((src, idx) => (
+                      <div key={idx} className="relative">
+                        <img src={src} alt="待发送图片" className="w-14 h-14 object-cover rounded-lg border border-gray-200" />
+                        <button
+                          onClick={() => setAiImages((prev) => prev.filter((_, i) => i !== idx))}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800/80 text-white text-[10px] leading-none flex items-center justify-center hover:bg-rose-500"
+                          aria-label="移除图片"
+                          style={{ touchAction: "manipulation" }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <input
+                  ref={aiImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleAiPickImages}
+                  aria-label="选择图片"
+                />
                 <div className="flex items-end gap-2">
+                  <button
+                    onClick={() => aiImageInputRef.current?.click()}
+                    disabled={aiGenerating}
+                    title="添加图片 / 拍照"
+                    aria-label="添加图片或拍照"
+                    className="flex-shrink-0 min-h-[44px] px-3 py-2 text-base bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ touchAction: "manipulation" }}
+                  >
+                    📷
+                  </button>
                   <textarea
                     value={aiInput}
                     onChange={(e) => setAiInput(e.target.value)}
@@ -1365,7 +1483,7 @@ function CreatePageInner() {
                   )}
                 </div>
                 <div className="mt-1.5 text-xs text-gray-400 leading-relaxed">
-                  平台已支持白名单联网和内置 AI，AI 会自动使用；超出沙盒范围的需求，AI 会说明原因并给出替代方案
+                  平台已支持白名单联网、内置 AI 与图片理解（点 📷 可拍照/导入图片）；超出沙盒范围的需求，AI 会说明原因并给出替代方案
                 </div>
               </div>
               

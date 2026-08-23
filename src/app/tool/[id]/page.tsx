@@ -382,12 +382,27 @@ export default function ToolDetailPage() {
       setReplyContent("");
       setReplyingTo(null);
       toast.success("回复成功");
+      // v2.9.1 通知：回复了别人的评论/回复时通知对方
+      if (replyingTo.userId && replyingTo.userId !== user.id) {
+        authedFetch("/api/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: replyingTo.userId,
+            type: "reply",
+            actorName: user.user_metadata?.name || user.email?.split("@")[0] || "匿名用户",
+            toolId: id,
+            toolTitle: tool?.title,
+            content: replyContent.trim(),
+          }),
+        }).catch(() => {});
+      }
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "回复失败，请重试");
     } finally {
       setSubmitting(false);
     }
-  }, [user, id, submitting, replyingTo, replyContent, toast]);
+  }, [user, id, submitting, replyingTo, replyContent, toast, tool]);
 
   // v2.8.1：删除自己的评论/回复
   const handleDeleteReview = useCallback(async (reviewId: string) => {
@@ -1487,7 +1502,7 @@ export default function ToolDetailPage() {
                             <div className="mt-3 space-y-2.5 border-l-2 border-gray-100 pl-3">
                               {replies.map((reply) => (
                                 <div key={reply.id} className="bg-gray-50 rounded-xl p-3">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-start gap-2">
                                     {reply.avatarUrl ? (
                                       <img src={reply.avatarUrl} alt={reply.userName} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                                     ) : (
@@ -1495,22 +1510,26 @@ export default function ToolDetailPage() {
                                         {reply.userName[0]?.toUpperCase() || "?"}
                                       </div>
                                     )}
-                                    <span className="text-xs font-medium text-gray-700">{reply.userName}</span>
-                                    {reply.replyToName && (
-                                      <span className="text-[10px] text-gray-400">回复 @{reply.replyToName}</span>
-                                    )}
-                                    {reply.userId === tool.authorId && (
-                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[10px] font-medium">
-                                        作者
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap pr-1">
+                                        <span className="text-xs font-medium text-gray-700">{reply.userName}</span>
+                                        {reply.replyToName && (
+                                          <span className="text-[10px] text-gray-400">回复 @{reply.replyToName}</span>
+                                        )}
+                                        {reply.userId === tool.authorId && (
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[10px] font-medium">
+                                            作者
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="text-[10px] text-gray-400">
+                                        {new Date(reply.createdAt).toLocaleDateString("zh-CN")}
                                       </span>
-                                    )}
-                                    <span className="text-[10px] text-gray-400">
-                                      {new Date(reply.createdAt).toLocaleDateString("zh-CN")}
-                                    </span>
+                                    </div>
                                     {user && reply.userId === user.id && (
                                       <button
                                         onClick={() => handleDeleteReview(reply.id)}
-                                        className="ml-auto text-[10px] text-gray-400 hover:text-rose-500 transition-colors"
+                                        className="flex-shrink-0 text-[10px] text-gray-400 hover:text-rose-500 transition-colors"
                                       >
                                         删除
                                       </button>
