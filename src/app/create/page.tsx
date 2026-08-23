@@ -856,6 +856,23 @@ function CreatePageInner() {
       setPublishError("请选择分类");
       return;
     }
+    // v2.10.1 发布侧审核底线：标题/简介敏感词拦截 + 长度上限（与 AI 生成侧一致）
+    if (publishTitle.trim().length > 60) {
+      setPublishError("工具名称过长，请精简到 60 字以内");
+      return;
+    }
+    if (publishDesc.trim().length > 200) {
+      setPublishError("一句话介绍过长，请精简到 200 字以内");
+      return;
+    }
+    const sensitiveTitle = containsSensitiveContent(publishTitle);
+    const sensitiveDesc = containsSensitiveContent(publishDesc);
+    if (sensitiveTitle.hit || sensitiveDesc.hit) {
+      setPublishError(
+        `内容包含${(sensitiveTitle.hit ? sensitiveTitle.label : sensitiveDesc.label) ?? "违规"}描述，无法发布，请修改后再试`
+      );
+      return;
+    }
     setPublishing(true);
     setPublishError("");
 
