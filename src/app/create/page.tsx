@@ -383,6 +383,24 @@ function CreatePageInner() {
   const timelineRef = useRef<HTMLDivElement>(null);
   const initialLoadDone = useRef(false);
   const aiImageInputRef = useRef<HTMLInputElement>(null); // v2.10.0：图片选择
+  const desktopPreviewRef = useRef<HTMLDivElement>(null); // v2.17.0：桌面预览缩放容器
+  const [desktopPreviewScale, setDesktopPreviewScale] = useState(0.35);
+  // 桌面预览：按容器宽度缩放 1280px 视口，呈现真实桌面布局
+  useEffect(() => {
+    if (deviceTarget !== "desktop") return;
+    const el = desktopPreviewRef.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.clientWidth;
+      if (w > 0) setDesktopPreviewScale(Math.min(1, w / 1280));
+    };
+    update();
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(update);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+  }, [deviceTarget]);
 
   const codeRef = useRef(code);
   codeRef.current = code;
@@ -1704,30 +1722,56 @@ function CreatePageInner() {
         {/* === Preview Panel === */}
         <div className={`flex-1 flex flex-col items-center justify-center bg-gray-200 p-3 lg:p-4 min-h-0 lg:w-[33%] ${mobileTab === "preview" ? "flex" : "hidden"} lg:flex`}>
           <div className="relative flex flex-col items-center flex-1 w-full justify-center">
-            <div className="flex flex-col items-center">
-              <WechatGuide>
-                <div
-                  className="relative bg-gray-800 rounded-[36px] p-3 shadow-2xl"
-                  style={{
-                    width: "calc(375px + 24px)",
-                    height: "calc(667px + 64px)",
-                    maxHeight: "calc(100vh - 200px)",
-                  }}
-                >
-                  <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-b-2xl z-10" />
-                  <div className="w-full h-full overflow-hidden rounded-[24px] bg-white relative flex flex-col">
-                    <div className="h-5 flex-shrink-0" />
-                    <iframe
-                      key={`desktop:${isWechatPreview ? previewBlobUrl : previewSrcDoc}`}
-                      {...previewIframeProps}
-                      title="工具预览"
-                      className="flex-1 w-full border-0"
-                      sandbox={previewSandbox}
-                    />
+            <div className="flex flex-col items-center w-full">
+              {deviceTarget === "desktop" ? (
+                <>
+                  <div className="w-full max-w-[720px] bg-gray-800 rounded-xl p-2 shadow-2xl">
+                    <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-700 rounded-t-lg">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                      <div className="ml-2 flex-1 bg-white/10 rounded-full px-3 py-1 text-[11px] text-gray-400 truncate">we-woo.net</div>
+                    </div>
+                    <div ref={desktopPreviewRef} className="relative w-full overflow-hidden bg-white" style={{ aspectRatio: "16/9" }}>
+                      <iframe
+                        key={`desktop2:${isWechatPreview ? previewBlobUrl : previewSrcDoc}`}
+                        {...previewIframeProps}
+                        title="桌面预览"
+                        className="absolute top-0 left-0 border-0"
+                        style={{ width: "1280px", height: "720px", transform: `scale(${desktopPreviewScale})`, transformOrigin: "top left" }}
+                        sandbox={previewSandbox}
+                      />
+                    </div>
                   </div>
-                </div>
-              </WechatGuide>
-              <p className="mt-4 text-xs text-gray-400 text-center">手机预览 · 375 × 667</p>
+                  <p className="mt-4 text-xs text-gray-400 text-center">电脑预览 · 1280 × 720</p>
+                </>
+              ) : (
+                <>
+                  <WechatGuide>
+                    <div
+                      className="relative bg-gray-800 rounded-[36px] p-3 shadow-2xl"
+                      style={{
+                        width: "calc(375px + 24px)",
+                        height: "calc(667px + 64px)",
+                        maxHeight: "calc(100vh - 200px)",
+                      }}
+                    >
+                      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-b-2xl z-10" />
+                      <div className="w-full h-full overflow-hidden rounded-[24px] bg-white relative flex flex-col">
+                        <div className="h-5 flex-shrink-0" />
+                        <iframe
+                          key={`desktop:${isWechatPreview ? previewBlobUrl : previewSrcDoc}`}
+                          {...previewIframeProps}
+                          title="工具预览"
+                          className="flex-1 w-full border-0"
+                          sandbox={previewSandbox}
+                        />
+                      </div>
+                    </div>
+                  </WechatGuide>
+                  <p className="mt-4 text-xs text-gray-400 text-center">手机预览 · 375 × 667</p>
+                </>
+              )}
             </div>
 
                                     <div className="lg:hidden flex flex-col items-center justify-center w-full flex-1 min-h-0 gap-3 text-gray-500">
