@@ -42,5 +42,30 @@ export async function POST(
     console.warn("[admin/ban] error:", error.message);
     return NextResponse.json({ error: "操作失败，请稍后重试" }, { status: 500 });
   }
+
+  // v2.12.0：下架/恢复时通知作者（服务端 service_role，不受 RLS 限制；失败不阻塞主流程）
+  try {
+    const { data: toolRow } = await admin
+      .from("tools")
+      .select("author_id, title")
+      .eq("id", dbId)
+      .single();
+    if (toolRow && toolRow.author_id) {
+      await admin.from("notifications").insert({
+        user_id: toolRow.author_id,
+        type: "system",
+        actor_name: "平台管理员",
+        tool_id: dbId,
+        tool_title: String(toolRow.title ?? ""),
+        content: body.banned
+          ? "你的工具因收到举报/违规已被平台下架，如有疑问可联系管理员申诉。"
+          : "你的工具已恢复公开。",
+        read: false,
+      });
+    }
+  } catch (e) {
+    console.warn("[admin/ban] notify error:", e instanceof Error ? e.message : e);
+  }
+
   return NextResponse.json({ ok: true, banned: body.banned });
 }
