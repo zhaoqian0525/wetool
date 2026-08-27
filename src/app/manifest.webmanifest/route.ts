@@ -14,7 +14,7 @@ export function GET() {
     name: "微坞 WeWoo - AI小工具分享社区",
     short_name: "WeWoo",
     description:
-      "像发朋友圈一样分享你做的 AI 小工具，别人点开链接就能直接使用。科学计算器、密码生成器、旅行分账、古诗词抽签…丰富的在线小工具等你探索。",
+      "像发朋友圈一样分享你做的 AI 小工具，别人点开链接就能直接使用。密码生成器、单位换算、旅行分账、古诗词抽签…丰富的在线小工具等你探索。",
     start_url: "/",
     display: "standalone",
     background_color: "#f9fafb",
