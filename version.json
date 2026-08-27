@@ -1,6 +1,6 @@
 {
-  "version": "2.16.0",
-  "buildDate": "2026-08-27",
-  "buildTimestamp": "2026-08-27 23:52:46.758+08:00",
-  "description": "v2.16.0：删除内置工具「API 权限测试台」与「科学计算器 Pro」"
+  "version": "2.16.1",
+  "buildDate": "2026-08-28",
+  "buildTimestamp": "2026-08-28 00:01:12.785+08:00",
+  "description": "v2.16.1：删除内置工具「酒店比价小助手」"
 }

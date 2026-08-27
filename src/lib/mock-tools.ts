@@ -565,109 +565,6 @@ render();
     description: "记录每天宝宝吃了什么，自动生成营养报告",
   },
   {
-    id: "5",
-    title: "酒店比价小助手",
-    author: "省钱达人阿杰",
-    authorId: "user-005",
-    category: "旅行",
-    visibility: "public",
-    code: `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>酒店比价小助手</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#ecfeff,#f0f9ff);min-height:100vh;padding:16px;color:#1e293b}
-  .wrap{max-width:420px;margin:0 auto}
-  h1{font-size:20px;font-weight:800;color:#0e7490;text-align:center;margin-bottom:2px}
-  .sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px}
-  .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px rgba(14,116,144,.08)}
-  .card h3{font-size:14px;color:#0e7490;margin-bottom:10px}
-  .row{display:flex;gap:8px;margin-bottom:10px}
-  .row input{flex:1;min-height:44px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 12px;font-size:16px;outline:none;background:#f8fafc}
-  .row input:focus{border-color:#06b6d4;background:#fff}
-  .btn{width:100%;min-height:46px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#0891b2,#06b6d4);color:#fff;transition:transform .1s}
-  .btn:active{transform:scale(.97)}
-  .hotel{display:flex;align-items:center;gap:10px;padding:12px;border:1.5px solid #e2e8f0;border-radius:12px;margin-bottom:8px;background:#fff}
-  .hotel.best{border-color:#f59e0b;background:#fffbeb}
-  .hotel .idx{width:26px;height:26px;border-radius:8px;background:#e0f2fe;color:#0369a1;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .hotel.best .idx{background:#f59e0b;color:#fff}
-  .hotel .body{flex:1;min-width:0}
-  .hotel .name{font-size:15px;font-weight:700;color:#334155}
-  .hotel .meta{font-size:12px;color:#64748b;margin-top:2px}
-  .hotel .score{font-size:13px;font-weight:800;color:#0e7490;text-align:right}
-  .hotel .score small{display:block;font-size:10px;color:#94a3b8;font-weight:400}
-  .hotel button{min-width:32px;min-height:32px;border:0;border-radius:8px;background:#fee2e2;color:#dc2626;font-size:13px;cursor:pointer}
-  .empty{font-size:12px;color:#cbd5e1;text-align:center;padding:12px 0}
-  .tip{font-size:11px;color:#94a3b8;text-align:center;margin-top:6px}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>🏨 酒店比价小助手</h1>
-  <p class="sub">输入候选酒店，自动算性价比并推荐（自动保存）</p>
-  <div class="card">
-    <h3>✏️ 添加候选酒店</h3>
-    <div class="row"><input id="name" placeholder="酒店名称" style="flex:1.6"></div>
-    <div class="row">
-      <input id="price" type="number" inputmode="decimal" placeholder="每晚价格 ¥" style="flex:1">
-      <input id="rate" type="number" inputmode="decimal" min="0" max="5" step="0.1" placeholder="评分 0-5" style="flex:.8">
-    </div>
-    <button class="btn" id="addBtn">添加并比较</button>
-  </div>
-  <div class="card">
-    <h3>📊 性价比排行（每花 100 元获得多少评分）</h3>
-    <div id="list"></div>
-  </div>
-  <p class="tip">性价比 = 评分 ÷ 每晚价格 × 100，越高越划算；黄色为推荐</p>
-</div>
-<script>
-var KEY="wewoo-hotel-compare";
-function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
-var list=load();if(!Array.isArray(list))list=[];
-function save(){localStorage.setItem(KEY,JSON.stringify(list))}
-function add(){
-  var name=document.getElementById("name").value.trim();
-  var price=parseFloat(document.getElementById("price").value)||0;
-  var rate=parseFloat(document.getElementById("rate").value)||0;
-  if(!name){document.getElementById("name").focus();return}
-  if(price<=0){document.getElementById("price").focus();return}
-  if(rate<=0||rate>5){document.getElementById("rate").focus();return}
-  list.push({name:name,price:price,rate:rate});
-  save();
-  document.getElementById("name").value="";document.getElementById("price").value="";document.getElementById("rate").value="";
-  render();
-}
-function del(i){list.splice(i,1);save();render()}
-function render(){
-  var box=document.getElementById("list");
-  if(list.length===0){box.innerHTML='<div class="empty">还没有酒店，添加几家对比吧</div>';return}
-  var sorted=list.map(function(h,i){return {h:h,i:i,v:h.rate/h.price*100}}).sort(function(a,b){return b.v-a.v});
-  var bestV=sorted[0].v;
-  box.innerHTML="";
-  sorted.forEach(function(s,rank){
-    var d=document.createElement("div");d.className="hotel"+(rank===0?" best":"");
-    var total="约 ¥"+(s.h.price*(s.h.rate/5)).toFixed(0)+" 等价体验";
-    d.innerHTML='<div class="idx">'+(rank+1)+'</div>'+
-      '<div class="body"><div class="name">'+s.h.name+'</div>'+
-      '<div class="meta">¥'+s.h.price.toFixed(0)+'/晚 · 评分 '+s.h.rate.toFixed(1)+' · '+total+'</div></div>'+
-      '<div class="score">'+s.v.toFixed(1)+'<small>分/百元</small></div>';
-    var b=document.createElement("button");b.textContent="×";b.onclick=function(){del(s.i)};
-    d.appendChild(b);box.appendChild(d);
-  });
-}
-document.getElementById("addBtn").onclick=add;
-render();
-</script>
-</body>
-</html>`,
-    thumbnailGradient: "linear-gradient(135deg, #43e97b, #38f9d7)",
-    createdAt: "2026-07-17T11:00:00Z",
-    description: "对比多家酒店，找到性价比最高的选择",
-  },
-  {
     id: "6",
     title: "齿轮参数速算",
     author: "CAD老陈",
@@ -3275,7 +3172,6 @@ export const MOCK_REVIEWS: Review[] = [
   { id: "r4", toolId: "3", userId: "mock-user-1", userName: "旅行达人小明", rating: 5, content: "课堂上用这个抽查学生，全班抢答，效果太好了！", createdAt: "2026-07-20T10:00:00Z" },
   { id: "r5", toolId: "3", userId: "mock-user-5", userName: "省钱达人阿杰", rating: 4, content: "诗词库可以再多一点就好了", createdAt: "2026-07-21T08:00:00Z" },
   { id: "r6", toolId: "2", userId: "mock-user-1", userName: "旅行达人小明", rating: 5, content: "虽然我不搞工程，但这个看起来好专业！", createdAt: "2026-07-20T15:00:00Z" },
-  { id: "r7", toolId: "5", userId: "mock-user-4", userName: "新手妈妈小怡", rating: 4, content: "出门旅游省钱神器，推荐！", createdAt: "2026-07-18T12:00:00Z" },
   { id: "r8", toolId: "8", userId: "mock-user-3", userName: "语文张老师", rating: 5, content: "督促自己多喝水，八杯水的设计很直观", createdAt: "2026-07-22T07:30:00Z" },
   { id: "r9", toolId: "11", userId: "mock-user-4", userName: "新手妈妈小怡", rating: 5, content: "给孩子练口算太合适了，计时功能很有挑战性", createdAt: "2026-07-16T19:00:00Z" },
   { id: "r10", toolId: "7", userId: "mock-user-2", userName: "老王机械师", rating: 4, content: "适合背单词，要是有发音功能就更棒了", createdAt: "2026-07-22T10:00:00Z" },

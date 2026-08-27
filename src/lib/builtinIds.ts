@@ -16,7 +16,6 @@ const BUILTIN_UUID_MAP: Record<string, string> = {
   "2": "1ec769f8-c637-56a6-93b3-edfab0de66f7",
   "3": "30f80a9f-84a9-5927-94bd-fd6f5176bfac",
   "4": "fd10ce1c-303e-5df9-af81-d27f32db1310",
-  "5": "567cea14-637d-5079-94ec-fdd4a3659b42",
   "6": "1543b0b5-e7e7-56ee-a47c-72d454793da3",
   "7": "ea660fda-02e9-5a41-81a5-9bb2220e345e",
   "8": "e6739193-39ca-5920-8a92-0ae0fdb161cb",
