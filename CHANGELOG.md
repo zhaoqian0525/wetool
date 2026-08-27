@@ -6,6 +6,13 @@
 
 ---
 
+## [2.13.0] - 2026-08-27
+
+### Fixed
+- 补全 AI 系统提示词缺失的「3.5 条」零风险平台 API 文档：内置 AI 现在能正确生成使用 `__wewoo.copyText / download / share / getUser / speak`、Web Worker、图片导入（`input type=file` + FileReader + 视觉 AI）的工具，此前只是功能已实现但 AI 无法调用
+
+---
+
 ## [2.12.0] - 2026-08-27
 
 ### Added
