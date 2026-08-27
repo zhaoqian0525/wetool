@@ -6,6 +6,18 @@
 
 ---
 
+## [2.11.0] - 2026-08-27
+
+### Added
+- 设备适配：创作页 AI 对话区新增「📱 手机优先 / 🖥️ 电脑优先」切换（仅电脑端显示），电脑端优先时 AI 会生成宽屏、多栏、更高信息密度的桌面布局
+- 工具详情页新增设备优化徽章（「📱 移动端优化 / 🖥️ 电脑端优化」，旧工具默认移动端）
+- 发布/改编时记录设备目标（`tools.layout_target`），改编会自动继承原工具的设备适配
+
+### Database
+- 新增迁移 SQL：`supabase_v211_layout_target.sql`（`tools.layout_target text NOT NULL DEFAULT 'mobile'`）
+
+---
+
 ## [2.10.1] - 2026-08-24
 
 ### Added

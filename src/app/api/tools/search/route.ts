@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from("tools")
-    .select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count")
+    .select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count, layout_target")
     .eq("visibility", "public")
     .eq("is_banned", false)
     .or(`title.ilike.${pattern},description.ilike.${pattern},author.ilike.${pattern}`)
@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
     visibility: String(row.visibility ?? "public"),
     sourceToolId: row.source_tool_id ? String(row.source_tool_id) : undefined,
     viewCount: row.view_count !== undefined && row.view_count !== null ? Number(row.view_count) : undefined,
+    layoutTarget: String(row.layout_target ?? "") === "desktop" ? "desktop" : "mobile",
   }));
 
   return NextResponse.json({ tools });

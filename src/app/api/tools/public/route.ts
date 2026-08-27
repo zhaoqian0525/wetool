@@ -11,7 +11,7 @@ import { createClient } from "@supabase/supabase-js";
  */
 export const dynamic = "force-dynamic";
 
-const LEAN_SELECT = "id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count, is_banned";
+const LEAN_SELECT = "id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count, is_banned, layout_target";
 const MAX_TOOLS = 200;
 
 export async function GET() {
@@ -51,6 +51,7 @@ export async function GET() {
     visibility: String(row.visibility ?? "public"),
     sourceToolId: row.source_tool_id ? String(row.source_tool_id) : undefined,
     viewCount: row.view_count !== undefined && row.view_count !== null ? Number(row.view_count) : undefined,
+    layoutTarget: String(row.layout_target ?? "") === "desktop" ? "desktop" : "mobile",
   }));
 
   return NextResponse.json({ tools }, {

@@ -365,6 +365,7 @@ function CreatePageInner() {
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<AiChatMsg[]>([]);
   const [aiImages, setAiImages] = useState<string[]>([]); // v2.10.0：待发送图片
+  const [deviceTarget, setDeviceTarget] = useState<"mobile" | "desktop">("mobile"); // v2.11.0：设备适配目标
   const [aiVersions, setAiVersions] = useState<AiVersion[]>([]);
   const [aiActiveVersion, setAiActiveVersion] = useState<number | null>(null);
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -413,6 +414,7 @@ function CreatePageInner() {
         if (tool) {
           setSourceToolId(tool.id);
           setSourceToolTitle(tool.title);
+          setDeviceTarget(tool.layoutTarget === "desktop" ? "desktop" : "mobile"); // v2.11.0：改编继承设备适配
           if (tool.code) setCode(tool.code);
           setAiMessages([
             {
@@ -646,7 +648,7 @@ function CreatePageInner() {
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, currentCode, ...(reqImages.length ? { images: reqImages } : {}) }),
+        body: JSON.stringify({ messages: history, currentCode, deviceTarget, ...(reqImages.length ? { images: reqImages } : {}) }),
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -728,7 +730,7 @@ function CreatePageInner() {
       setAiGenerating(false);
       if (!aborted) setAiError("AI 生成失败，请检查网络后重试");
     }
-  }, [aiMessages, aiVersions, aiActiveVersion, code, aiGenerating, toast]);
+  }, [aiMessages, aiVersions, aiActiveVersion, code, aiGenerating, toast, deviceTarget]);
 
   const handleAiSend = useCallback(() => {
     const t = aiInput.trim();
@@ -913,6 +915,7 @@ function CreatePageInner() {
           source_tool_id: sourceToolId || null,
           visibility: publishPublic,
           is_downloadable: publishDownloadable,
+          layout_target: deviceTarget,
         })
         .select("id")
         .single();
@@ -1216,6 +1219,29 @@ function CreatePageInner() {
               <span className="text-base">💬</span>
               <span className="text-sm font-medium text-gray-800">和 AI 对话生成工具</span>
               <span className="text-xs text-gray-400 hidden sm:inline">内置 DeepSeek</span>
+              {/* v2.11.0：设备适配切换（仅电脑端显示） */}
+              <div className="hidden lg:flex items-center ml-2 rounded-lg bg-gray-100 p-0.5" role="group" aria-label="设备适配">
+                <button
+                  onClick={() => setDeviceTarget("mobile")}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                    deviceTarget === "mobile" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                  style={{ touchAction: "manipulation" }}
+                  title="移动端优先（默认）"
+                >
+                  📱 手机优先
+                </button>
+                <button
+                  onClick={() => setDeviceTarget("desktop")}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                    deviceTarget === "desktop" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                  style={{ touchAction: "manipulation" }}
+                  title="电脑端优先（宽屏布局）"
+                >
+                  🖥️ 电脑优先
+                </button>
+              </div>
             </div>
             <div className="flex items-center gap-1.5">
               <button
@@ -1786,6 +1812,37 @@ function CreatePageInner() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                {/* v2.11.0：设备适配选择（发布时记录到详情页徽章） */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">设备适配</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setDeviceTarget("mobile")}
+                      disabled={publishing}
+                      className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                        deviceTarget === "mobile"
+                          ? "border-indigo-300 bg-indigo-50 text-indigo-700"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                      style={{ touchAction: "manipulation" }}
+                    >
+                      📱 移动端优化
+                    </button>
+                    <button
+                      onClick={() => setDeviceTarget("desktop")}
+                      disabled={publishing}
+                      className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                        deviceTarget === "desktop"
+                          ? "border-indigo-300 bg-indigo-50 text-indigo-700"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                      style={{ touchAction: "manipulation" }}
+                    >
+                      🖥️ 电脑端优化
+                    </button>
+                  </div>
                 </div>
 
                 {/* 可见范围选择 */}

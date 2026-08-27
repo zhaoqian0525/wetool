@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { AI_SYSTEM_PROMPT, containsSensitiveContent } from "@/lib/aiPrompts";
+import { AI_SYSTEM_PROMPT, DESKTOP_TARGET_INSTRUCTION, containsSensitiveContent } from "@/lib/aiPrompts";
 import {
   ChatItem,
   AiUsage,
@@ -88,7 +88,7 @@ function logUsage(ip: string, usage: AiUsage | null, codeChars: number, promptCh
 
 /**
  * POST /api/ai/generate
- * Body: { messages?: {role,content}[], prompt?: string, currentCode?: string }
+ * Body: { messages?: {role,content}[], prompt?: string, currentCode?: string, deviceTarget?: "mobile"|"desktop" }
  * 将需求/对话发送给 DeepSeek（默认 deepseek-v4-flash），以 SSE 流式返回生成的 HTML。
  * 服务端持有 DEEPSEEK_API_KEY，绝不进入客户端 bundle。
  */
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  let body: { prompt?: unknown; messages?: unknown; currentCode?: unknown; images?: unknown };
+  let body: { prompt?: unknown; messages?: unknown; currentCode?: unknown; images?: unknown; deviceTarget?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -169,6 +169,8 @@ export async function POST(request: NextRequest) {
     typeof body?.currentCode === "string" && body.currentCode.trim()
       ? body.currentCode.trim()
       : "";
+  // v2.11.0：设备适配目标（默认移动端优先）
+  const deviceTarget = typeof body?.deviceTarget === "string" && body.deviceTarget === "desktop" ? "desktop" : "mobile";
   // v2.10.0：视觉输入，仅接受 base64 data URL（客户端已压缩）
   const images: string[] = (Array.isArray(body?.images) ? body.images : [])
     .filter((i): i is string => typeof i === "string" && i.startsWith("data:image/") && i.length > 64)
@@ -189,7 +191,10 @@ export async function POST(request: NextRequest) {
 
   // 压缩上下文：只保留用户需求 + 当前代码，不再重发历史完整 HTML
   const compacted = compactHistory(history);
-  const system = buildSystem(currentCode, AI_SYSTEM_PROMPT);
+  const system = buildSystem(
+    currentCode,
+    deviceTarget === "desktop" ? AI_SYSTEM_PROMPT + "\n\n" + DESKTOP_TARGET_INSTRUCTION : AI_SYSTEM_PROMPT
+  );
   const upstreamMessages: UpstreamMessage[] = [
     { role: "system", content: system },
     ...(compacted.length > 0 ? compacted : [{ role: "user" as const, content: prompt }]),

@@ -923,6 +923,10 @@ export default function ToolDetailPage() {
             </h1>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <Badge>{tool.category}</Badge>
+              {/* v2.11.0：设备适配徽章（旧工具默认移动端优化） */}
+              <Badge tone={tool.layoutTarget === "desktop" ? "brand" : "gray"}>
+                {tool.layoutTarget === "desktop" ? "🖥️ 电脑端优化" : "📱 移动端优化"}
+              </Badge>
               {isJustPublished && (
                 <Badge tone="green" className="animate-pulse">刚刚发布</Badge>
               )}

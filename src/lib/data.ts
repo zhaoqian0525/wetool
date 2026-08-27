@@ -46,6 +46,7 @@ function mapRow(row: Record<string, unknown>): Tool {
       : "public") as Visibility,
     isDownloadable: row.is_downloadable === true || row.is_downloadable === "true" || row.isDownloadable === true || undefined,
     isBanned: row.is_banned === true || row.isBanned === true || undefined,
+    layoutTarget: String(row.layout_target ?? row.layoutTarget ?? "") === "desktop" ? "desktop" : "mobile",
   };
 }
 
@@ -285,7 +286,7 @@ export async function fetchTools(): Promise<Tool[]> {
       // ?????????6s????/??????????????????
       for (let attempt = 0; attempt < 2; attempt++) {
         const result = await queryWithTimeout(
-          supabase.from("tools").select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count, is_banned").eq("is_banned", false).order("created_at", { ascending: false }),
+          supabase.from("tools").select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count, is_banned, layout_target").eq("is_banned", false).order("created_at", { ascending: false }),
           6000
         );
         if (result && !(result as { error: unknown }).error) {
@@ -421,7 +422,7 @@ export async function fetchToolsByUser(userId: string): Promise<Tool[]> {
   const supabase = await getSupabaseClient();
   if (supabase) {
     const result = await queryWithTimeout(
-      supabase.from("tools").select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count, is_banned").eq("author_id", userId).order("created_at", { ascending: false })
+      supabase.from("tools").select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count, is_banned, layout_target").eq("author_id", userId).order("created_at", { ascending: false })
     );
     if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
       return ((result as { data: Record<string, unknown>[] }).data).map(mapRow);
@@ -843,7 +844,7 @@ export async function fetchRecentTools(userId: string, limit = 6): Promise<Tool[
       const allTools: Tool[] = [];
       for (const chunk of chunks) {
         const result = await queryWithTimeout(
-          supabase.from("tools").select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count, is_banned").in("id", chunk)
+          supabase.from("tools").select("id, title, description, author, author_id, category, cover_url, thumbnail_gradient, is_downloadable, created_at, visibility, source_tool_id, view_count, is_banned, layout_target").in("id", chunk)
         );
         if (result && !(result as { error: unknown }).error && (result as { data: unknown }).data) {
           allTools.push(...((result as { data: Record<string, unknown>[] }).data).map(mapRow));

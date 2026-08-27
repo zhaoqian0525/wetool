@@ -30,6 +30,8 @@ export interface Tool {
   isDownloadable?: boolean;
   /** v2.0.1：平台下架标记（公共列表过滤；详情页非作者显示已下架） */
   isBanned?: boolean;
+  /** v2.11.0：设备适配目标（mobile 移动端优先 / desktop 电脑端优先，旧工具默认 mobile） */
+  layoutTarget?: "mobile" | "desktop";
 }
 
 export interface Favorite {
