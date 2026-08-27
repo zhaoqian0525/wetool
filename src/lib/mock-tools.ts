@@ -3468,6 +3468,263 @@ function clearAll() {
     createdAt: "2026-07-29T12:51:06.637Z",
     description: "快速查询公制/英制螺纹参数：螺距、中径、小径、钻孔直径等",
   },
+  {
+    id: "19",
+    title: "API 权限测试台",
+    author: "微坞官方",
+    authorId: "user-001",
+    category: "工程计算",
+    visibility: "public",
+    code: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>微坞 API 权限测试台</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#f1f5f9;min-height:100vh;padding:16px;color:#0f172a}
+  .wrap{max-width:600px;margin:0 auto}
+  h1{font-size:19px;font-weight:800;text-align:center;margin-bottom:4px}
+  .sub{font-size:12px;color:#64748b;text-align:center;margin-bottom:14px}
+  .toolbar{display:flex;gap:8px;margin-bottom:14px}
+  .toolbar button{flex:1;min-height:44px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer}
+  .runall{background:#4f46e5;color:#fff}
+  .clear{background:#fff;color:#475569;border:1px solid #e2e8f0}
+  .item{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  .row{display:flex;align-items:flex-start;gap:10px}
+  .info{flex:1;min-width:0}
+  .name{font-size:14px;font-weight:600}
+  .desc{font-size:11px;color:#94a3b8;margin-top:2px}
+  .status{font-size:12px;font-weight:700;white-space:nowrap;margin-top:2px}
+  .status.pending{color:#94a3b8}
+  .status.ok{color:#16a34a}
+  .status.fail{color:#dc2626}
+  .runbtn{min-height:36px;padding:0 14px;border:none;border-radius:9px;background:#eef2ff;color:#4f46e5;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0}
+  .detail{margin-top:10px;font-size:12px;line-height:1.7;color:#334155;background:#f8fafc;border-radius:9px;padding:10px;word-break:break-all;white-space:pre-wrap;display:none}
+  .item.show .detail{display:block}
+  .file{display:none}
+  .foot{text-align:center;font-size:11px;color:#94a3b8;margin-top:6px}
+  input.state-input{width:100%;min-height:40px;border:1px solid #e2e8f0;border-radius:9px;padding:0 10px;font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>微坞 API 权限测试台</h1>
+  <div class="sub">逐项验证沙盒能力是否正常，结果仅供参考</div>
+  <div class="toolbar">
+    <button class="runall" onclick="runAll()">▶ 全部测试</button>
+    <button class="clear" onclick="clearAll()">清空结果</button>
+  </div>
+  <div class="item">
+    <div class="row">
+      <div class="info">
+        <div class="name">状态墓碑 saveState/loadState</div>
+        <div class="desc">在下方输入框写内容，点「测试」验证状态保存与恢复</div>
+        <input id="stateInput" class="state-input" placeholder="输入任意文字后点测试">
+      </div>
+      <button class="runbtn" onclick="runOne('state')">测试</button>
+    </div>
+    <div class="detail" id="d-state"></div>
+  </div>
+  <div id="list"></div>
+  <input type="file" id="fileInput" class="file" accept="image/*">
+  <div class="foot">图片导入需要手动选图；摄像头（getUserMedia）在沙盒内不可用属正常。</div>
+</div>
+<script>
+var isWeWoo = !!(window.__wewoo);
+function el(id){ return document.getElementById(id); }
+function setStatus(id, cls, txt, detail){
+  var item = el('item-'+id);
+  if(item){
+    var st = item.querySelector('.status');
+    st.className = 'status ' + cls;
+    st.textContent = txt;
+    if(detail){ item.classList.add('show'); el('d-'+id).textContent = detail; }
+  }
+}
+function done(id, ok, detail){
+  setStatus(id, ok ? 'ok' : 'fail', ok ? '✅ 通过' : '❌ 失败', detail || '');
+}
+var TESTS = [
+  { id:'kv', name:'云记忆 KV', desc:'save/load/list/remove/clear（按账号+工具隔离）', fn:function(d){
+      if(!isWeWoo) return d(false, '不在微坞内，无 __wewoo');
+      var key = 'apitest_' + Date.now();
+      window.__wewoo.save(key, {hello:'world'}, function(err){
+        if(err) return d(false, 'save 失败: ' + err);
+        window.__wewoo.load(key, function(err2, val){
+          if(err2) return d(false, 'load 失败: ' + err2);
+          if(val && val.hello === 'world') return d(true, 'save/load 成功，读到 ' + JSON.stringify(val));
+          d(false, 'load 返回值异常: ' + JSON.stringify(val));
+        });
+      });
+  }},
+  { id:'ls', name:'localStorage 持久化', desc:'工具内 localStorage 自动同步父页面', fn:function(d){
+      try {
+        localStorage.setItem('__apitest__', 'hello');
+        var v = localStorage.getItem('__apitest__');
+        localStorage.removeItem('__apitest__');
+        d(v === 'hello', 'setItem/getItem/removeItem 正常，值=' + v);
+      } catch(e){ d(false, '异常: ' + e.message); }
+  }},
+  { id:'copy', name:'剪贴板 copyText', desc:'一键复制（只写不读）', fn:function(d){
+      if(!isWeWoo) return d(false, '不在微坞内');
+      window.__wewoo.copyText('微坞复制测试 ' + new Date().toISOString(), function(err){
+        d(!err, err ? '复制失败: ' + err : '已调用 copyText，可手动粘贴验证');
+      });
+  }},
+  { id:'download', name:'文件导出 download', desc:'导出 CSV/文本等', fn:function(d){
+      if(!isWeWoo) return d(false, '不在微坞内');
+      window.__wewoo.download('api-test.csv', 'name,value\\na,1\\nb,2\\n', 'text/csv', function(err){
+        d(!err, err ? '下载失败: ' + err : '已触发 CSV 下载，请检查浏览器下载');
+      });
+  }},
+  { id:'share', name:'分享 share', desc:'唤起系统分享/复制', fn:function(d){
+      if(!isWeWoo) return d(false, '不在微坞内');
+      window.__wewoo.share({title:'微坞 API 测试', text:'测试分享文案', url:'https://we-woo.net'}, function(err){
+        d(!err, err ? '分享失败: ' + err : '已触发分享');
+      });
+  }},
+  { id:'user', name:'只读用户信息 getUser', desc:'昵称/头像，不含邮箱/ID', fn:function(d){
+      if(!isWeWoo) return d(false, '不在微坞内');
+      window.__wewoo.getUser(function(err, res){
+        if(err) return d(false, 'getUser 失败: ' + err);
+        var name = res && res.name ? res.name : '（未登录/匿名）';
+        var avatar = res && res.avatar ? '有头像' : '无头像';
+        d(true, 'name=' + name + '，avatar=' + avatar);
+      });
+  }},
+  { id:'speak', name:'语音朗读 speak', desc:'speechSynthesis 合成', fn:function(d){
+      if(!isWeWoo) return d(false, '不在微坞内');
+      window.__wewoo.speak('这是一条语音朗读测试', {lang:'zh-CN'}, function(err){
+        d(!err, err ? '朗读失败: ' + err : '已触发朗读（iOS 需用户手势）');
+      });
+  }},
+  { id:'fetch', name:'白名单联网 fetch', desc:'天气 API 等公开数据', fn:function(d){
+      if(!isWeWoo || !window.__wewoo.fetch) return d(false, '无 __wewoo.fetch');
+      var t = setTimeout(function(){ d(false, '超时（可能网络慢或域名不在白名单）'); }, 9000);
+      window.__wewoo.fetch('https://wttr.in/Beijing?format=j1', function(err, res){
+        clearTimeout(t);
+        if(err) return d(false, 'fetch 失败: ' + err);
+        var has = res && (res.json || res.data || res.status);
+        d(!!has, 'fetch 正常，status=' + (res && res.status) + (res && res.json ? '，JSON 已解析' : ''));
+      });
+  }},
+  { id:'ai', name:'工具内 AI ai.chat', desc:'内置 DeepSeek 问答', fn:function(d){
+      if(!isWeWoo || !window.__wewoo.ai || !window.__wewoo.ai.chat) return d(false, '无 __wewoo.ai.chat');
+      var t = setTimeout(function(){ d(false, '超时'); }, 15000);
+      window.__wewoo.ai.chat({ prompt:'用一句话回答：1+1等于几？', maxTokens:60 }, function(err, res){
+        clearTimeout(t);
+        if(err) return d(false, 'AI 失败: ' + err);
+        var reply = res && res.reply ? res.reply : '';
+        d(!!reply, 'AI 回复: ' + reply);
+      });
+  }},
+  { id:'history', name:'使用记录 recordAction/getHistory', desc:'记录操作历史', fn:function(d){
+      if(!isWeWoo) return d(false, '不在微坞内');
+      window.__wewoo.recordAction('api_test', {t: Date.now()}, function(){
+        window.__wewoo.getHistory(function(err, list){
+          if(err) return d(false, 'getHistory 失败: ' + err);
+          d(Array.isArray(list), '历史条数=' + (Array.isArray(list) ? list.length : '非数组'));
+        });
+      });
+  }},
+  { id:'worker', name:'Web Worker（blob）', desc:'后台计算防卡 UI', fn:function(d){
+      try {
+        var blob = new Blob(['self.onmessage=function(e){self.postMessage(e.data*2)}'], {type:'application/javascript'});
+        var url = URL.createObjectURL(blob);
+        var w = new Worker(url);
+        var t = setTimeout(function(){ d(false, 'Worker 超时'); }, 4000);
+        w.onmessage = function(e){ clearTimeout(t); w.terminate(); URL.revokeObjectURL(url); d(e.data === 42, 'Worker 计算 21*2=' + e.data); };
+        w.onerror = function(){ clearTimeout(t); d(false, 'Worker 创建失败'); };
+        w.postMessage(21);
+      } catch(e){ d(false, '异常: ' + e.message); }
+  }},
+  { id:'file', name:'图片导入 input[type=file]', desc:'FileReader 读取图片（配合视觉 AI）', fn:function(d){
+      var inp = el('fileInput');
+      inp.onchange = function(){
+        var f = inp.files && inp.files[0];
+        if(!f){ d(false, '未选择文件'); return; }
+        var reader = new FileReader();
+        reader.onload = function(){
+          var dataUrl = String(reader.result);
+          d(true, '已读取：' + f.name + '，类型=' + f.type + '，大小≈' + Math.round(dataUrl.length/1024) + 'KB，前缀=' + dataUrl.slice(0, 30));
+        };
+        reader.onerror = function(){ d(false, 'FileReader 读取失败'); };
+        reader.readAsDataURL(f);
+      };
+      inp.click();
+      d(true, '等待选择图片…（选择后显示结果）');
+  }}
+];
+var STATE_TEST = { id:'state', name:'状态墓碑', fn:function(d){
+  if(!isWeWoo) return d(false, '不在微坞内');
+  var inp = el('stateInput');
+  inp.value = '测试状态 ' + Date.now();
+  window.__wewoo.saveState(function(err){
+    if(err) return d(false, 'saveState 失败: ' + err);
+    inp.value = '';
+    window.__wewoo.loadState(function(err2){
+      if(err2) return d(false, 'loadState 失败: ' + err2);
+      d(!!inp.value, '状态已恢复: ' + inp.value);
+    });
+  });
+}};
+function render(){
+  var list = el('list');
+  var html = '';
+  for(var i=0;i<TESTS.length;i++){
+    var t = TESTS[i];
+    html += '<div class="item" id="item-'+t.id+'">'
+      + '<div class="row"><div class="info"><div class="name">'+t.name+'</div><div class="desc">'+t.desc+'</div></div>'
+      + '<div class="status pending">待测</div><button class="runbtn" onclick="runOne(\''+t.id+'\')">测试</button></div>'
+      + '<div class="detail" id="d-'+t.id+'"></div></div>';
+  }
+  list.innerHTML = html;
+}
+function runOne(id){
+  if(id === 'state'){ setStatus(id, 'pending', '测试中…', ''); return STATE_TEST.fn(function(ok, detail){ done(id, ok, detail); }); }
+  var t = null;
+  for(var i=0;i<TESTS.length;i++){ if(TESTS[i].id === id){ t = TESTS[i]; break; } }
+  if(!t) return;
+  setStatus(id, 'pending', '测试中…', '');
+  t.fn(function(ok, detail){ done(id, ok, detail); });
+}
+function runAll(){
+  var ids = ['state'];
+  for(var i=0;i<TESTS.length;i++){ ids.push(TESTS[i].id); }
+  var idx = 0;
+  function next(){
+    if(idx >= ids.length) return;
+    var id = ids[idx++];
+    runOne(id);
+    setTimeout(next, 600);
+  }
+  next();
+}
+function clearAll(){
+  var ids = ['state'];
+  for(var i=0;i<TESTS.length;i++){ ids.push(TESTS[i].id); }
+  for(var j=0;j<ids.length;j++){
+    var item = el('item-'+ids[j]);
+    if(item){
+      item.classList.remove('show');
+      var st = item.querySelector('.status');
+      if(st){ st.className = 'status pending'; st.textContent = '待测'; }
+      var dd = el('d-'+ids[j]); if(dd) dd.textContent = '';
+    }
+  }
+  el('stateInput').value = '';
+}
+render();
+</script>
+</body>
+</html>
+`,
+    thumbnailGradient: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+    createdAt: "2026-08-27T14:45:00.000Z",
+    description: "逐项验证微坞沙盒 API 是否正常：记忆/持久化/复制/导出/分享/用户/朗读/联网/AI/Worker/图片导入",
+  },
 
 ];
 

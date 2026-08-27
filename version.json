@@ -1,6 +1,6 @@
 {
-  "version": "2.13.0",
+  "version": "2.14.0",
   "buildDate": "2026-08-27",
-  "buildTimestamp": "2026-08-27 22:45:25.494+08:00",
-  "description": "v2.13.0：AI 提示词补全零风险 API 文档（copy/download/share/getUser/speak/Worker/图片导入）"
+  "buildTimestamp": "2026-08-27 23:07:23.813+08:00",
+  "description": "v2.14.0：内置「API 权限测试台」工具 + 优先级调整（PWA/推广优先，App 后置）"
 }
