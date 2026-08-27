@@ -249,6 +249,40 @@ export default function GuidePage() {
           ))}
         </div>
 
+        {/* 能力边界（v2.15.0）：明确告知用户能做什么 / 不能做什么 */}
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">平台能做什么 / 不能做什么</h2>
+          <p className="text-gray-500 text-center mb-8">先说清楚边界，避免你做了半天发现跑不起来</p>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
+              <h3 className="font-bold text-emerald-700 mb-3">✅ 能做</h3>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li>纯前端工具：计算器、换算、小游戏、记账、打卡等</li>
+                <li>本地记忆：用 localStorage 保存，刷新 / 重进不丢</li>
+                <li>云记忆：登录后数据跨设备同步</li>
+                <li>白名单联网：汇率、天气、词典、翻译等公开数据</li>
+                <li>内置 AI：问答、总结、分类（每天 1000 次）</li>
+                <li>视觉 AI：上传图片做识别 / OCR</li>
+                <li>一键复制、导出文件（CSV / 图片）、分享</li>
+                <li>语音朗读、音效（WebAudio）</li>
+              </ul>
+            </div>
+            <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6">
+              <h3 className="font-bold text-rose-700 mb-3">❌ 不能做</h3>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li>任意联网（只能访问白名单公开 API）</li>
+                <li>服务器 / 数据库（后端逻辑）</li>
+                <li>工具内登录注册、支付</li>
+                <li>麦克风录音、摄像头拍照</li>
+                <li>系统通知推送、定位</li>
+                <li>弹窗、跳转、外部链接</li>
+                <li>读取剪贴板（只能写入，不能读）</li>
+                <li>读取用户邮箱 / ID（只提供昵称头像）</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         {/* FAQ */}
         <div className="mt-16">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">常见问题</h2>
