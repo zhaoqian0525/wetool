@@ -50,6 +50,7 @@ export default function ToolDetailPage() {
   useToolStorage(id, user?.id, user);
   const [isJustPublished, setIsJustPublished] = useState(false);
   const [toolVisibility, setToolVisibility] = useState(tool?.visibility ?? "public");
+  const [visMenuOpen, setVisMenuOpen] = useState(false); // v2.18.0：可见性下拉（点击展开，兼容触屏）
   const [loading, setLoading] = useState(true);
 
   // 同步 tool 的 visibility
@@ -932,25 +933,40 @@ export default function ToolDetailPage() {
               )}
               {/* 可见性徽章（仅作者可见） */}
               {isAuthor && (
-                <div className="relative group">
+                <div className="relative">
                   <Badge
                     tone={toolVisibility === "public" ? "green" : toolVisibility === "unlisted" ? "amber" : "red"}
-                    className="cursor-pointer"
+                    className="cursor-pointer select-none"
+                    onClick={() => setVisMenuOpen((v) => !v)}
                   >
                     {toolVisibility === "public" ? "公开" : toolVisibility === "unlisted" ? "未列出" : "私密"}
+                    <span className="ml-1 text-[10px] opacity-70">⌄</span>
                   </Badge>
-                  {/* 下拉菜单 */}
-                  <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-30 hidden group-hover:block min-w-[120px]">
-                    <button onClick={() => handleChangeVisibility("public")} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-500" /> 公开
-                    </button>
-                    <button onClick={() => handleChangeVisibility("unlisted")} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-amber-500" /> 未列出
-                    </button>
-                    <button onClick={() => handleChangeVisibility("private")} className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-500" /> 私密
-                    </button>
-                  </div>
+                  {visMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-20" onClick={() => setVisMenuOpen(false)} />
+                      <div className="absolute top-full left-0 mt-1 z-30 bg-white rounded-xl shadow-lg border border-gray-200 py-1 min-w-[128px]">
+                        <button
+                          onClick={() => { handleChangeVisibility("public"); setVisMenuOpen(false); }}
+                          className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <span className="w-2 h-2 rounded-full bg-green-500" /> 公开
+                        </button>
+                        <button
+                          onClick={() => { handleChangeVisibility("unlisted"); setVisMenuOpen(false); }}
+                          className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <span className="w-2 h-2 rounded-full bg-amber-500" /> 未列出
+                        </button>
+                        <button
+                          onClick={() => { handleChangeVisibility("private"); setVisMenuOpen(false); }}
+                          className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <span className="w-2 h-2 rounded-full bg-red-500" /> 私密
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>

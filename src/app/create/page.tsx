@@ -358,6 +358,7 @@ function CreatePageInner() {
 
   // Mobile editor/preview tab（移动端切换用）
   const [mobileTab, setMobileTab] = useState<"chat" | "code" | "preview">("chat");
+  const [desktopRightTab, setDesktopRightTab] = useState<"preview" | "code">("preview"); // v2.18.0：桌面右侧合并切换，默认预览
 
   // AI prompt helper
   const [externalPromptOpen, setExternalPromptOpen] = useState(false);
@@ -1615,8 +1616,25 @@ function CreatePageInner() {
             </div>
           </div>
         </div>
+{/* === 桌面右侧：代码 / 预览（合并切换，默认预览）=== */}
+        <div className={`flex-1 flex flex-col min-h-0 lg:w-[67%] ${mobileTab === "code" || mobileTab === "preview" ? "flex" : "hidden"} lg:flex`}>
+          <div className="hidden lg:flex flex-shrink-0 items-center gap-1 px-2 py-1.5 bg-gray-100 border-b border-gray-200">
+            <button
+              onClick={() => setDesktopRightTab("preview")}
+              className={`min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${desktopRightTab === "preview" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            >
+              👁 预览
+            </button>
+            <button
+              onClick={() => setDesktopRightTab("code")}
+              className={`min-h-[36px] px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${desktopRightTab === "code" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            >
+              📝 代码
+            </button>
+          </div>
+
 {/* === Editor Panel === */}
-        <div className={`flex-1 flex flex-col min-h-0 bg-[#0A1628] lg:w-[34%] ${mobileTab === "code" ? "flex" : "hidden"} lg:flex`}>
+        <div className={`flex-1 flex-col min-h-0 bg-[#0A1628] ${mobileTab === "code" ? "flex" : "hidden"} ${desktopRightTab === "code" ? "lg:flex" : "lg:hidden"}`}>
           <div className="flex-shrink-0 flex items-center justify-between px-3 lg:px-4 py-1.5 lg:py-2 bg-[#0F1F38] border-b border-white/10">
             <div className="flex items-center gap-2">
               <div className="flex gap-1.5">
@@ -1720,7 +1738,7 @@ function CreatePageInner() {
         </div>
 
         {/* === Preview Panel === */}
-        <div className={`flex-1 flex flex-col items-center justify-center bg-gray-200 p-3 lg:p-4 min-h-0 lg:w-[33%] ${mobileTab === "preview" ? "flex" : "hidden"} lg:flex`}>
+        <div className={`flex-1 flex-col items-center justify-center bg-gray-200 p-3 lg:p-4 min-h-0 ${mobileTab === "preview" ? "flex" : "hidden"} ${desktopRightTab === "preview" ? "lg:flex" : "lg:hidden"}`}>
           <div className="relative flex flex-col items-center flex-1 w-full justify-center">
             <div className="flex flex-col items-center w-full">
               {deviceTarget === "desktop" ? (
@@ -1783,6 +1801,7 @@ function CreatePageInner() {
               </button>
             </div>
           </div>
+        </div>
         </div>
       </div>
 

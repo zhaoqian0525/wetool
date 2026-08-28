@@ -44,10 +44,12 @@ export function Badge({
   children,
   tone = "brand",
   className = "",
+  onClick,
 }: {
   children: ReactNode;
   tone?: "brand" | "green" | "amber" | "red" | "gray";
   className?: string;
+  onClick?: () => void;
 }) {
   const tones: Record<string, string> = {
     brand: "text-indigo-600 bg-indigo-50",
@@ -57,7 +59,10 @@ export function Badge({
     gray: "text-gray-600 bg-gray-100",
   };
   return (
-    <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${tones[tone]} ${className}`}>
+    <span
+      onClick={onClick}
+      className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${tones[tone]} ${className}`}
+    >
       {children}
     </span>
   );
