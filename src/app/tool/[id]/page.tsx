@@ -1039,8 +1039,7 @@ export default function ToolDetailPage() {
         ) : (
         <div className="flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
           {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
-          <div className="flex items-center gap-2 pb-2.5">
-            <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+          <div className="flex items-center gap-2 pb-2.5 overflow-x-auto">
             {authLoading ? (
               <div className="h-11 w-24 rounded-xl bg-gray-100 animate-pulse" aria-hidden />
             ) : user ? (
@@ -1137,8 +1136,7 @@ export default function ToolDetailPage() {
             >
               ✨ 改编
             </Link>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="flex-1 min-w-2" />
             <button
               onClick={enterFullscreen}
               className="inline-flex items-center gap-1 h-11 px-3 brand-gradient text-white rounded-xl text-[13px] font-medium hover:opacity-90 active:scale-95 transition-all"
@@ -1146,7 +1144,6 @@ export default function ToolDetailPage() {
               ⛶ 全屏
             </button>
             <ToolInstallButton compact />
-            </div>
           </div>
           {/* 次要操作：举报（顶部保留；使用记录/换封面/删除已移到工具下方） */}
           {!isAuthor && (
