@@ -1036,8 +1036,8 @@ export default function ToolDetailPage() {
         ) : (
         <div className="flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
           {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
-          <div className="pb-2.5">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="pb-2.5 lg:pb-0 lg:flex lg:items-center lg:gap-2">
+            <div className="flex items-center gap-2 flex-wrap lg:flex-1 lg:min-w-0">
             {authLoading ? (
               <div className="h-11 w-24 rounded-xl bg-gray-100 animate-pulse" aria-hidden />
             ) : user ? (
@@ -1135,10 +1135,10 @@ export default function ToolDetailPage() {
               ✨ 改编
             </Link>
             </div>
-            <div className="flex items-center gap-2 justify-end mt-2">
+            <div className="flex items-center gap-2 justify-end mt-2 lg:mt-0 lg:flex-shrink-0">
             <button
               onClick={enterFullscreen}
-              className="inline-flex items-center gap-1 h-11 px-3 brand-gradient text-white rounded-xl text-[13px] font-medium hover:opacity-90 active:scale-95 transition-all"
+              className="inline-flex items-center gap-1 h-11 px-4 brand-gradient text-white rounded-xl text-[13px] font-medium hover:opacity-90 active:scale-95 transition-all"
             >
               ⛶ 全屏
             </button>
