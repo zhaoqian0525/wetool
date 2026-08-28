@@ -96,6 +96,7 @@ export default function ToolDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [clearingState, setClearingState] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false); // v2.19.0：二维码分享弹窗
 
   // Related tools
   const [related, setRelated] = useState<Tool[]>([]);
@@ -1105,6 +1106,12 @@ export default function ToolDetailPage() {
             >
               {shareCopied ? "✓ 已复制" : "🔗 分享"}
             </button>
+            <button
+              onClick={() => setQrOpen(true)}
+              className="inline-flex items-center gap-1 h-11 px-3 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
+            >
+              📱 二维码
+            </button>
             <Link
               href={`/create?source_tool_id=${tool.id}`}
               className="inline-flex items-center gap-1 h-11 px-3 bg-white text-indigo-600 border border-indigo-200 rounded-xl text-[13px] font-medium hover:bg-indigo-50 active:scale-95 transition-all"
@@ -1624,6 +1631,44 @@ export default function ToolDetailPage() {
           </div>
       </Modal>
     )}
+    {/* v2.19.0：二维码分享弹窗 */}
+    {qrOpen && tool && (
+      <Modal open maxWidth="max-w-sm" cardClassName="p-6 text-center" onClose={() => setQrOpen(false)}>
+        <h3 className="text-base font-semibold text-gray-900 mb-1">扫码打开工具</h3>
+        <p className="text-xs text-gray-500 mb-4">用手机扫一扫，即可在手机上打开使用</p>
+        <div className="w-48 h-48 mx-auto bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <img
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=192x192&data=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}&bgcolor=ffffff&color=4f46e5`}
+            alt="工具二维码"
+            className="w-full h-full object-contain p-1"
+            loading="eager"
+          />
+        </div>
+        <p className="mt-3 text-[11px] text-gray-400 break-all leading-relaxed bg-gray-50 rounded-lg border border-gray-100 p-2">
+          {typeof window !== "undefined" ? window.location.href : ""}
+        </p>
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => setQrOpen(false)}
+            className="flex-1 min-h-[44px] flex items-center justify-center btn-ghost"
+          >
+            关闭
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(typeof window !== "undefined" ? window.location.href : "");
+                toast.success("链接已复制");
+              } catch { /* ignore */ }
+            }}
+            className="flex-1 min-h-[44px] flex items-center justify-center btn-primary"
+          >
+            复制链接
+          </button>
+        </div>
+      </Modal>
+    )}
+
     {/* 删除确认对话框 */}
     {deleteOpen && (
       <Modal open maxWidth="max-w-xs" cardClassName="p-6 text-center">
