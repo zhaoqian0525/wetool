@@ -975,36 +975,39 @@ export default function ToolDetailPage() {
           {tool.description && (
             <p className="text-sm text-gray-500 mb-2 line-clamp-2">{tool.description}</p>
           )}
-          <div className="flex items-center gap-2 text-[13px] text-gray-500 flex-wrap">
-            {tool.authorId ? (
-              <Link href={`/user/${tool.authorId}`} className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0">
-                @{tool.author}
-              </Link>
-            ) : (
-              <span>@{tool.author}</span>
-            )}
-            {tool.sourceTool && (
-              <>
-                <span className="text-gray-300">·</span>
-                <span className="flex items-center gap-1">
-                  ✨ 改编自
-                  <Link
-                    href={`/tool/${tool.sourceTool.id}`}
-                    className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0"
-                  >
-                    《{tool.sourceTool.title}》
-                  </Link>
-                </span>
-              </>
-            )}
-            <span className="text-gray-300">·</span>
-            <span>{new Date(tool.createdAt).toLocaleDateString("zh-CN")}</span>
-            {viewCount > 0 && (
-              <>
-                <span className="text-gray-300">·</span>
-                <span className="flex items-center gap-0.5">👁 {viewCount}</span>
-              </>
-            )}
+          <div className="text-[13px] text-gray-500">
+            <div className="flex items-center gap-2 flex-wrap">
+              {tool.authorId ? (
+                <Link href={`/user/${tool.authorId}`} className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0">
+                  @{tool.author}
+                </Link>
+              ) : (
+                <span>@{tool.author}</span>
+              )}
+              {tool.sourceTool && (
+                <>
+                  <span className="text-gray-300">·</span>
+                  <span className="flex items-center gap-1">
+                    ✨ 改编自
+                    <Link
+                      href={`/tool/${tool.sourceTool.id}`}
+                      className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0"
+                    >
+                      《{tool.sourceTool.title}》
+                    </Link>
+                  </span>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+              <span>{new Date(tool.createdAt).toLocaleDateString("zh-CN")}</span>
+              {viewCount > 0 && (
+                <>
+                  <span className="text-gray-300">·</span>
+                  <span className="flex items-center gap-0.5">👁 {viewCount}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
