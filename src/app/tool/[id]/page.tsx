@@ -975,39 +975,36 @@ export default function ToolDetailPage() {
           {tool.description && (
             <p className="text-sm text-gray-500 mb-2 line-clamp-2">{tool.description}</p>
           )}
-          <div className="text-[13px] text-gray-500">
-            <div className="flex items-center gap-2 flex-wrap">
-              {tool.authorId ? (
-                <Link href={`/user/${tool.authorId}`} className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0">
-                  @{tool.author}
-                </Link>
-              ) : (
-                <span>@{tool.author}</span>
-              )}
-              {tool.sourceTool && (
-                <>
-                  <span className="text-gray-300">·</span>
-                  <span className="flex items-center gap-1">
-                    ✨ 改编自
-                    <Link
-                      href={`/tool/${tool.sourceTool.id}`}
-                      className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0"
-                    >
-                      《{tool.sourceTool.title}》
-                    </Link>
-                  </span>
-                </>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
-              <span>{new Date(tool.createdAt).toLocaleDateString("zh-CN")}</span>
-              {viewCount > 0 && (
-                <>
-                  <span className="text-gray-300">·</span>
-                  <span className="flex items-center gap-0.5">👁 {viewCount}</span>
-                </>
-              )}
-            </div>
+          <div className="flex items-center gap-2 text-[13px] text-gray-500 flex-wrap">
+            {tool.authorId ? (
+              <Link href={`/user/${tool.authorId}`} className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0">
+                @{tool.author}
+              </Link>
+            ) : (
+              <span>@{tool.author}</span>
+            )}
+            {tool.sourceTool && (
+              <>
+                <span className="text-gray-300">·</span>
+                <span className="flex items-center gap-1">
+                  ✨ 改编自
+                  <Link
+                    href={`/tool/${tool.sourceTool.id}`}
+                    className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0"
+                  >
+                    《{tool.sourceTool.title}》
+                  </Link>
+                </span>
+              </>
+            )}
+            <span className="text-gray-300">·</span>
+            <span>{new Date(tool.createdAt).toLocaleDateString("zh-CN")}</span>
+            {viewCount > 0 && (
+              <>
+                <span className="text-gray-300">·</span>
+                <span className="flex items-center gap-0.5">👁 {viewCount}</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -1039,7 +1036,8 @@ export default function ToolDetailPage() {
         ) : (
         <div className="flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
           {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
-          <div className="flex items-center gap-2 pb-2.5 flex-wrap">
+          <div className="flex items-center gap-2 pb-2.5">
+            <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
             {authLoading ? (
               <div className="h-11 w-24 rounded-xl bg-gray-100 animate-pulse" aria-hidden />
             ) : user ? (
@@ -1105,9 +1103,18 @@ export default function ToolDetailPage() {
             )}
             <button
               onClick={handleShare}
-              className="inline-flex items-center gap-1 h-11 px-3 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
+              title="分享"
+              className="inline-flex items-center justify-center gap-1 h-11 w-11 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
             >
-              {shareCopied ? "✓ 已复制" : "🔗 分享"}
+              {shareCopied ? (
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v12M8 7l4-4 4 4M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4" />
+                </svg>
+              )}
             </button>
             <button
               onClick={() => setQrOpen(true)}
@@ -1127,7 +1134,8 @@ export default function ToolDetailPage() {
             >
               ✨ 改编
             </Link>
-            <span className="flex-1" />
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={enterFullscreen}
               className="inline-flex items-center gap-1 h-11 px-3 brand-gradient text-white rounded-xl text-[13px] font-medium hover:opacity-90 active:scale-95 transition-all"
@@ -1135,30 +1143,16 @@ export default function ToolDetailPage() {
               ⛶ 全屏
             </button>
             <ToolInstallButton compact />
-          </div>
-          {/* 次要操作：使用记录 / 作者管理（v1.9.3 与主操作分离，降低视觉噪音） */}
-          <div className="flex items-center gap-4 pb-3 text-xs text-gray-400">
-              {user && (
-                <button onClick={() => setHistoryOpen(true)} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
-                  📋 使用记录
-                </button>
-              )}
-              {!isAuthor && (
-                <button onClick={() => setReportOpen((v) => !v)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
-                  🚩 举报
-                </button>
-              )}
-              {isAuthor && (
-                <>
-                  <button onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
-                    🖼️ 换封面
-                  </button>
-                  <button onClick={() => setDeleteOpen(true)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
-                    删除
-                  </button>
-                </>
-              )}
             </div>
+          </div>
+          {/* 次要操作：举报（顶部保留；使用记录/换封面/删除已移到工具下方） */}
+          {!isAuthor && (
+            <div className="flex items-center gap-4 pb-3 text-xs text-gray-400">
+              <button onClick={() => setReportOpen((v) => !v)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
+                🚩 举报
+              </button>
+            </div>
+          )}
           {reportOpen && (
             <div className="relative z-20">
               <div className="absolute left-0 bottom-0 w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2">
@@ -1255,6 +1249,27 @@ export default function ToolDetailPage() {
         <div className="mt-6">
           <CapabilityBadges code={tool.code ?? ""} showEmpty />
         </div>
+
+        {/* v2.22.0：使用记录 / 换封面 / 删除 移到工具下方 */}
+        {(user || isAuthor) && (
+          <div className="mt-4 flex items-center gap-4 text-xs text-gray-400 flex-wrap">
+            {user && (
+              <button onClick={() => setHistoryOpen(true)} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
+                📋 使用记录
+              </button>
+            )}
+            {isAuthor && (
+              <>
+                <button onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
+                  🖼️ 换封面
+                </button>
+                <button onClick={() => setDeleteOpen(true)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
+                  🗑 删除
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Related tools */}
         {related.length > 0 && (
