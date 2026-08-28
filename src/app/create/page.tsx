@@ -206,6 +206,7 @@ interface PublishResult {
   title: string;
   description: string;
   coverUrl: string | null;
+  authorName: string;
 }
 
 interface AiChatMsg {
@@ -991,17 +992,15 @@ function CreatePageInner() {
       setPublishing(false);
       setPublishOpen(false);
 
-      // Build tool URL
-      const toolUrl = `${window.location.origin}/tool/${toolId}`;
-
-      // Auto-copy link
-      await copyAndAnimate(toolUrl, setShareCopied);
-      toast.success("发布成功！3 秒后跳转到工具页");
-
-      // 直接跳转到工具详情页
-      setTimeout(() => {
-        router.push(`/tool/${toolId}?new=1`);
-      }, 1500);
+      // v2.20.0：发布成功后弹出分享卡片（含二维码/封面/简介/作者 + 保存分享图）
+      setShareCardData({
+        toolId,
+        title,
+        description: desc,
+        coverUrl,
+        authorName: user?.user_metadata?.name || user?.email?.split("@")[0] || "微坞创作者",
+      });
+      setShareCardOpen(true);
 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "发布失败，请稍后重试";
@@ -1023,9 +1022,11 @@ function CreatePageInner() {
   };
 
   const closeShareCard = () => {
+    const tid = shareCardData?.toolId;
     setShareCardOpen(false);
     setShareCardData(null);
-    router.push("/");
+    if (tid) router.push(`/tool/${tid}?new=1`);
+    else router.push("/");
   };
 
   const handleCopyCode = useCallback(() => {
@@ -2086,125 +2087,139 @@ function ShareCard({
   onShare: () => void;
   onClose: () => void;
 }) {
+  const shareImgRef = useRef<HTMLDivElement>(null);
+  const [savingImage, setSavingImage] = useState(false);
   const toolUrl = typeof window !== "undefined" ? `${window.location.origin}/tool/${data.toolId}` : "";
   const qrUrl = toolUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(toolUrl)}&bgcolor=ffffff&color=4f46e5`
     : "";
 
+  const handleSaveImage = async () => {
+    const el = shareImgRef.current;
+    if (!el || savingImage) return;
+    setSavingImage(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+      const a = document.createElement("a");
+      a.download = `${data.title || "工具"}-分享图.png`;
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    } catch {
+      // 保存失败时静默忽略，不影响主流程
+    } finally {
+      setSavingImage(false);
+    }
+  };
+
   return (
     <Modal open maxWidth="max-w-sm">
-        <div className="h-1.5 brand-gradient" />
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900">🎉 发布成功</h3>
-          <button
-            onClick={onClose}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+      <div className="h-1.5 brand-gradient" />
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <h3 className="text-lg font-bold text-gray-900">🎉 发布成功</h3>
+        <button
+          onClick={onClose}
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Card Body */}
+      <div className="p-5 space-y-3">
+        {/* 分享图预览（保存的就是这张） */}
+        <div className="flex justify-center">
+          <div
+            ref={shareImgRef}
+            className="w-[300px] bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <div className="relative w-full aspect-[16/10] bg-gray-100">
+              {data.coverUrl ? (
+                <img
+                  src={data.coverUrl}
+                  alt={data.title}
+                  crossOrigin="anonymous"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg, #667eea, #764ba2)" }}
+                >
+                  <span className="text-white/90 text-base font-bold px-4 text-center line-clamp-2">
+                    {data.title}
+                  </span>
+                </div>
+              )}
+              <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+              <div className="absolute bottom-2 left-3 right-3">
+                <p className="text-white text-sm font-bold truncate drop-shadow-md">{data.title}</p>
+                {data.description && (
+                  <p className="text-white/85 text-[11px] mt-0.5 truncate drop-shadow-md">{data.description}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3">
+              <div className="flex-shrink-0 w-[68px] h-[68px] bg-white rounded-lg border border-gray-200 overflow-hidden">
+                {qrUrl ? (
+                  <img
+                    src={qrUrl}
+                    alt="扫码访问工具"
+                    crossOrigin="anonymous"
+                    className="w-full h-full object-contain p-0.5"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-300">QR</div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-gray-700 truncate">扫码打开这个工具</p>
+                <p className="text-[11px] text-gray-400 mt-1 truncate">由 {data.authorName} 制作</p>
+                <p className="text-[10px] text-indigo-500 mt-1">微坞 WeWoo · 手机即点即用</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 保存分享图 */}
+        <button
+          onClick={handleSaveImage}
+          disabled={savingImage}
+          className="w-full min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 active:scale-95 transition-all disabled:opacity-50"
+        >
+          {savingImage ? "生成中..." : "💾 保存分享图"}
+        </button>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={onCopyLink}
+            className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+              copied
+                ? "bg-green-50 text-green-600 border border-green-200 scale-[0.97]"
+                : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
+            }`}
+          >
+            {copied ? "✓ 已复制" : "复制链接"}
+          </button>
+          <button
+            onClick={onShare}
+            className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 active:scale-95 transition-all duration-200"
+          >
+            分享给朋友
           </button>
         </div>
 
-        {/* Card Body */}
-        <div className="p-5 space-y-4">
-          {/* Cover */}
-          <div className="relative rounded-xl overflow-hidden shadow-md bg-gray-100 aspect-[375/200]">
-            {data.coverUrl ? (
-              <img
-                src={data.coverUrl}
-                alt={data.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
-            ) : (
-              <div
-                className="w-full h-full flex items-center justify-center"
-                style={{
-                  background: "linear-gradient(135deg, #667eea, #764ba2)",
-                }}
-              >
-                <span className="text-white/80 text-lg font-bold px-4 text-center line-clamp-2">
-                  {data.title}
-                </span>
-              </div>
-            )}
-            {/* Overlay gradient at bottom for readability */}
-            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-            <div className="absolute bottom-3 left-3 right-3">
-              <p className="text-white text-base font-bold truncate drop-shadow-md">{data.title}</p>
-              {data.description && (
-                <p className="text-white/80 text-xs mt-0.5 truncate drop-shadow-md">{data.description}</p>
-              )}
-            </div>
-          </div>
-
-          {/* QR Code */}
-          <div className="flex items-center gap-4 bg-gray-50 rounded-xl p-4">
-            <div className="flex-shrink-0 w-[90px] h-[90px] bg-white rounded-lg border border-gray-200 overflow-hidden">
-              {qrUrl ? (
-                <img
-                  src={qrUrl}
-                  alt="扫码访问工具"
-                  className="w-full h-full object-contain p-1"
-                  loading="eager"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-300">
-                  <svg className="w-8 h-8 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2m6-6v2m0-2h-2m-2 0H8m4-4V4m0 0H8m4 0h4" />
-                  </svg>
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-gray-500 mb-2">扫码或复制链接分享给朋友</p>
-              <p className="text-[11px] text-gray-400 break-all leading-relaxed bg-white rounded-lg border border-gray-200 p-2 truncate">
-                {toolUrl}
-              </p>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3">
-            <button
-              onClick={onCopyLink}
-              className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                copied
-                  ? "bg-green-50 text-green-600 border border-green-200 scale-[0.97]"
-                  : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
-              }`}
-            >
-              {copied ? (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  已复制
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  复制链接
-                </>
-              )}
-            </button>
-            <button
-              onClick={onShare}
-              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 active:scale-95 transition-all duration-200"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-              分享给朋友
-            </button>
-          </div>
-        </div>
+        <Link
+          href={`/tool/${data.toolId}?new=1`}
+          className="w-full min-h-[44px] flex items-center justify-center gap-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 active:scale-95 transition-all"
+        >
+          查看我的工具 →
+        </Link>
+      </div>
     </Modal>
   );
 }

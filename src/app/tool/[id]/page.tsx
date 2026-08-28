@@ -1088,11 +1088,12 @@ export default function ToolDetailPage() {
                     } finally { setSaving(false); }
                   }}
                   disabled={saving}
+                  title={saved ? "取消收藏" : "收藏"}
                   className={`inline-flex items-center gap-1 h-11 px-3 rounded-xl text-[13px] font-medium transition-all active:scale-95 ${
                     saved ? "bg-amber-50 text-amber-600 ring-1 ring-amber-200" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                   } ${saving ? "opacity-60" : ""}`}
                 >
-                  {saved ? "⭐" : "☆"}{saved ? " 已收藏" : " 收藏"}
+                  {saved ? "⭐" : "☆"}
                 </button>
               </>
             ) : (
@@ -1110,7 +1111,13 @@ export default function ToolDetailPage() {
               onClick={() => setQrOpen(true)}
               className="inline-flex items-center gap-1 h-11 px-3 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
             >
-              📱 二维码
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                <path d="M14 14h4v4h-4zM19 19h2v2h-2zM14 21h2M21 14v2" strokeLinecap="round" />
+              </svg>
+              二维码
             </button>
             <Link
               href={`/create?source_tool_id=${tool.id}`}
