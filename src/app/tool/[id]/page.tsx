@@ -1037,7 +1037,7 @@ export default function ToolDetailPage() {
         <div className="flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
           {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
           <div className="pb-2.5 lg:flex lg:items-center lg:gap-2">
-            <div className="flex items-center gap-2 flex-wrap lg:flex-1 lg:min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap lg:flex-1 lg:min-w-0">
             {authLoading ? (
               <div className="h-11 w-24 rounded-xl bg-gray-100 animate-pulse" aria-hidden />
             ) : user ? (
@@ -1056,7 +1056,7 @@ export default function ToolDetailPage() {
                     } finally { setLiking(false); }
                   }}
                   disabled={liking}
-                  className={`inline-flex items-center gap-1 h-11 px-3 rounded-xl text-[13px] font-medium transition-all active:scale-95 ${
+                  className={`inline-flex items-center gap-1 h-11 px-2.5 rounded-xl text-[13px] font-medium transition-all active:scale-95 ${
                     liked ? "bg-red-50 text-red-600 ring-1 ring-red-200" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                   } ${liking ? "opacity-60" : ""}`}
                 >
@@ -1089,7 +1089,7 @@ export default function ToolDetailPage() {
                   }}
                   disabled={saving}
                   title={saved ? "取消收藏" : "收藏"}
-                  className={`inline-flex items-center gap-1 h-11 px-3 rounded-xl text-[13px] font-medium transition-all active:scale-95 ${
+                  className={`inline-flex items-center gap-1 h-11 px-2.5 rounded-xl text-[13px] font-medium transition-all active:scale-95 ${
                     saved ? "bg-amber-50 text-amber-600 ring-1 ring-amber-200" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
                   } ${saving ? "opacity-60" : ""}`}
                 >
@@ -1130,7 +1130,7 @@ export default function ToolDetailPage() {
             </button>
             <Link
               href={`/create?source_tool_id=${tool.id}`}
-              className="inline-flex items-center gap-1 h-11 px-3 bg-white text-indigo-600 border border-indigo-200 rounded-xl text-[13px] font-medium hover:bg-indigo-50 active:scale-95 transition-all"
+              className="inline-flex items-center gap-1 h-11 px-2.5 bg-white text-indigo-600 border border-indigo-200 rounded-xl text-[13px] font-medium hover:bg-indigo-50 active:scale-95 transition-all"
             >
               ✨ 改编
             </Link>
