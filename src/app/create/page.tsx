@@ -1743,12 +1743,20 @@ function CreatePageInner() {
             <div className="flex flex-col items-center w-full">
               {deviceTarget === "desktop" ? (
                 <>
-                  <div className="w-full max-w-[720px] bg-gray-800 rounded-xl p-2 shadow-2xl">
+                  <div className="w-full max-w-[1280px] bg-gray-800 rounded-xl p-2 shadow-2xl">
                     <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-700 rounded-t-lg">
                       <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
                       <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
                       <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
                       <div className="ml-2 flex-1 bg-white/10 rounded-full px-3 py-1 text-[11px] text-gray-400 truncate">we-woo.net</div>
+                      <button
+                        onClick={() => { setPreviewLsSeed(readPreviewSeed()); setFullscreenPreview(true); }}
+                        className="flex-shrink-0 min-h-[28px] px-2.5 text-xs text-gray-300 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                        title="全屏预览"
+                        style={{ touchAction: "manipulation" }}
+                      >
+                        ⛶ 全屏
+                      </button>
                     </div>
                     <div ref={desktopPreviewRef} className="relative w-full overflow-hidden bg-white" style={{ aspectRatio: "16/9" }}>
                       <iframe
