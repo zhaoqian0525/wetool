@@ -1036,7 +1036,7 @@ export default function ToolDetailPage() {
         ) : (
         <div className="flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
           {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
-          <div className="pb-2.5 lg:pb-0 lg:flex lg:items-center lg:gap-2">
+          <div className="pb-2.5 lg:flex lg:items-center lg:gap-2">
             <div className="flex items-center gap-2 flex-wrap lg:flex-1 lg:min-w-0">
             {authLoading ? (
               <div className="h-11 w-24 rounded-xl bg-gray-100 animate-pulse" aria-hidden />
@@ -1134,6 +1134,14 @@ export default function ToolDetailPage() {
             >
               ✨ 改编
             </Link>
+            <ToolInstallButton compact />
+            <button
+              onClick={handleDownload}
+              className="hidden lg:inline-flex items-center gap-1 h-11 px-3 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
+              title="下载工具 HTML"
+            >
+              ⬇️ 下载
+            </button>
             </div>
             <div className="flex items-center gap-2 justify-end mt-2 lg:mt-0 lg:flex-shrink-0">
             <button
@@ -1142,39 +1150,8 @@ export default function ToolDetailPage() {
             >
               ⛶ 全屏
             </button>
-            <ToolInstallButton compact />
             </div>
           </div>
-          {/* 次要操作：举报（顶部保留；使用记录/换封面/删除已移到工具下方） */}
-          {!isAuthor && (
-            <div className="flex items-center gap-4 pb-3 text-xs text-gray-400">
-              <button onClick={() => setReportOpen((v) => !v)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
-                🚩 举报
-              </button>
-            </div>
-          )}
-          {reportOpen && (
-            <div className="relative z-20">
-              <div className="absolute left-0 bottom-0 w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2">
-                <p className="text-xs font-medium text-gray-700 px-2 py-1.5">选择举报原因</p>
-                {["垃圾广告", "侵权内容", "违法信息", "色情低俗", "其他"].map((r) => (
-                  <button
-                    key={r}
-                    disabled={reporting}
-                    onClick={() => handleReport(r)}
-                    className="w-full text-left px-2 py-2 text-xs text-gray-600 hover:bg-gray-50 rounded-lg disabled:opacity-50 flex items-center justify-between"
-                  >
-                    <span>{r}</span>
-                    <span className="text-gray-300">{reporting ? "…" : "›"}</span>
-                  </button>
-                ))}
-                <button onClick={() => setReportOpen(false)} className="w-full text-center px-2 py-1.5 text-xs text-gray-400 hover:bg-gray-50 rounded-lg">
-                  取消
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Full-height iframe（等待状态加载完成后再挂载，确保启动快照已就绪） */}
           {stateLoaded && tool.code ? (
             iframeError ? (
@@ -1250,26 +1227,50 @@ export default function ToolDetailPage() {
           <CapabilityBadges code={tool.code ?? ""} showEmpty />
         </div>
 
-        {/* v2.22.0：使用记录 / 换封面 / 删除 移到工具下方 */}
-        {(user || isAuthor) && (
-          <div className="mt-4 flex items-center gap-4 text-xs text-gray-400 flex-wrap">
-            {user && (
-              <button onClick={() => setHistoryOpen(true)} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
-                📋 使用记录
+        {/* v2.23.0：使用记录 / 举报 / 换封面 / 删除 统一移到工具下方 */}
+        <div className="mt-4 flex items-center gap-4 text-xs text-gray-400 flex-wrap">
+          {user && (
+            <button onClick={() => setHistoryOpen(true)} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
+              📋 使用记录
+            </button>
+          )}
+          {!isAuthor && (
+            <div className="relative">
+              <button onClick={() => setReportOpen((v) => !v)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
+                🚩 举报
               </button>
-            )}
-            {isAuthor && (
-              <>
-                <button onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
-                  🖼️ 换封面
-                </button>
-                <button onClick={() => setDeleteOpen(true)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
-                  🗑 删除
-                </button>
-              </>
-            )}
-          </div>
-        )}
+              {reportOpen && (
+                <div className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2 z-30">
+                  <p className="text-xs font-medium text-gray-700 px-2 py-1.5">选择举报原因</p>
+                  {["垃圾广告", "侵权内容", "违法信息", "色情低俗", "其他"].map((r) => (
+                    <button
+                      key={r}
+                      disabled={reporting}
+                      onClick={() => handleReport(r)}
+                      className="w-full text-left px-2 py-2 text-xs text-gray-600 hover:bg-gray-50 rounded-lg disabled:opacity-50 flex items-center justify-between"
+                    >
+                      <span>{r}</span>
+                      <span className="text-gray-300">{reporting ? "…" : "›"}</span>
+                    </button>
+                  ))}
+                  <button onClick={() => setReportOpen(false)} className="w-full text-center px-2 py-1.5 text-xs text-gray-400 hover:bg-gray-50 rounded-lg">
+                    取消
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          {isAuthor && (
+            <>
+              <button onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
+                🖼️ 换封面
+              </button>
+              <button onClick={() => setDeleteOpen(true)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
+                🗑 删除
+              </button>
+            </>
+          )}
+        </div>
 
         {/* Related tools */}
         {related.length > 0 && (
