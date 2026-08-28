@@ -975,39 +975,36 @@ export default function ToolDetailPage() {
           {tool.description && (
             <p className="text-sm text-gray-500 mb-2 line-clamp-2">{tool.description}</p>
           )}
-          <div className="text-[13px] text-gray-500">
-            <div className="flex items-center gap-2 flex-wrap">
-              {tool.authorId ? (
-                <Link href={`/user/${tool.authorId}`} className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0">
-                  @{tool.author}
-                </Link>
-              ) : (
-                <span>@{tool.author}</span>
-              )}
-              {tool.sourceTool && (
-                <>
-                  <span className="text-gray-300">·</span>
-                  <span className="flex items-center gap-1">
-                    ✨ 改编自
-                    <Link
-                      href={`/tool/${tool.sourceTool.id}`}
-                      className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0"
-                    >
-                      《{tool.sourceTool.title}》
-                    </Link>
-                  </span>
-                </>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
-              <span>{new Date(tool.createdAt).toLocaleDateString("zh-CN")}</span>
-              {viewCount > 0 && (
-                <>
-                  <span className="text-gray-300">·</span>
-                  <span className="flex items-center gap-0.5">👁 {viewCount}</span>
-                </>
-              )}
-            </div>
+          <div className="flex items-center gap-2 text-[13px] text-gray-500 flex-wrap">
+            {tool.authorId ? (
+              <Link href={`/user/${tool.authorId}`} className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0">
+                @{tool.author}
+              </Link>
+            ) : (
+              <span>@{tool.author}</span>
+            )}
+            <span className="text-gray-300">·</span>
+            <span>{new Date(tool.createdAt).toLocaleDateString("zh-CN")}</span>
+            {viewCount > 0 && (
+              <>
+                <span className="text-gray-300">·</span>
+                <span className="flex items-center gap-0.5">👁 {viewCount}</span>
+              </>
+            )}
+            {tool.sourceTool && (
+              <>
+                <span className="text-gray-300">·</span>
+                <span className="flex items-center gap-1">
+                  ✨ 改编自
+                  <Link
+                    href={`/tool/${tool.sourceTool.id}`}
+                    className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0"
+                  >
+                    《{tool.sourceTool.title}》
+                  </Link>
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -1121,7 +1118,8 @@ export default function ToolDetailPage() {
             </button>
             <button
               onClick={() => setQrOpen(true)}
-              className="inline-flex items-center gap-1 h-11 px-3 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
+              title="二维码"
+              className="inline-flex items-center justify-center gap-1 h-11 w-11 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -1129,7 +1127,6 @@ export default function ToolDetailPage() {
                 <rect x="3" y="14" width="7" height="7" rx="1.5" />
                 <path d="M14 14h4v4h-4zM19 19h2v2h-2zM14 21h2M21 14v2" strokeLinecap="round" />
               </svg>
-              二维码
             </button>
             <Link
               href={`/create?source_tool_id=${tool.id}`}
