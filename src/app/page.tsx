@@ -26,7 +26,7 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  const [sortBy, setSortBy] = useState<"latest" | "popular" | "recommended">("latest");
+  const [sortBy, setSortBy] = useState<"latest" | "popular" | "recommended">("popular");
   const [myTools, setMyTools] = useState<Tool[]>([]);
   const [recentTools, setRecentTools] = useState<Array<Record<string, unknown>>>([]);
   const [myToolsLoading, setMyToolsLoading] = useState(false);
