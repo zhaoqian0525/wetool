@@ -186,28 +186,17 @@ export default function ToolDetailPage() {
         setTool(cached);
         setLoading(false);
       }
-      // 并行加载 tool、reviews、rating
+      // v2.26.4：工具本体先加载渲染，评论/评分延后加载，避免慢接口阻塞首屏 iframe
       let t: Tool | null = null;
-      let revs: Review[] = [];
-      let avg: { average: number; count: number } = { average: 0, count: 0 };
       let networkError = false;
       try {
-        [t, revs, avg] = await Promise.all([
-          fetchToolById(id),
-          fetchReviews(id),
-          fetchAverageRating(id),
-        ]);
+        t = await fetchToolById(id);
       } catch {
-        // 网络失败：尝试单独加载 tool（fetchToolById 有缓存兜底）
-        try {
-          t = await fetchToolById(id);
-        } catch {
-          // v1.14.0 修复：网络抖动 ≠ 工具不存在。
-          // 若已渲染过（缓存命中）则保留现状，不再误清为「工具未找到」；
-          // 若从未渲染成功则标记加载失败，显示可重试的失败视图。
-          networkError = true;
-          t = null;
-        }
+        // v1.14.0 修复：网络抖动 ≠ 工具不存在。
+        // 若已渲染过（缓存命中）则保留现状，不再误清为「工具未找到」；
+        // 若从未渲染成功则标记加载失败，显示可重试的失败视图。
+        networkError = true;
+        t = null;
       }
 
       if (cancelled) return;
@@ -230,22 +219,29 @@ export default function ToolDetailPage() {
         setTool(null);
       }
 
-      setReviews(revs);
-      // v1.14.0：加载评论点赞数（最热排序）
-      if (revs.length > 0) {
-        fetchReviewLikeCounts(revs.map(r => r.id)).then((counts) => {
-          if (cancelled) return;
-          setReviews((prev) => prev.map((r) => ({ ...r, likeCount: counts.get(r.id) ?? r.likeCount ?? 0 })));
-        });
-      }
-      // 加载评论点赞状态
-      if (user?.id && revs.length > 0) {
-        fetchUserLikes(user.id, "review", revs.map(r => r.id)).then(s => {
-          if (!cancelled) setReviewLikes(s);
-        });
-      }
-      setAvgRating(avg);
       setLoading(false);
+
+      // 评论/评分延后加载，不阻塞工具首屏
+      Promise.all([fetchReviews(id), fetchAverageRating(id)])
+        .then(([revs, avg]) => {
+          if (cancelled) return;
+          setReviews(revs);
+          setAvgRating(avg);
+          // v1.14.0：加载评论点赞数（最热排序）
+          if (revs.length > 0) {
+            fetchReviewLikeCounts(revs.map(r => r.id)).then((counts) => {
+              if (cancelled) return;
+              setReviews((prev) => prev.map((r) => ({ ...r, likeCount: counts.get(r.id) ?? r.likeCount ?? 0 })));
+            });
+          }
+          // 加载评论点赞状态
+          if (user?.id && revs.length > 0) {
+            fetchUserLikes(user.id, "review", revs.map(r => r.id)).then(s => {
+              if (!cancelled) setReviewLikes(s);
+            });
+          }
+        })
+        .catch(() => {});
     }
 
     loadAll();

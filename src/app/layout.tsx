@@ -83,6 +83,8 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <head>
+        <link rel="preconnect" href="https://cvacrykzcppiflmvwwfe.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://cvacrykzcppiflmvwwfe.supabase.co" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

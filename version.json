@@ -1,6 +1,6 @@
 {
-  "version": "2.26.3",
+  "version": "2.26.4",
   "buildDate": "2026-08-29",
-  "buildTimestamp": "2026-08-29 17:33:33.691+08:00",
-  "description": "v2.26.3：修复跨设备记忆晚于工具初始化注入（登录态确认后再挂载 iframe）"
+  "buildTimestamp": "2026-08-29 17:50:49.773+08:00",
+  "description": "v2.26.4：工具首屏加载提速（工具先渲染、评论评分延后、Supabase 预连接）"
 }
