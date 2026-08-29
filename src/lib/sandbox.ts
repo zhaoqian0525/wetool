@@ -783,9 +783,9 @@ ${rawCode}
  * - allow-forms: 防止表单提交
  * - allow-popups: 防止 window.open 弹窗
  * - allow-top-navigation: 防止 iframe 劫持父窗口跳转
- * - allow-modals: 防止 alert/confirm/prompt 干扰
+ * - allow-modals: 允许 alert/confirm/prompt（AI 生成工具常用 alert 做校验提示）
  *
  * 副作用：localStorage / sessionStorage / cookie 在 null-origin 下抛错，
  * 由 SECURITY_SHIM 静默降级为内存 mock。
  */
-export const IFRAME_SANDBOX = "allow-scripts";
+export const IFRAME_SANDBOX = "allow-scripts allow-modals";

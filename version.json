@@ -1,6 +1,6 @@
 {
-  "version": "2.26.5",
+  "version": "2.26.6",
   "buildDate": "2026-08-29",
-  "buildTimestamp": "2026-08-29 17:56:32.596+08:00",
-  "description": "v2.26.5：修复拍照识别大图超限（pickImage 自动压缩后传给视觉 AI）"
+  "buildTimestamp": "2026-08-29 18:20:00.787+08:00",
+  "description": "v2.26.6：恢复工具沙盒弹窗能力，修复 AI 工具点击开始使用/校验无反应"
 }

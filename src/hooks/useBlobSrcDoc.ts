@@ -56,5 +56,5 @@ export function useBlobSrcDoc(
     };
   }, [rawCode, lsSeed]);
 
-  return { srcDoc, blobUrl, sandbox: "allow-scripts" };
+  return { srcDoc, blobUrl, sandbox: "allow-scripts allow-modals" };
 }
