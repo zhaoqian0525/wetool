@@ -24,7 +24,7 @@ export async function GET(
 
   if (error) {
     console.warn("[state] GET error:", error.message);
-    return NextResponse.json({ state: null });
+    return NextResponse.json({ error: "加载状态失败" }, { status: 500 });
   }
   return NextResponse.json({ state: data?.state_data ?? null });
 }

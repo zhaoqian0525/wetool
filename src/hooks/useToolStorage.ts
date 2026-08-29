@@ -280,7 +280,10 @@ export function useToolStorage(toolId?: string, userId?: string, user?: ToolSand
             break;
           }
           authedFetch(`/api/tools/${toolId}/state`)
-            .then((r) => r.json())
+            .then((r) => {
+              if (!r.ok) throw new Error("state load failed");
+              return r.json();
+            })
             .then((res) => {
               // 优先使用 Supabase 数据，fallback 到 localStorage
               const cloud = (res.state && typeof res.state === "object" ? res.state : null) as Record<string, unknown> | null;

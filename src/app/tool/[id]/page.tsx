@@ -476,7 +476,10 @@ export default function ToolDetailPage() {
     const forceLoad = setTimeout(() => { if (!settled) { settled = true; setStateLoaded(true); } }, 10000);
     const finishLoad = () => { if (settled) return; settled = true; clearTimeout(forceLoad); setStateLoaded(true); };
     authedFetch(`/api/tools/${tool.id}/state`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("state load failed");
+        return r.json();
+      })
       .then((data) => {
         const cloud = (data.state && typeof data.state === "object" ? data.state : null) as Record<string, unknown> | null;
         // 游客墓碑合并：本机曾以游客身份使用过且云端还没有 _ls → 合并上云
