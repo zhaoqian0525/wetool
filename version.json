@@ -1,6 +1,6 @@
 {
-  "version": "2.26.4",
+  "version": "2.26.5",
   "buildDate": "2026-08-29",
-  "buildTimestamp": "2026-08-29 17:50:49.773+08:00",
-  "description": "v2.26.4：工具首屏加载提速（工具先渲染、评论评分延后、Supabase 预连接）"
+  "buildTimestamp": "2026-08-29 17:56:32.596+08:00",
+  "description": "v2.26.5：修复拍照识别大图超限（pickImage 自动压缩后传给视觉 AI）"
 }

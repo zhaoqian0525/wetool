@@ -498,7 +498,27 @@ const STORAGE_API = `<script>
           if (!f) { if (cb) cb('未选择图片', null); return; }
           var reader = new FileReader();
           reader.onload = function() {
-            if (cb) cb(null, { dataUrl: String(reader.result), name: f.name, type: f.type, size: f.size });
+            var raw = String(reader.result);
+            // v2.26.5：压缩图片（最长边 1600，JPEG 0.9），避免大图超出视觉模型输入上限
+            try {
+              var img = new Image();
+              img.onload = function() {
+                try {
+                  var maxEdge = 1600;
+                  var scale = Math.min(1, maxEdge / Math.max(img.width || 1, img.height || 1));
+                  var w = Math.max(1, Math.round((img.width || 1) * scale));
+                  var h = Math.max(1, Math.round((img.height || 1) * scale));
+                  var canvas = document.createElement('canvas');
+                  canvas.width = w; canvas.height = h;
+                  var ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0, w, h);
+                  var out = canvas.toDataURL('image/jpeg', 0.9);
+                  if (cb) cb(null, { dataUrl: out, name: f.name, type: 'image/jpeg', size: Math.round(out.length * 0.75) });
+                } catch(_) { if (cb) cb(null, { dataUrl: raw, name: f.name, type: f.type, size: f.size }); }
+              };
+              img.onerror = function() { if (cb) cb(null, { dataUrl: raw, name: f.name, type: f.type, size: f.size }); };
+              img.src = raw;
+            } catch(_) { if (cb) cb(null, { dataUrl: raw, name: f.name, type: f.type, size: f.size }); }
           };
           reader.onerror = function() { if (cb) cb('图片读取失败', null); };
           reader.readAsDataURL(f);
