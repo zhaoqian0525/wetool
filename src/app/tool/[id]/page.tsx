@@ -470,6 +470,8 @@ export default function ToolDetailPage() {
   // 加载已保存的状态
   useEffect(() => {
     if (!tool?.id) return; // 等待工具数据加载完成
+    // v2.26.3：等待登录态确认后再挂载 iframe，避免云端记忆晚于工具初始化注入
+    if (authLoading) return;
     if (!user?.id) { setStateLoaded(true); return; }
     // v1.9.11: 状态接口慢/挂起时兜底放行，避免 iframe 迟迟无法挂载
     let settled = false;
@@ -504,7 +506,7 @@ export default function ToolDetailPage() {
         finishLoad();
       })
       .catch(finishLoad);
-  }, [tool?.id, user?.id]);
+  }, [tool?.id, user?.id, authLoading]);
 
   // 状态加载完成后兜底注入一次（覆盖 READY 早于云端状态返回的情况）
   const stateInjectedForRef = useRef<string | null>(null);

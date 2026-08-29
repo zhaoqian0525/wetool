@@ -1,6 +1,6 @@
 {
-  "version": "2.26.2",
+  "version": "2.26.3",
   "buildDate": "2026-08-29",
-  "buildTimestamp": "2026-08-29 17:28:17.844+08:00",
-  "description": "v2.26.2：修复 iOS 添加到主屏幕偶发保存成官网首页（manifest 链接竞争）"
+  "buildTimestamp": "2026-08-29 17:33:33.691+08:00",
+  "description": "v2.26.3：修复跨设备记忆晚于工具初始化注入（登录态确认后再挂载 iframe）"
 }
