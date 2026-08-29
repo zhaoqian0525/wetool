@@ -21,8 +21,8 @@ const AI_MODEL = process.env.AI_MODEL ?? "deepseek-v4-flash";
 // v2.10.0 视觉模型：用户附带图片时切换（图片理解/设计稿转工具）
 const AI_VISION_MODEL = process.env.AI_VISION_MODEL ?? "deepseek-v4-flash-vision-exp";
 
-const MAX_HISTORY = 24; // 客户端消息条数上限
-const MAX_PROMPT_LENGTH = 8000; // 单次 prompt 上限
+const MAX_HISTORY = 32; // 客户端消息条数上限
+const MAX_PROMPT_LENGTH = 20000; // 单次 prompt 上限（v2.25.0 再放松，匹配更大的上下文）
 const MAX_IMAGES = 4; // 单次最多附带图片数
 const MAX_IMAGE_CHARS = 2_000_000; // 单张 base64 上限（约 1.5MB）
 
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     });
   }
   if (prompt.length > MAX_PROMPT_LENGTH) {
-    return new Response(JSON.stringify({ error: "需求描述过长，请精简到 8000 字以内" }), {
+    return new Response(JSON.stringify({ error: `需求描述过长，请精简到 ${MAX_PROMPT_LENGTH} 字以内` }), {
       status: 413,
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });

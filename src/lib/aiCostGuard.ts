@@ -12,9 +12,9 @@ export interface AiUsage {
 }
 
 // ===== 可调参数（环境变量可覆盖） =====
-export const MAX_CODE_LENGTH = 32000; // currentCode 上限（v1.8.7 放松：适配 3 万字长工具改编）
-export const MAX_TOKENS = Number(process.env.AI_MAX_TOKENS ?? 16000); // 输出上限（v1.8.7 放松：3 万字 HTML 约需 7k+ token）
-export const MAX_CONTEXT_CHARS = 48000; // 上游 system+history 总字符护栏（v1.8.7 放松）
+export const MAX_CODE_LENGTH = 100000; // currentCode 上限（v2.25.0 再放松：适配 10 万字长工具改编）
+export const MAX_TOKENS = Number(process.env.AI_MAX_TOKENS ?? 48000); // 输出上限（v2.25.0 再放松）
+export const MAX_CONTEXT_CHARS = 200000; // 上游 system+history 总字符护栏（v2.25.0 再放松）
 export const RATE_MIN = Number(process.env.AI_RATE_MIN ?? 8); // 每 IP 每分钟请求上限
 export const RATE_DAY = Number(process.env.AI_RATE_DAY ?? 120); // 每 IP 每天请求上限
 export const MIN_BALANCE_CNY = 1.0; // 余额低于该值（元）拒绝生成
@@ -24,8 +24,8 @@ export const BALANCE_TTL_MS = 5 * 60 * 1000;
 export function compactHistory(messages: ChatItem[]): { role: "user"; content: string }[] {
   return messages
     .filter((m) => m.role === "user")
-    .slice(-8)
-    .map((m) => ({ role: "user" as const, content: m.content.slice(0, 1000) }));
+    .slice(-16)
+    .map((m) => ({ role: "user" as const, content: m.content.slice(0, 4000) }));
 }
 
 /** 组装系统提示词：基础规则 + 当前代码（截断到上限） */

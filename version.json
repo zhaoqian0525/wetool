@@ -1,6 +1,6 @@
 {
-  "version": "2.24.0",
+  "version": "2.25.0",
   "buildDate": "2026-08-29",
-  "buildTimestamp": "2026-08-29 15:36:26.994+08:00",
-  "description": "v2.24.0：沙盒新增 __wewoo.pickImage（拍照/选图，input type=file 方案）"
+  "buildTimestamp": "2026-08-29 16:07:35.339+08:00",
+  "description": "v2.25.0：AI 生成代码/上下文上限再放松（代码 10 万字、输出 48000 token、上下文 20 万字）"
 }
