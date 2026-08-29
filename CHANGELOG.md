@@ -6,6 +6,13 @@
 
 ---
 
+## [2.24.0] - 2026-08-29
+
+### Added
+- 沙盒新增 `__wewoo.pickImage({ capture })`：工具内可一键拍照 / 选图（input type=file + FileReader，不碰 getUserMedia），返回 base64 dataUrl 供展示或视觉 AI 识别；AI 提示词同步该标准写法
+
+---
+
 ## [2.23.1] - 2026-08-29
 
 ### Fixed

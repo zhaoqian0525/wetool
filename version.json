@@ -1,6 +1,6 @@
 {
-  "version": "2.23.1",
+  "version": "2.24.0",
   "buildDate": "2026-08-29",
-  "buildTimestamp": "2026-08-29 01:41:03.915+08:00",
-  "description": "v2.23.1：手机端操作栏按钮间距微调（gap/padding 缩小，安装归位第一行）"
+  "buildTimestamp": "2026-08-29 15:36:26.994+08:00",
+  "description": "v2.24.0：沙盒新增 __wewoo.pickImage（拍照/选图，input type=file 方案）"
 }

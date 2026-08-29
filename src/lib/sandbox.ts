@@ -481,6 +481,31 @@ const STORAGE_API = `<script>
         if (cb) cb(null, 'ok');
       } catch(e) { if (cb) cb(String((e && e.message) || 'error')); }
     },
+    // ---- v2.24.0：拍照/上传图片（input type=file + FileReader，不走 getUserMedia，回调 (err, {dataUrl,name,type,size})） ----
+    pickImage: function(opts, cb) {
+      if (typeof opts === 'function') { cb = opts; opts = {}; }
+      opts = opts || {};
+      try {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        if (opts.capture) input.setAttribute('capture', 'environment');
+        input.style.display = 'none';
+        document.body.appendChild(input);
+        input.onchange = function() {
+          var f = input.files && input.files[0];
+          try { document.body.removeChild(input); } catch(_) {}
+          if (!f) { if (cb) cb('未选择图片', null); return; }
+          var reader = new FileReader();
+          reader.onload = function() {
+            if (cb) cb(null, { dataUrl: String(reader.result), name: f.name, type: f.type, size: f.size });
+          };
+          reader.onerror = function() { if (cb) cb('图片读取失败', null); };
+          reader.readAsDataURL(f);
+        };
+        input.click();
+      } catch(e) { if (cb) cb(String((e && e.message) || 'error'), null); }
+    },
     // ---- v2.1.0 M3：白名单联网代理（仅白名单域名 + GET，回调 (err, {status,data,contentType})） ----
     fetch: function(url, opts, cb) {
       if (typeof opts === 'function') { cb = opts; opts = {}; }
