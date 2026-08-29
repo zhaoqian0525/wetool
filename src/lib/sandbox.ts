@@ -239,7 +239,11 @@ const SECURITY_SHIM = `<script>
       _timer = setTimeout(function() {
         _timer = null;
         try { window.parent.postMessage({ type: 'WEWOO_LS_SYNC', data: JSON.stringify(data) }, '*'); } catch(_) {}
-      }, 800);
+      }, 300);
+    }
+    function _flush() {
+      if (_timer) { clearTimeout(_timer); _timer = null; }
+      if (syncToParent) { try { window.parent.postMessage({ type: 'WEWOO_LS_SYNC', data: JSON.stringify(data) }, '*'); } catch(_) {} }
     }
     var api = {
       getItem: function(k) { return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
@@ -257,9 +261,11 @@ const SECURITY_SHIM = `<script>
     };
     // 页面卸载前立即同步，避免防抖窗口内的写入丢失
     try {
-      window.addEventListener('pagehide', function() {
-        if (_timer) { clearTimeout(_timer); _timer = null; }
-        if (syncToParent) { try { window.parent.postMessage({ type: 'WEWOO_LS_SYNC', data: JSON.stringify(data) }, '*'); } catch(_) {} }
+      window.addEventListener('pagehide', _flush);
+    } catch(_) {}
+    try {
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') _flush();
       });
     } catch(_) {}
     return api;

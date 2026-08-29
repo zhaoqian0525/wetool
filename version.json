@@ -1,6 +1,6 @@
 {
-  "version": "2.26.8",
+  "version": "2.26.9",
   "buildDate": "2026-08-29",
-  "buildTimestamp": "2026-08-29 19:26:10.465+08:00",
-  "description": "v2.26.8：使用记录清空全部时同时清空工具保存数据并重置 iframe"
+  "buildTimestamp": "2026-08-29 19:29:25.673+08:00",
+  "description": "v2.26.9：缩短 localStorage 同步间隔并在页面隐藏/离开时立即同步"
 }
