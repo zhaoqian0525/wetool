@@ -1,6 +1,6 @@
 {
-  "version": "2.26.1",
+  "version": "2.26.2",
   "buildDate": "2026-08-29",
-  "buildTimestamp": "2026-08-29 17:25:09.905+08:00",
-  "description": "v2.26.1：修复状态读取失败时误覆盖云端记忆导致工具数据丢失"
+  "buildTimestamp": "2026-08-29 17:28:17.844+08:00",
+  "description": "v2.26.2：修复 iOS 添加到主屏幕偶发保存成官网首页（manifest 链接竞争）"
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 /**
@@ -11,7 +12,18 @@ import { usePathname } from "next/navigation";
  * 工具页只保留工具 layout 注入的工具 manifest，保证每页只有一个 manifest。
  */
 export default function SiteManifestLink() {
-  const pathname = usePathname();
-  if (pathname?.startsWith("/tool/")) return null;
-  return <link rel="manifest" href="/manifest.webmanifest" />;
+  const pathname = usePathname() || "";
+  const isTool = pathname.startsWith("/tool/");
+  const href = isTool
+    ? `/tool/${encodeURIComponent(pathname.slice("/tool/".length).split("/")[0])}/manifest.webmanifest?v=4`
+    : "/manifest.webmanifest";
+
+  // 客户端导航进入工具页时，iOS 可能仍持有站点 manifest 缓存；预热一次工具 manifest 强制拿到正确 start_url
+  useEffect(() => {
+    if (isTool) {
+      fetch(href, { cache: "no-store" }).catch(() => {});
+    }
+  }, [href, isTool]);
+
+  return <link rel="manifest" href={href} />;
 }
