@@ -155,12 +155,32 @@ export function ToolHistoryDrawer({
       await authedFetch(`/api/tools/${toolId}/history?all=true`, { method: "DELETE" });
     } catch {
       // ignore
+    }
+    try {
+      // 同时清空工具本身保存的记忆数据
+      await authedFetch(`/api/tools/${toolId}/state`, { method: "DELETE" });
+    } catch {
+      // ignore
     } finally {
       // 清本地
       saveLocalHistory(toolId, userId, []);
+      [
+        `wewoo-hist-${toolId}-${userId}`,
+        `wewoo-hist-${toolId}`,
+        `wewoo-ls-${toolId}-${userId}`,
+        `wewoo-ls-${toolId}`,
+        `wewoo-db-${toolId}-${userId}`,
+        `wewoo-db-${toolId}`,
+        `wewoo-draft-${toolId}-${userId}`,
+        `wewoo-draft-${toolId}`,
+      ].forEach((k) => {
+        try { localStorage.removeItem(k); } catch { /* ignore */ }
+      });
       setHistory([]);
       setClearing(false);
       setShowConfirm(false);
+      // 重载页面，让工具 iframe 以空状态重新挂载
+      window.location.reload();
     }
   };
 
@@ -358,7 +378,7 @@ export function ToolHistoryDrawer({
               <div className="text-3xl mb-3">⚠️</div>
               <h3 className="text-base font-semibold text-gray-900 mb-1">确认清空</h3>
               <p className="text-sm text-gray-500 mb-4">
-                确定清空此工具下的所有使用记录吗？此操作不可恢复。
+                确定清空此工具下的所有使用记录和已保存数据吗？此操作不可恢复。
               </p>
               <div className="flex gap-2">
                 <button
@@ -379,7 +399,7 @@ export function ToolHistoryDrawer({
                       清空中
                     </>
                   ) : (
-                    "确认清空"
+                    "清空记录和数据"
                   )}
                 </button>
               </div>
