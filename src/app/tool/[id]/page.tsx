@@ -471,7 +471,8 @@ export default function ToolDetailPage() {
     if (!user?.id) { setStateLoaded(true); return; }
     // v1.9.11: 状态接口慢/挂起时兜底放行，避免 iframe 迟迟无法挂载
     let settled = false;
-    const forceLoad = setTimeout(() => { if (!settled) { settled = true; setStateLoaded(true); } }, 10000);
+    let forced = false;
+    const forceLoad = setTimeout(() => { if (!settled) { settled = true; forced = true; setStateLoaded(true); } }, 10000);
     const finishLoad = () => { if (settled) return; settled = true; clearTimeout(forceLoad); setStateLoaded(true); };
     authedFetch(`/api/tools/${tool.id}/state`)
       .then((r) => {
@@ -498,6 +499,8 @@ export default function ToolDetailPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ state: openedState }),
         }).catch(() => {});
+        // 若此前已按空状态强制挂载，现在云端记忆晚到，需要允许 iframe 用新快照重建
+        if (forced) lsSeedRef.current = undefined;
         setSavedState(openedState);
         finishLoad();
       })
