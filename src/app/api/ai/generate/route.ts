@@ -5,6 +5,7 @@ import {
   AiUsage,
   MAX_TOKENS,
   MAX_CONTEXT_CHARS,
+  MAX_HISTORY_ITEM_CHARS,
   MIN_BALANCE_CNY,
   checkRateLimitRemote,
   getBalanceCny,
@@ -21,8 +22,8 @@ const AI_MODEL = process.env.AI_MODEL ?? "deepseek-v4-flash";
 // v2.10.0 视觉模型：用户附带图片时切换（图片理解/设计稿转工具）
 const AI_VISION_MODEL = process.env.AI_VISION_MODEL ?? "deepseek-v4-flash-vision-exp";
 
-const MAX_HISTORY = 32; // 客户端消息条数上限
-const MAX_PROMPT_LENGTH = 20000; // 单次 prompt 上限（v2.25.0 再放松，匹配更大的上下文）
+const MAX_HISTORY = 40; // 客户端消息条数硬上限（实际保留数量由上下文预算决定）
+const MAX_PROMPT_LENGTH = 12000; // 单次 prompt 上限（v2.26.0 回收）
 const MAX_IMAGES = 4; // 单次最多附带图片数
 const MAX_IMAGE_CHARS = 2_000_000; // 单张 base64 上限（约 1.5MB）
 
@@ -190,11 +191,15 @@ export async function POST(request: NextRequest) {
   }
 
   // 压缩上下文：只保留用户需求 + 当前代码，不再重发历史完整 HTML
-  const compacted = compactHistory(history);
   const system = buildSystem(
     currentCode,
     deviceTarget === "desktop" ? AI_SYSTEM_PROMPT + "\n\n" + DESKTOP_TARGET_INSTRUCTION : AI_SYSTEM_PROMPT
   );
+  // 上下文预算制：先给 system（含当前代码）和图片留足空间，剩余预算从最新往旧动态保留用户历史
+  const systemLen = contentLength({ role: "system", content: system });
+  const imageLen = hasImages ? images.reduce((s, u) => s + u.length, 0) : 0;
+  const historyBudget = Math.max(MAX_HISTORY_ITEM_CHARS, MAX_CONTEXT_CHARS - systemLen - imageLen - 2000);
+  const compacted = compactHistory(history, historyBudget);
   const upstreamMessages: UpstreamMessage[] = [
     { role: "system", content: system },
     ...(compacted.length > 0 ? compacted : [{ role: "user" as const, content: prompt }]),

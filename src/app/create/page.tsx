@@ -652,7 +652,8 @@ function CreatePageInner() {
 
     const history = nextMessages
       .filter((m) => m.role === "user" || (m.role === "assistant" && m.content.trim()))
-      .map((m) => ({ role: m.role, content: m.content.slice(0, 20000) }));
+      .slice(-40)
+      .map((m) => ({ role: m.role, content: m.content.slice(0, 12000) }));
 
     const currentCode =
       aiActiveVersion !== null && aiVersions[aiActiveVersion] && aiVersions[aiActiveVersion].code

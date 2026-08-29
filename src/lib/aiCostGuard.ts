@@ -13,19 +13,27 @@ export interface AiUsage {
 
 // ===== 可调参数（环境变量可覆盖） =====
 export const MAX_CODE_LENGTH = 100000; // currentCode 上限（v2.25.0 再放松：适配 10 万字长工具改编）
-export const MAX_TOKENS = Number(process.env.AI_MAX_TOKENS ?? 48000); // 输出上限（v2.25.0 再放松）
-export const MAX_CONTEXT_CHARS = 200000; // 上游 system+history 总字符护栏（v2.25.0 再放松）
+export const MAX_TOKENS = Number(process.env.AI_MAX_TOKENS ?? 32000); // 输出上限（v2.26.0 回收到与 10 万字代码匹配）
+export const MAX_CONTEXT_CHARS = 150000; // 上游 system+history 总字符护栏（v2.26.0 回收）
+export const MAX_HISTORY_ITEM_CHARS = 8000; // 单条历史消息最多保留的字符数（预算制，v2.26.0）
 export const RATE_MIN = Number(process.env.AI_RATE_MIN ?? 8); // 每 IP 每分钟请求上限
 export const RATE_DAY = Number(process.env.AI_RATE_DAY ?? 120); // 每 IP 每天请求上限
 export const MIN_BALANCE_CNY = 1.0; // 余额低于该值（元）拒绝生成
 export const BALANCE_TTL_MS = 5 * 60 * 1000;
 
-/** 压缩对话历史：只保留最近 N 条用户需求，丢弃 assistant 的完整代码消息（当前代码已通过 currentCode 单独传入） */
-export function compactHistory(messages: ChatItem[]): { role: "user"; content: string }[] {
-  return messages
-    .filter((m) => m.role === "user")
-    .slice(-16)
-    .map((m) => ({ role: "user" as const, content: m.content.slice(0, 4000) }));
+/** 压缩对话历史：在给定字符预算内，从最新往旧尽量多保留用户需求；最新一条始终保留 */
+export function compactHistory(messages: ChatItem[], budget: number): { role: "user"; content: string }[] {
+  const users = messages.filter((m) => m.role === "user");
+  if (users.length === 0) return [];
+  const kept: { role: "user"; content: string }[] = [];
+  let used = 0;
+  for (let i = users.length - 1; i >= 0; i--) {
+    const content = users[i].content.slice(0, MAX_HISTORY_ITEM_CHARS);
+    if (kept.length > 0 && used + content.length > budget) break;
+    kept.unshift({ role: "user", content });
+    used += content.length;
+  }
+  return kept;
 }
 
 /** 组装系统提示词：基础规则 + 当前代码（截断到上限） */
