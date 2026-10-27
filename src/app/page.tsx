@@ -16,12 +16,14 @@ import { Badge } from "@/components/ui";
 // 首页首屏只展示三个已验证的正式工具，避免把 20+ 个同等权重的卡片塞给新用户。
 const FEATURED_TOOL_IDS = [
   "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8", // 税后真实时薪计算器
-  "a46673f0-5749-405f-a03d-4f66695a8509", // 卡西欧 991 计算器
+  "332fbf19-2537-4af3-a36c-e82829921f54", // 分账计算器
   "4c285279-d7cf-4852-a9e0-ed022b06dccf", // 2048 特别版
 ];
 
 const FEATURED_TOOL_LINKS: Record<string, string> = {
   "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8": "/real-hourly-wage",
+  "332fbf19-2537-4af3-a36c-e82829921f54": "/split-bill",
+  "4c285279-d7cf-4852-a9e0-ed022b06dccf": "/2048",
 };
 
 type FeaturedTool = {
@@ -44,14 +46,14 @@ const FEATURED_TOOL_FALLBACKS: Record<string, FeaturedTool> = {
       "https://cvacrykzcppiflmvwwfe.supabase.co/storage/v1/object/public/tool-covers/public/c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8.png",
     thumbnailGradient: "linear-gradient(135deg, #fa8231, #f7b731)",
   },
-  "a46673f0-5749-405f-a03d-4f66695a8509": {
-    id: "a46673f0-5749-405f-a03d-4f66695a8509",
-    title: "卡西欧991计算器",
-    description: "工程计算与日常换算",
+  "332fbf19-2537-4af3-a36c-e82829921f54": {
+    id: "332fbf19-2537-4af3-a36c-e82829921f54",
+    title: "分账计算器",
+    description: "聚餐、旅行一算就清",
     category: "生活",
     coverUrl:
-      "https://cvacrykzcppiflmvwwfe.supabase.co/storage/v1/object/public/tool-covers/public/a46673f0-5749-405f-a03d-4f66695a8509.png",
-    thumbnailGradient: "linear-gradient(135deg, #4facfe, #00f2fe)",
+      "https://cvacrykzcppiflmvwwfe.supabase.co/storage/v1/object/public/tool-covers/public/332fbf19-2537-4af3-a36c-e82829921f54.webp",
+    thumbnailGradient: "linear-gradient(135deg, #43e97b, #38f9d7)",
   },
   "4c285279-d7cf-4852-a9e0-ed022b06dccf": {
     id: "4c285279-d7cf-4852-a9e0-ed022b06dccf",

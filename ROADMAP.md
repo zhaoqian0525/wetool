@@ -13,6 +13,8 @@
 
 **v2.28.0（2026-10-27）获客与增长基建**：全站匿名增长事件（首次访问/回访/打开/完成/分享/改编/创作/发布 + UTM 归因与访客去重）；管理后台渠道看板；首页首屏价值主张 + 三个真实工具；清理重复/测试工具（19 个公开工具）；sitemap 动态读取公开工具并移除 `/create`、`/auth`。增长事件表迁移见 `supabase_v227_growth_events.sql`，工具库清理见 `supabase_v228_tool_curation.sql`。
 
+**v2.29.0（2026-10-27）垂类获客页**：新增 `/2048`（突出撤回一步、最高分保存、手机单手玩）与 `/split-bill`（快速按人数分账、除不尽差额提示、完整版按项目分账）；首页精选改为时薪、分账、2048，sitemap 同步收录。
+
 **2026-08-12 双 AI 安全审查（已核验采纳）**：外部 AI 对平台做全量代码走读 + 线上只读探测，以下问题已人工核验属实并纳入计划：
 
 - **P0-1 RLS 大面积未生效（已实测）**：anon key 可直读 tools / likes / reviews / user_pinned_tools / tool_state / tool_usage_history / tool_drafts / tool_recent 全部表（tools 返回含 author_id，likes 返回含 user_id）。现有 supabase_fix_rls.sql 仅覆盖 tools/favorites/reviews，其余表线上从未开 RLS。

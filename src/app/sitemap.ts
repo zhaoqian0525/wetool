@@ -48,7 +48,15 @@ async function fetchPublicToolEntries(): Promise<MetadataRoute.Sitemap> {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // /create 与 /auth 不参与搜索收录；/real-hourly-wage 是获客落地页。
-  const staticPages = ["", "/real-hourly-wage", "/guide", "/terms", "/privacy"];
+  const staticPages = [
+    "",
+    "/real-hourly-wage",
+    "/split-bill",
+    "/2048",
+    "/guide",
+    "/terms",
+    "/privacy",
+  ];
   const staticEntries: MetadataRoute.Sitemap = staticPages.map((path) => ({
     url: `${BASE_URL}${path}`,
     lastModified: new Date(),
