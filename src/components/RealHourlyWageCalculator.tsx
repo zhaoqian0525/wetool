@@ -74,7 +74,9 @@ export default function RealHourlyWageCalculator() {
     const shareData = {
       title: "真实时薪计算器",
       text,
-      url: window.location.origin + "/real-hourly-wage?utm_source=share&utm_medium=referral&utm_campaign=first_100",
+      url:
+        window.location.origin +
+        "/real-hourly-wage?utm_source=share&utm_medium=referral&utm_campaign=first_100&utm_content=result_share",
     };
 
     trackGrowthEvent("share_click", {

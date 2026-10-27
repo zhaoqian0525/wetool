@@ -105,6 +105,7 @@ export async function POST(request: Request) {
     source: clean(body.source, 64) || null,
     medium: clean(body.medium, 64) || null,
     campaign: clean(body.campaign, 64) || null,
+    content: clean(body.content, 64) || null,
     landing_page: clean(body.landingPage, 160) || null,
     path: clean(body.path, 160) || null,
     device_type: deviceFromUserAgent(request.headers.get("user-agent") || ""),

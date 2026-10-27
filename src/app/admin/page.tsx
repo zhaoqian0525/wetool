@@ -55,6 +55,7 @@ interface GrowthData {
     source: string;
     medium: string;
     campaign: string;
+    content: string;
     visitors: number;
     events: number;
     toolOpen: number;
@@ -331,12 +332,13 @@ export default function AdminPage() {
                         <p className="text-sm text-gray-400">暂无渠道数据</p>
                       ) : (
                         <div className="overflow-x-auto">
-                          <table className="w-full min-w-[640px] text-left text-xs">
+                          <table className="w-full min-w-[760px] text-left text-xs">
                             <thead className="text-gray-400">
                               <tr>
                                 <th className="py-2 pr-3">来源</th>
                                 <th className="py-2 pr-3">媒介</th>
                                 <th className="py-2 pr-3">活动</th>
+                                <th className="py-2 pr-3">内容</th>
                                 <th className="py-2 pr-3">访客</th>
                                 <th className="py-2 pr-3">打开</th>
                                 <th className="py-2 pr-3">完成</th>
@@ -347,10 +349,11 @@ export default function AdminPage() {
                             </thead>
                             <tbody>
                               {growth.channels.map((channel) => (
-                                <tr key={`${channel.source}|${channel.medium}|${channel.campaign}`} className="border-t border-gray-100 text-gray-700">
+                                <tr key={`${channel.source}|${channel.medium}|${channel.campaign}|${channel.content}`} className="border-t border-gray-100 text-gray-700">
                                   <td className="py-2 pr-3">{channel.source}</td>
                                   <td className="py-2 pr-3">{channel.medium || "—"}</td>
                                   <td className="py-2 pr-3">{channel.campaign || "—"}</td>
+                                  <td className="py-2 pr-3">{channel.content || "—"}</td>
                                   <td className="py-2 pr-3 font-semibold">{channel.visitors}</td>
                                   <td className="py-2 pr-3">{channel.toolOpen}</td>
                                   <td className="py-2 pr-3">{channel.toolCompleted}</td>

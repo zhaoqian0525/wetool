@@ -60,7 +60,7 @@ export default function SplitBillCalculator() {
       text,
       url:
         window.location.origin +
-        "/split-bill?utm_source=share&utm_medium=referral&utm_campaign=first_100",
+        "/split-bill?utm_source=share&utm_medium=referral&utm_campaign=first_100&utm_content=result_share",
     };
 
     trackGrowthEvent("share_click", {

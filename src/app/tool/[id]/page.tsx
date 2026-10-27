@@ -290,6 +290,7 @@ export default function ToolDetailPage() {
         shareUrl.searchParams.set("utm_source", "share");
         shareUrl.searchParams.set("utm_medium", "referral");
         shareUrl.searchParams.set("utm_campaign", "tool_share");
+        shareUrl.searchParams.set("utm_content", tool?.id || id);
         url = shareUrl.toString();
       } catch {
         // Keep the original URL if parsing fails.

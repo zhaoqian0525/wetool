@@ -11,6 +11,7 @@ type GrowthRow = {
   source: string | null;
   medium: string | null;
   campaign: string | null;
+  content: string | null;
   created_at: string;
 };
 
@@ -18,6 +19,7 @@ type ChannelBucket = {
   source: string;
   medium: string;
   campaign: string;
+  content: string;
   visitors: Set<string>;
   events: number;
   toolOpen: number;
@@ -57,7 +59,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await admin
     .from("growth_events")
-    .select("event, visitor_id, session_id, tool_id, source, medium, campaign, created_at")
+    .select("event, visitor_id, session_id, tool_id, source, medium, campaign, content, created_at")
     .gte("created_at", since)
     .order("created_at", { ascending: false })
     .limit(50000);
@@ -104,11 +106,13 @@ export async function GET(request: NextRequest) {
     const source = row.source || "direct";
     const medium = row.medium || "";
     const campaign = row.campaign || "";
-    const channelKey = [source, medium, campaign].join("|");
+    const content = row.content || "";
+    const channelKey = [source, medium, campaign, content].join("|");
     const channel = channels.get(channelKey) ?? {
       source,
       medium,
       campaign,
+      content,
       visitors: new Set<string>(),
       events: 0,
       toolOpen: 0,
@@ -152,6 +156,7 @@ export async function GET(request: NextRequest) {
         source: channel.source,
         medium: channel.medium,
         campaign: channel.campaign,
+        content: channel.content,
         visitors: channel.visitors.size,
         events: channel.events,
         toolOpen: channel.toolOpen,

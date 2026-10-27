@@ -12,12 +12,16 @@ create table if not exists public.growth_events (
   source text,
   medium text,
   campaign text,
+  content text,
   landing_page text,
   path text,
   device_type text,
   country text,
   created_at timestamptz not null default now()
 );
+
+-- 兼容已提前建表的环境（新环境由 create table 直接带上该字段）。
+alter table public.growth_events add column if not exists content text;
 
 create index if not exists growth_events_created_at_idx
   on public.growth_events (created_at desc);
@@ -26,7 +30,7 @@ create index if not exists growth_events_event_idx
 create index if not exists growth_events_visitor_idx
   on public.growth_events (visitor_id);
 create index if not exists growth_events_source_idx
-  on public.growth_events (source, medium, campaign);
+  on public.growth_events (source, medium, campaign, content);
 
 alter table public.growth_events enable row level security;
 

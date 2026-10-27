@@ -20,6 +20,7 @@ type Attribution = {
   source: string;
   medium: string;
   campaign: string;
+  content: string;
   landingPage: string;
 };
 
@@ -111,11 +112,13 @@ function currentAttribution(): Attribution | null {
     const source = params.get("utm_source") || "";
     const medium = params.get("utm_medium") || "";
     const campaign = params.get("utm_campaign") || "";
-    if (!source && !medium && !campaign) return null;
+    const content = params.get("utm_content") || "";
+    if (!source && !medium && !campaign && !content) return null;
     return {
       source,
       medium,
       campaign,
+      content,
       landingPage: window.location.pathname,
     };
   } catch {
@@ -133,6 +136,7 @@ function readAttribution(): Attribution | null {
       source: String(parsed.source || ""),
       medium: String(parsed.medium || ""),
       campaign: String(parsed.campaign || ""),
+      content: String(parsed.content || ""),
       landingPage: String(parsed.landingPage || ""),
     };
   } catch {
@@ -148,7 +152,7 @@ function ensureAttribution(): Attribution {
     writeStorage(ATTRIBUTION_KEY, JSON.stringify(current));
     return current;
   }
-  return { source: "", medium: "", campaign: "", landingPage: "" };
+  return { source: "", medium: "", campaign: "", content: "", landingPage: "" };
 }
 
 function sendEvent(
@@ -168,6 +172,7 @@ function sendEvent(
         source: attribution.source,
         medium: attribution.medium,
         campaign: attribution.campaign,
+        content: attribution.content,
         ...(toolId ? { tool_id: toolId } : {}),
       },
     });
@@ -184,6 +189,7 @@ function sendEvent(
     source: attribution.source,
     medium: attribution.medium,
     campaign: attribution.campaign,
+    content: attribution.content,
     landingPage: attribution.landingPage,
   });
 
