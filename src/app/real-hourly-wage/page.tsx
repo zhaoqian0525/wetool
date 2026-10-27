@@ -5,9 +5,9 @@ import RealHourlyWageCalculator from "@/components/RealHourlyWageCalculator";
 
 const baseUrl = "https://we-woo.net";
 const pageUrl = `${baseUrl}/real-hourly-wage`;
-const title = "真实时薪计算器：把加班和通勤算进去";
+const title = "真实时薪计算器（税前估算）：把通勤算进去";
 const description =
-  "月薪高不等于时薪高。输入月薪、工作天数和通勤时间，立即算出真实时薪，看清一份工作的时间成本；完整版还可对比两份 offer。";
+  "月薪高不等于时薪高。输入月薪、工作天数和通勤时间，快速估算税前时间时薪；完整版可算五险一金、个税后的税后时薪。";
 
 export const metadata: Metadata = {
   title,
@@ -18,7 +18,8 @@ export const metadata: Metadata = {
     "时薪计算",
     "月薪换算时薪",
     "通勤时间计算",
-    "offer对比",
+    "税前时薪",
+    "通勤时薪",
     "加班时薪",
   ],
   openGraph: {
@@ -49,7 +50,7 @@ const faqs = [
   {
     question: "真实时薪怎么计算？",
     answer:
-      "真实时薪等于月薪除以每月实际投入的总时长。总时长包括每天的工作时间和通勤时间，再乘以每月工作天数。",
+      "本页是税前快速估算：月薪除以每月实际投入的总时长。总时长包括每天的工作时间和通勤时间，再乘以每月工作天数；五险一金和个税请用完整版计算。",
   },
   {
     question: "为什么要计算通勤时间？",
@@ -64,7 +65,7 @@ const faqs = [
   {
     question: "计算器会保存工资数据吗？",
     answer:
-      "不会上传工资数据。页面上的结果只在当前浏览器中计算；需要保存或对比两份 offer 时，可继续打开微坞完整版工具。",
+      "不会上传工资数据。页面上的结果只在当前浏览器中计算；需要五险一金、个税和法定基准对比时，可继续打开微坞完整版工具。",
   },
 ];
 
@@ -124,7 +125,7 @@ export default function RealHourlyWagePage() {
                 <span className="text-amber-300">不一定时薪高</span>
               </h1>
               <p className="mt-5 max-w-xl text-base font-medium leading-8 text-indigo-100 sm:text-lg">
-                把单休、加班和每天通勤一起算进去，看看你真正用一小时换来了多少钱。
+                把单休、加班和每天通勤一起算进去，先看看你税前的时间时薪；需要税后结果时再打开完整版。
               </p>
               <div className="mt-6 flex flex-wrap gap-2 text-sm font-semibold text-indigo-50">
                 <span className="rounded-full bg-white/10 px-3 py-2">无需登录</span>
@@ -139,7 +140,7 @@ export default function RealHourlyWagePage() {
         <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              ["01", "把时间算完整", "工作、加班和通勤都计入，不只看工资条上的数字。"],
+              ["01", "把时间算完整", "工作时间和通勤时间都计入，不只看工资条上的数字。"],
               ["02", "用同一把尺比较", "月薪、上班天数、每天时长不同也能放到同一基准。"],
               ["03", "做决定前多看一眼", "时薪不是唯一标准，但它能让时间成本更透明。"],
             ].map(([number, heading, copy]) => (
@@ -157,7 +158,7 @@ export default function RealHourlyWagePage() {
         <section className="border-y border-slate-200 bg-white">
           <div className="mx-auto grid max-w-5xl gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[1fr_1.1fr]">
             <div>
-              <p className="text-xs font-black tracking-[0.16em] text-indigo-600">两个 OFFER，算完才看清</p>
+              <p className="text-xs font-black tracking-[0.16em] text-indigo-600">时间成本，算完才看清</p>
               <h2 className="mt-3 text-3xl font-black leading-tight text-slate-900">
                 多拿 2,000 元，
                 <br />
@@ -207,9 +208,9 @@ export default function RealHourlyWagePage() {
             <p className="text-xs font-black tracking-[0.16em] text-indigo-300">不止算一次</p>
             <div className="mt-3 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div>
-                <h2 className="text-2xl font-black sm:text-3xl">用完整版对比两份 offer</h2>
+                <h2 className="text-2xl font-black sm:text-3xl">用完整版看税后时薪</h2>
                 <p className="mt-2 max-w-xl text-sm leading-7 text-slate-300">
-                  支持两份工作并排比较，算入五险一金和个税，还能添加到手机主屏幕随时使用。
+                  完整版会算入五险一金和个税，并对比法定基准；还能添加到手机主屏幕随时使用。
                 </p>
               </div>
               <a

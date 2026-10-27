@@ -1,6 +1,6 @@
 {
-  "version": "2.29.2",
+  "version": "2.30.0",
   "buildDate": "2026-10-27",
-  "buildTimestamp": "2026-10-27T22:37:35+08:00",
-  "description": "v2.29.2：增长埋点支持 utm_content，渠道看板可按内容区分"
+  "buildTimestamp": "2026-10-27T22:53:08+08:00",
+  "description": "v2.30.0：首页减负、时薪口径修正、首次交互与登录埋点"
 }

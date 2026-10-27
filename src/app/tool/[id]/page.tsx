@@ -300,10 +300,14 @@ export default function ToolDetailPage() {
     const shareTitle = tool?.title ? `${tool.title} | 微坞 WeWoo` : "微坞 WeWoo 小工具";
     const shareDesc = tool?.description ? tool.description : "在线小工具，点开即用";
     if (typeof navigator !== "undefined" && navigator.share) {
-      try { await navigator.share({ title: shareTitle, text: shareDesc, url }); } catch { /* cancelled */ }
+      try {
+        await navigator.share({ title: shareTitle, text: shareDesc, url });
+        trackGrowthEvent("share_completed", { toolId: tool?.id || id, path: `/tool/${id}` });
+      } catch { /* cancelled */ }
     } else {
       try {
         await navigator.clipboard.writeText(`${shareTitle}\n${shareDesc}\n${url}`);
+        trackGrowthEvent("share_completed", { toolId: tool?.id || id, path: `/tool/${id}` });
         setShareCopied(true);
         toast.success("分享文案已复制");
         setTimeout(() => setShareCopied(false), 2000);

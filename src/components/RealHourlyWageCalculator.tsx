@@ -72,7 +72,7 @@ export default function RealHourlyWageCalculator() {
   const handleShare = async () => {
     const text = "月薪高不一定时薪高。把加班和通勤算进去，看看你的一小时值多少钱。";
     const shareData = {
-      title: "真实时薪计算器",
+      title: "税前时间时薪计算器",
       text,
       url:
         window.location.origin +
@@ -86,14 +86,26 @@ export default function RealHourlyWageCalculator() {
     try {
       if (navigator.share) {
         await navigator.share(shareData);
+        trackGrowthEvent("share_completed", {
+          toolId: "hourly-wage-landing",
+          path: "/real-hourly-wage",
+        });
         setShareState("shared");
       } else {
         await navigator.clipboard.writeText(`${text}\n${shareData.url}`);
+        trackGrowthEvent("share_completed", {
+          toolId: "hourly-wage-landing",
+          path: "/real-hourly-wage",
+        });
         setShareState("copied");
       }
     } catch {
       try {
         await navigator.clipboard.writeText(`${text}\n${shareData.url}`);
+        trackGrowthEvent("share_completed", {
+          toolId: "hourly-wage-landing",
+          path: "/real-hourly-wage",
+        });
         setShareState("copied");
       } catch {
         setShareState("idle");
@@ -106,7 +118,7 @@ export default function RealHourlyWageCalculator() {
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold tracking-[0.18em] text-indigo-600">免费计算</p>
-          <h2 className="mt-1 text-xl font-black text-slate-900">你的真实时薪是多少？</h2>
+          <h2 className="mt-1 text-xl font-black text-slate-900">你的税前时间时薪是多少？</h2>
         </div>
         <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">不用登录</span>
       </div>
@@ -177,13 +189,13 @@ export default function RealHourlyWageCalculator() {
         onClick={handleCalculate}
         className="mt-4 h-14 w-full rounded-2xl bg-indigo-600 px-5 text-base font-black text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 active:scale-[0.99]"
       >
-        算出我的真实时薪
+        算出税前时间时薪
       </button>
 
       {showResult && (
         <div ref={resultRef} className="mt-5 rounded-2xl bg-slate-950 p-5 text-white">
           <p className="text-xs font-bold tracking-[0.14em] text-indigo-300">
-            {hasCalculated ? "把通勤也算进去之后" : "示例数据 · 把通勤也算进去之后"}
+            {hasCalculated ? "税前时间时薪（含通勤）" : "示例数据 · 税前时间时薪（含通勤）"}
           </p>
           <div className="mt-2 flex items-end gap-2">
             <span className="text-4xl font-black tracking-tight text-amber-300">¥{formatMoney(result.realHourly)}</span>
@@ -221,7 +233,7 @@ export default function RealHourlyWageCalculator() {
         </a>
       </div>
       <p className="mt-3 text-center text-[11px] leading-5 text-slate-400">
-        本页计算不会上传工资数据；完整版支持双基准对比、历史记录与手机桌面安装。
+        本页是税前快速估算，不含五险一金和个税；完整版可算税后时薪，并支持历史记录与手机桌面安装。
       </p>
     </div>
   );

@@ -66,6 +66,11 @@ const FEATURED_TOOL_FALLBACKS: Record<string, FeaturedTool> = {
   },
 };
 
+const FEATURED_IMAGE_OVERRIDES: Record<string, string> = {
+  // 时薪页使用真实结果截图，而不是通用渐变封面。
+  "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8": "/growth/hourly-wage-tool-result.png",
+};
+
 
 
 // ---- Component ----
@@ -392,9 +397,9 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="/create?new=1"
-                  className="inline-flex min-h-[44px] items-center rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-white/20"
+                  className="inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-white/80 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white"
                 >
-                  做一个我的工具
+                  想自己做？开始创作 →
                 </Link>
               </div>
 
@@ -482,12 +487,11 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Newbie guide banner */}
-      {!isSearching && <GuideBanner />}
+      {/* 教程提示只给非 standalone 的游客；standalone 游客优先看到登录提示，避免多个横幅同时抢占首屏 */}
+      {!isSearching && !user && !standalone && <GuideBanner />}
 
       {/* 最近使用（已登录且有记录时显示，无记录不显示；搜索时隐藏） */}
-      {!isSearching && (user ? (
-        recentTools.length > 0 && (
+      {!isSearching && user && recentTools.length > 0 && (
           <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-4">
             <h2 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <span>🕐</span>最近使用
@@ -526,20 +530,7 @@ export default function HomePage() {
               ))}
             </div>
           </section>
-        )
-      ) : (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-4">
-          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-center justify-between gap-3">
-            <p className="text-sm text-indigo-700">登录后可快速找回最近使用的工具</p>
-            <Link
-              href="/auth"
-              className="flex-shrink-0 inline-flex items-center gap-1 min-h-[32px] px-4 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              登录
-            </Link>
-          </div>
-        </section>
-      ))}
+      )}
 
       {/* 我的工具 — 紧凑横向滚动（搜索时隐藏） */}
       {!isSearching && user && combinedMyTools.length > 0 && (
@@ -688,15 +679,16 @@ export default function HomePage() {
 // ---- ToolCard — React.memo 防止不必要的重渲染 ----
 
 function FeaturedToolCard({ tool, href }: { tool: FeaturedTool; href: string }) {
+  const coverUrl = FEATURED_IMAGE_OVERRIDES[tool.id] || tool.coverUrl;
   return (
     <Link
       href={href}
       className="group flex min-w-0 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-2.5 transition-colors hover:bg-white/15"
     >
       <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-white/10">
-        {tool.coverUrl ? (
+        {coverUrl ? (
           <Image
-            src={tool.coverUrl}
+            src={coverUrl}
             alt={tool.title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"

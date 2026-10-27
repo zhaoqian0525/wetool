@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback } from "react";
 import { authedFetch } from "@/lib/api-client";
+import { trackGrowthEvent } from "@/lib/growth";
 
 /** v2.1.0 M3：沙盒内工具调用平台代理接口（联网 / AI 网关），统一处理鉴权与超时 */
 async function callToolApi(
@@ -247,6 +248,13 @@ export function useToolStorage(toolId?: string, userId?: string, user?: ToolSand
             if (hist.length > 50) hist.length = 50; // 最多50条
             saveJson(hk, hist);
           } catch { /* ignore */ }
+          if (toolId !== "preview") {
+            trackGrowthEvent("tool_interaction", {
+              toolId,
+              path: `/tool/${toolId}`,
+              onceKey: `tool-interaction-${toolId}`,
+            });
+          }
           respond(null);
           break;
         }

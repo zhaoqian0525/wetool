@@ -74,18 +74,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "查询增长数据失败" }, { status: 500 });
   }
 
-  const rows = (data ?? []) as GrowthRow[];
+  const allRows = (data ?? []) as GrowthRow[];
+  // 测试流量：utm_source/medium/campaign/content 任一以 test 开头即排除。
+  const rows = allRows.filter((row) => {
+    const fields = [row.source, row.medium, row.campaign, row.content];
+    return !fields.some((value) => /^test/i.test(String(value || "")));
+  });
   const totals = {
     events: rows.length,
     visitors: new Set(rows.map((row) => row.visitor_id).filter(Boolean)).size,
     firstVisit: 0,
     returnVisit: 0,
     toolOpen: 0,
+    toolInteraction: 0,
     toolCompleted: 0,
     shareClick: 0,
+    shareCompleted: 0,
     remixClick: 0,
     createStarted: 0,
     publishCompleted: 0,
+    loginStarted: 0,
+    loginCompleted: 0,
+    loginReturned: 0,
   };
   const channels = new Map<string, ChannelBucket>();
   const tools = new Map<string, { opens: number; completions: number }>();
@@ -96,11 +106,16 @@ export async function GET(request: NextRequest) {
       case "first_visit": totals.firstVisit++; break;
       case "return_visit": totals.returnVisit++; break;
       case "tool_open": totals.toolOpen++; break;
+      case "tool_interaction": totals.toolInteraction++; break;
       case "tool_completed": totals.toolCompleted++; break;
       case "share_click": totals.shareClick++; break;
+      case "share_completed": totals.shareCompleted++; break;
       case "remix_click": totals.remixClick++; break;
       case "create_started": totals.createStarted++; break;
       case "publish_completed": totals.publishCompleted++; break;
+      case "login_started": totals.loginStarted++; break;
+      case "login_completed": totals.loginCompleted++; break;
+      case "login_returned": totals.loginReturned++; break;
     }
 
     const source = row.source || "direct";
@@ -150,6 +165,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     initialized: true,
     days,
+    excludedTestEvents: allRows.length - rows.length,
     totals,
     channels: Array.from(channels.values())
       .map((channel) => ({

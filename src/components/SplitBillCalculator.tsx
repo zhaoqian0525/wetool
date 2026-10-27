@@ -71,14 +71,26 @@ export default function SplitBillCalculator() {
     try {
       if (navigator.share) {
         await navigator.share(shareData);
+        trackGrowthEvent("share_completed", {
+          toolId: "split-bill-landing",
+          path: "/split-bill",
+        });
         setShareState("shared");
       } else {
         await navigator.clipboard.writeText(`${text}\n${shareData.url}`);
+        trackGrowthEvent("share_completed", {
+          toolId: "split-bill-landing",
+          path: "/split-bill",
+        });
         setShareState("copied");
       }
     } catch {
       try {
         await navigator.clipboard.writeText(`${text}\n${shareData.url}`);
+        trackGrowthEvent("share_completed", {
+          toolId: "split-bill-landing",
+          path: "/split-bill",
+        });
         setShareState("copied");
       } catch {
         setShareState("idle");

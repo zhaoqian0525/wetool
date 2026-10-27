@@ -39,17 +39,23 @@ interface GrowthData {
   initialized?: boolean;
   hint?: string;
   days?: number;
+  excludedTestEvents?: number;
   totals?: {
     events: number;
     visitors: number;
     firstVisit: number;
     returnVisit: number;
     toolOpen: number;
+    toolInteraction: number;
     toolCompleted: number;
     shareClick: number;
+    shareCompleted: number;
     remixClick: number;
     createStarted: number;
     publishCompleted: number;
+    loginStarted: number;
+    loginCompleted: number;
+    loginReturned: number;
   };
   channels?: {
     source: string;
@@ -314,10 +320,14 @@ export default function AdminPage() {
                         ["新访客", growth.totals.firstVisit],
                         ["回访", growth.totals.returnVisit],
                         ["打开工具", growth.totals.toolOpen],
+                        ["首次交互", growth.totals.toolInteraction],
                         ["完成工具", growth.totals.toolCompleted],
                         ["分享点击", growth.totals.shareClick],
+                        ["分享完成", growth.totals.shareCompleted],
                         ["改编点击", growth.totals.remixClick],
                         ["成功发布", growth.totals.publishCompleted],
+                        ["登录完成", growth.totals.loginCompleted],
+                        ["登录后返回", growth.totals.loginReturned],
                       ].map(([label, value]) => (
                         <div key={String(label)} className="rounded-2xl border border-gray-200 bg-white p-4">
                           <div className="text-xs text-gray-500">{label}</div>
@@ -325,6 +335,11 @@ export default function AdminPage() {
                         </div>
                       ))}
                     </div>
+                    {!!growth.excludedTestEvents && (
+                      <p className="text-xs text-gray-400">
+                        已排除 UTM/内容以 test 开头的测试事件 {growth.excludedTestEvents} 条
+                      </p>
+                    )}
 
                     <div className="rounded-2xl border border-gray-200 bg-white p-4">
                       <h3 className="mb-3 font-medium text-gray-900">按渠道（最近 {growth.days ?? 30} 天）</h3>

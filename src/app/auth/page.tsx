@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { WewooMark } from "@/components/WewooLogo";
+import { trackGrowthEvent } from "@/lib/growth";
 
 /** 将 Supabase 错误信息映射为中文友好提示 */
 function mapAuthError(msg: string): string {
@@ -103,6 +104,15 @@ function AuthForm() {
     }
   }, [user, loading, router]);
 
+  useEffect(() => {
+    if (!loading && !user) {
+      trackGrowthEvent("login_started", {
+        path: "/auth",
+        onceKey: "login-started",
+      });
+    }
+  }, [loading, user]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -160,6 +170,10 @@ function AuthForm() {
           setPassword("");
         } else {
           // 无需验证——直接跳转首页（AuthProvider 的 onAuthStateChange 会触发）
+          trackGrowthEvent("login_completed", { path: redirectTo });
+          if (redirectTo !== "/") {
+            trackGrowthEvent("login_returned", { path: redirectTo });
+          }
           router.push(redirectTo);
         }
         return;
@@ -168,6 +182,10 @@ function AuthForm() {
       // ---- 登录成功 ----
       if (tab === "login") {
         if (result.data?.user) {
+          trackGrowthEvent("login_completed", { path: redirectTo });
+          if (redirectTo !== "/") {
+            trackGrowthEvent("login_returned", { path: redirectTo });
+          }
           router.push(redirectTo);
         } else {
           // 理论上不应发生

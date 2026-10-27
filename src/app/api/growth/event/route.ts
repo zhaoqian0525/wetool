@@ -8,11 +8,16 @@ const ALLOWED_EVENTS = new Set([
   "first_visit",
   "return_visit",
   "tool_open",
+  "tool_interaction",
   "tool_completed",
   "share_click",
+  "share_completed",
   "remix_click",
   "create_started",
   "publish_completed",
+  "login_started",
+  "login_completed",
+  "login_returned",
 ]);
 
 /**
