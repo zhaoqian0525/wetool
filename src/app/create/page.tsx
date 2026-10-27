@@ -325,6 +325,12 @@ function CreatePageInner() {
   const sourceToolIdParam = searchParams.get("source_tool_id");
   const { user } = useAuth();
   const toast = useToast();
+  const publishLoginRedirect = (() => {
+    const params = new URLSearchParams();
+    if (sourceToolIdParam) params.set("source_tool_id", sourceToolIdParam);
+    params.set("publish", "1");
+    return `/create?${params.toString()}`;
+  })();
 
   useEffect(() => {
     trackGrowthEvent("create_started", {
@@ -332,6 +338,16 @@ function CreatePageInner() {
       onceKey: "create-started",
     });
   }, []);
+
+  useEffect(() => {
+    if (!user || searchParams.get("publish") !== "1") return;
+    setPublishOpen(true);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("publish");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [user, searchParams]);
 
   const [code, setCode] = useState(DEFAULT_CODE);
   const [versions, setVersions] = useState<Version[]>([]);
@@ -1071,7 +1087,7 @@ function CreatePageInner() {
     </button>
   ) : (
     <Link
-      href="/auth"
+      href={`/auth?redirect=${encodeURIComponent(publishLoginRedirect)}`}
       className="btn-primary min-w-[44px] min-h-[44px] flex items-center justify-center px-3 py-1.5 text-sm rounded-lg font-medium"
     >
       登录后发布

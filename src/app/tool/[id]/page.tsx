@@ -135,7 +135,9 @@ export default function ToolDetailPage() {
   }, []);
   // 全屏滚动保持：进入前记录预览滚动位置，退出后恢复，避免全屏滑动影响预览界面
   const fullscreenScrollRef = useRef<number | null>(null);
+  const pageScrollRef = useRef(0);
   const enterFullscreen = useCallback(async () => {
+    pageScrollRef.current = typeof window !== "undefined" ? window.scrollY : 0;
     const y = await new Promise<number | null>((resolve) => {
       const iframe = document.getElementById("tool-iframe") as HTMLIFrameElement | null;
       if (!iframe?.contentWindow) { resolve(null); return; }
@@ -162,6 +164,7 @@ export default function ToolDetailPage() {
             iframe.contentWindow.postMessage({ type: "WEWOO_SET_SCROLL", y: fullscreenScrollRef.current ?? 0 }, "*");
           } catch { /* ignore */ }
         }
+        window.scrollTo({ top: pageScrollRef.current, left: 0, behavior: "auto" });
       });
     });
   }, []);
@@ -1062,7 +1065,7 @@ export default function ToolDetailPage() {
             <p className="text-xs text-gray-400 mt-3">文件：{tool.title || "工具"}.html</p>
           </div>
         ) : (
-        <div className="flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}>
+        <div className="flex flex-col" style={{ height: "calc(100dvh - 200px)", minHeight: "400px" }}>
           {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
           <div className="pb-2.5 lg:flex lg:items-center lg:gap-2">
             <div className="flex items-center gap-1.5 flex-wrap lg:flex-1 lg:min-w-0">
@@ -1175,14 +1178,14 @@ export default function ToolDetailPage() {
               ⬇️ 下载
             </button>
             </div>
-            <div className="flex items-center gap-2 justify-end mt-2 lg:mt-0 lg:flex-shrink-0">
-            <ToolInstallButton compact />
+            <div className="flex items-center gap-2 mt-2 lg:mt-0 lg:flex-shrink-0">
             <button
               onClick={enterFullscreen}
-              className="inline-flex items-center gap-1 h-11 px-4 brand-gradient text-white rounded-xl text-[13px] font-medium hover:opacity-90 active:scale-95 transition-all"
+              className="inline-flex h-12 flex-1 items-center justify-center gap-1 rounded-xl brand-gradient px-5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 lg:flex-none"
             >
-              ⛶ 全屏
+              ⛶ 全屏使用
             </button>
+            <ToolInstallButton compact />
             </div>
           </div>
           {/* Full-height iframe（等待状态加载完成后再挂载，确保启动快照已就绪） */}
@@ -1193,6 +1196,7 @@ export default function ToolDetailPage() {
             <WechatGuide toolUrl={`https://we-woo.net/tool/${id}`}>
               <div
                 className={`${fullscreen ? "fixed inset-0 z-50 bg-black" : "relative flex-1 min-h-0 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200"}`}
+                style={fullscreen ? { height: "100dvh" } : undefined}
               >
                 {!docReady && <IframeSkeleton />}
                 {fullscreen && !appMode && (
