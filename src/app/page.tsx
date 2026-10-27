@@ -214,6 +214,16 @@ export default function HomePage() {
   // 搜索时隐藏"最近使用/我的工具"等区块，让搜索结果紧跟在搜索框下方（移动端更顺手）
   const isSearching = search.trim().length > 0;
 
+  const toggleSearch = () => {
+    if (searchOpen) {
+      setSearch("");
+      setSearchOpen(false);
+    } else {
+      setSearchOpen(true);
+      setTimeout(() => searchRef.current?.focus(), 50);
+    }
+  };
+
   // v2.8.0 推荐：基于收藏分类推荐同分类热门工具（并入广场「推荐」排序）
   const recommendedTools = useMemo(() => {
     if (!user || likedTools.length === 0) return [];
@@ -314,6 +324,34 @@ export default function HomePage() {
       <main>
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
         {!isSearching ? (
+          authLoading ? (
+            <div className="mb-1 flex items-center justify-between gap-3">
+              <div className="h-7 w-40 rounded-lg bg-gray-200 animate-pulse" />
+              <div className="h-11 w-11 rounded-full bg-gray-200 animate-pulse" />
+            </div>
+          ) : user ? (
+            <div className="mb-1 flex items-center justify-between gap-3">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">工具广场</h1>
+                <p className="mt-0.5 text-xs text-gray-500">继续用最近工具，或者搜一个</p>
+              </div>
+              <button
+                onClick={toggleSearch}
+                aria-label={searchOpen ? "关闭搜索" : "搜索工具"}
+                className={`flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded-full border transition-all ${
+                  searchOpen
+                    ? "border-indigo-200 bg-indigo-50 text-indigo-600"
+                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                {searchOpen ? (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>
+                )}
+              </button>
+            </div>
+          ) : (
           <div className="relative overflow-hidden rounded-3xl brand-gradient px-5 py-6 text-white shadow-xl shadow-indigo-200/50 sm:px-8 sm:py-8">
             <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-cyan-300/20 blur-3xl" />
@@ -327,15 +365,7 @@ export default function HomePage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => {
-                    if (searchOpen) {
-                      setSearch("");
-                      setSearchOpen(false);
-                    } else {
-                      setSearchOpen(true);
-                      setTimeout(() => searchRef.current?.focus(), 50);
-                    }
-                  }}
+                  onClick={toggleSearch}
                   aria-label={searchOpen ? "关闭搜索" : "搜索工具"}
                   className={`flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded-full border transition-all ${
                     searchOpen
@@ -379,6 +409,7 @@ export default function HomePage() {
               )}
             </div>
           </div>
+          )
         ) : (
           <div className="mb-1 flex items-center justify-between gap-3">
             <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">搜索工具</h1>
