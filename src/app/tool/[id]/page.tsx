@@ -25,6 +25,8 @@ import ToolInstallButton from "@/components/ToolInstallButton";
 import { Modal, Badge } from "@/components/ui";
 import CapabilityBadges from "@/components/CapabilityBadges";
 
+const TIME_WAGE_TOOL_ID = "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8";
+
 function renderReviewContent(content: string) {
   const parts = content.split(/(@[\w\u4e00-\u9fa5][\w\u4e00-\u9fa5-]*)/g);
   return parts.map((part, i) =>
@@ -1066,6 +1068,22 @@ export default function ToolDetailPage() {
           </div>
         ) : (
         <div className="flex flex-col" style={{ height: "calc(100dvh - 200px)", minHeight: "400px" }}>
+          {tool.id === TIME_WAGE_TOOL_ID && (
+            <div className="mb-2.5 flex flex-col gap-2 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-bold text-indigo-900">想先快速算一下？</p>
+                <p className="mt-0.5 text-xs leading-5 text-indigo-700">
+                  4 个输入，30 秒看税前时间时薪；完整版含五险一金和个税。
+                </p>
+              </div>
+              <Link
+                href="/real-hourly-wage?utm_source=tool_detail&utm_medium=quick_entry&utm_campaign=first_100"
+                className="inline-flex min-h-[40px] flex-shrink-0 items-center justify-center rounded-xl bg-white px-4 text-xs font-bold text-indigo-700 shadow-sm transition hover:bg-indigo-100"
+              >
+                快速估算
+              </Link>
+            </div>
+          )}
           {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
           <div className="pb-2.5 lg:flex lg:items-center lg:gap-2">
             <div className="flex items-center gap-1.5 flex-wrap lg:flex-1 lg:min-w-0">

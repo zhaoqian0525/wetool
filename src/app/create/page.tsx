@@ -409,6 +409,7 @@ function CreatePageInner() {
   const timelineRef = useRef<HTMLDivElement>(null);
   const initialLoadDone = useRef(false);
   const aiImageInputRef = useRef<HTMLInputElement>(null); // v2.10.0：图片选择
+  const aiInputRef = useRef<HTMLTextAreaElement>(null);
   const desktopPreviewRef = useRef<HTMLDivElement>(null); // v2.17.0：桌面预览缩放容器
   const [desktopPreviewScale, setDesktopPreviewScale] = useState(0.35);
   // 桌面预览：按容器宽度缩放 1280px 视口，呈现真实桌面布局
@@ -762,8 +763,9 @@ function CreatePageInner() {
             setAiVersions((prev) => [...prev, ver]);
             setAiActiveVersion(aiVersions.length);
             setCode(html);
-            setMobileTab("code");
-            toast.success(`已生成 ${ver.label}，代码已自动填入编辑器，可点「预览」查看效果`);
+            setMobileTab("preview");
+            setDesktopRightTab("preview");
+            toast.success(`已生成 ${ver.label}，先看看预览效果`);
           }
         }
       } else {
@@ -1216,7 +1218,7 @@ function CreatePageInner() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
-      <OnboardingModal />
+      <OnboardingModal onClose={() => setTimeout(() => aiInputRef.current?.focus(), 50)} />
       {/* Navbar */}
       <Navbar
         children={
@@ -1530,7 +1532,7 @@ function CreatePageInner() {
                   onChange={handleAiPickImages}
                   aria-label="选择图片"
                 />
-                <div className="flex items-end gap-2">
+                <div className="flex flex-shrink-0 items-end gap-2 pb-[env(safe-area-inset-bottom)]">
                   <button
                     onClick={() => aiImageInputRef.current?.click()}
                     disabled={aiGenerating}
@@ -1542,6 +1544,7 @@ function CreatePageInner() {
                     📷
                   </button>
                   <textarea
+                    ref={aiInputRef}
                     value={aiInput}
                     onChange={(e) => setAiInput(e.target.value)}
                     disabled={aiGenerating}
