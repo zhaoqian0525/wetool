@@ -45,3 +45,12 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# local-only working files (not for public repo)
+/tmp_*
+/BEIAN_PLAN.md
+/PROMOTION_PLAN.md
+/cover-wechat.html
+/public/wechat-cover.png
+/屏幕截图 *.png
+/wechat/

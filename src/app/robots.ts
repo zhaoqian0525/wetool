@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/create", "/auth"],
+      disallow: ["/create", "/auth", "/admin", "/api"],
     },
     sitemap: "https://we-woo.net/sitemap.xml",
     host: "https://we-woo.net",

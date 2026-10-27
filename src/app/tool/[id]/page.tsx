@@ -17,6 +17,7 @@ import { fetchToolById, readToolDetailCache, resolveSourceTool, fetchReviews, fe
 import { wrapSecureSrcDoc } from "@/lib/sandbox";
 import { authedFetch } from "@/lib/api-client";
 import { getLsSnapshot, setLsSnapshot } from "@/lib/toolStateBridge";
+import { trackGrowthEvent } from "@/lib/growth";
 import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } from "@/components/CoverPicker";
 import { captureCover, dataUrlToBlob, generateCustomCoverBlob, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
 import { getSupabase } from "@/lib/supabase";
@@ -48,6 +49,12 @@ export default function ToolDetailPage() {
 
   // 工具数据持久化
   useToolStorage(id, user?.id, user);
+  const trackedOpenRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!id || trackedOpenRef.current === id) return;
+    trackedOpenRef.current = id;
+    trackGrowthEvent("tool_open", { toolId: id, path: `/tool/${id}` });
+  }, [id]);
   const [isJustPublished, setIsJustPublished] = useState(false);
   const [toolVisibility, setToolVisibility] = useState(tool?.visibility ?? "public");
   const [visMenuOpen, setVisMenuOpen] = useState(false); // v2.18.0：可见性下拉（点击展开，兼容触屏）
@@ -276,7 +283,19 @@ export default function ToolDetailPage() {
 
   // Share handler
   const handleShare = useCallback(async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
+    let url = typeof window !== "undefined" ? window.location.href : "";
+    if (typeof window !== "undefined") {
+      try {
+        const shareUrl = new URL(window.location.href);
+        shareUrl.searchParams.set("utm_source", "share");
+        shareUrl.searchParams.set("utm_medium", "referral");
+        shareUrl.searchParams.set("utm_campaign", "tool_share");
+        url = shareUrl.toString();
+      } catch {
+        // Keep the original URL if parsing fails.
+      }
+    }
+    trackGrowthEvent("share_click", { toolId: tool?.id || id, path: `/tool/${id}` });
     const shareTitle = tool?.title ? `${tool.title} | 微坞 WeWoo` : "微坞 WeWoo 小工具";
     const shareDesc = tool?.description ? tool.description : "在线小工具，点开即用";
     if (typeof navigator !== "undefined" && navigator.share) {
@@ -289,7 +308,7 @@ export default function ToolDetailPage() {
         setTimeout(() => setShareCopied(false), 2000);
       } catch { /* ignore */ }
     }
-  }, [tool]);
+  }, [tool, id]);
 
   // v2.5.0 评论配图：上传到 review-images bucket
   const handleReviewImage = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
@@ -1121,7 +1140,10 @@ export default function ToolDetailPage() {
               )}
             </button>
             <button
-              onClick={() => setQrOpen(true)}
+              onClick={() => {
+                trackGrowthEvent("share_click", { toolId: tool?.id || id, path: `/tool/${id}` });
+                setQrOpen(true);
+              }}
               title="二维码"
               className="inline-flex items-center justify-center gap-1 h-11 w-11 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
             >
@@ -1134,9 +1156,11 @@ export default function ToolDetailPage() {
             </button>
             <Link
               href={`/create?source_tool_id=${tool.id}`}
+              onClick={() => trackGrowthEvent("remix_click", { toolId: tool.id, path: `/tool/${tool.id}` })}
+              title="一句话改成我的版本"
               className="inline-flex items-center gap-1 h-11 px-2.5 bg-white text-indigo-600 border border-indigo-200 rounded-xl text-[13px] font-medium hover:bg-indigo-50 active:scale-95 transition-all"
             >
-              ✨ 改编
+              改成我的版本
             </Link>
             <ToolInstallButton compact />
             <button

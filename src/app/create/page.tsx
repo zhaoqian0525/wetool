@@ -18,6 +18,7 @@ import CoverPicker, { COVER_GRADIENTS, DEFAULT_COVER_CHOICE, type CoverChoice } 
 import { captureCover, dataUrlToBlob, generateCustomCoverBlob, generateDefaultCoverBlob, uploadCoverToStorage } from "@/lib/cover";
 import { AI_PROMPT_TEMPLATE, aiPrompts, containsSensitiveContent, extractHtmlFromAiOutput, sceneTemplates } from "@/lib/aiPrompts";
 import { getLsSnapshot } from "@/lib/toolStateBridge";
+import { trackGrowthEvent } from "@/lib/growth";
 import { Modal } from "@/components/ui";
 import CapabilityBadges from "@/components/CapabilityBadges";
 
@@ -324,6 +325,13 @@ function CreatePageInner() {
   const sourceToolIdParam = searchParams.get("source_tool_id");
   const { user } = useAuth();
   const toast = useToast();
+
+  useEffect(() => {
+    trackGrowthEvent("create_started", {
+      path: "/create",
+      onceKey: "create-started",
+    });
+  }, []);
 
   const [code, setCode] = useState(DEFAULT_CODE);
   const [versions, setVersions] = useState<Version[]>([]);
@@ -945,6 +953,11 @@ function CreatePageInner() {
         throw new Error(error.message || "发布失败");
       }
       toolId = String((data as { id: string | number }).id);
+      trackGrowthEvent("publish_completed", {
+        toolId,
+        path: `/tool/${toolId}`,
+        onceKey: `publish-${toolId}`,
+      });
 
       // Step 2: Generate & upload cover image（自动截图 / 上传图片 / 渐变+表情）
       setPublishStep("screenshot");

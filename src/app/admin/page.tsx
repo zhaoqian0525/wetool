@@ -35,6 +35,39 @@ interface UsageData {
   } | null;
 }
 
+interface GrowthData {
+  initialized?: boolean;
+  hint?: string;
+  days?: number;
+  totals?: {
+    events: number;
+    visitors: number;
+    firstVisit: number;
+    returnVisit: number;
+    toolOpen: number;
+    toolCompleted: number;
+    shareClick: number;
+    remixClick: number;
+    createStarted: number;
+    publishCompleted: number;
+  };
+  channels?: {
+    source: string;
+    medium: string;
+    campaign: string;
+    visitors: number;
+    events: number;
+    toolOpen: number;
+    toolCompleted: number;
+    shareClick: number;
+    remixClick: number;
+    createStarted: number;
+    publishCompleted: number;
+  }[];
+  tools?: { toolId: string; opens: number; completions: number }[];
+  daily?: { date: string; visitors: number; events: number; completions: number }[];
+}
+
 const STATUS_LABEL: Record<string, string> = {
   pending: "待处理",
   processing: "处理中",
@@ -51,9 +84,11 @@ const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "1015790590@qq.com
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
   const toast = useToast();
-  const [tab, setTab] = useState<"pending" | "all" | "usage">("pending");
+  const [tab, setTab] = useState<"pending" | "all" | "growth" | "usage">("pending");
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [usageLoading, setUsageLoading] = useState(false);
+  const [growth, setGrowth] = useState<GrowthData | null>(null);
+  const [growthLoading, setGrowthLoading] = useState(false);
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -61,6 +96,22 @@ export default function AdminPage() {
   const isAdmin = !!user && ADMIN_EMAILS.includes((user.email ?? "").toLowerCase());
 
   const load = useCallback(async () => {
+    if (tab === "growth") {
+      setGrowthLoading(true);
+      try {
+        const res = await authedFetch("/api/admin/growth?days=30");
+        if (res.ok) {
+          setGrowth((await res.json()) as GrowthData);
+        } else {
+          toast.error("增长看板加载失败，请检查管理员权限");
+        }
+      } catch {
+        toast.error("网络异常");
+      } finally {
+        setGrowthLoading(false);
+      }
+      return;
+    }
     if (tab === "usage") {
       setUsageLoading(true);
       try {
@@ -148,8 +199,8 @@ export default function AdminPage() {
           </div>
         ) : (
           <>
-            <div className="flex gap-2 mb-4">
-              {(["pending", "all", "usage"] as const).map((t) => (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {(["pending", "all", "growth", "usage"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -157,12 +208,18 @@ export default function AdminPage() {
                     tab === t ? "bg-indigo-600 text-white" : "bg-white text-gray-600 border border-gray-200"
                   }`}
                 >
-                  {t === "pending" ? "待处理举报" : t === "all" ? "全部举报" : "用量看板"}
+                  {t === "pending"
+                    ? "待处理举报"
+                    : t === "all"
+                      ? "全部举报"
+                      : t === "growth"
+                        ? "渠道看板"
+                        : "用量看板"}
                 </button>
               ))}
             </div>
 
-            {loading ? (
+            {(tab === "pending" || tab === "all") && (loading ? (
               <div className="space-y-3">
                 <div className="h-20 bg-gray-200 rounded-xl animate-pulse" />
                 <div className="h-20 bg-gray-200 rounded-xl animate-pulse" />
@@ -232,6 +289,105 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            ))}
+
+            {tab === "growth" && (
+              <div className="space-y-4">
+                {growthLoading ? (
+                  <div className="space-y-3">
+                    <div className="h-20 bg-gray-200 rounded-xl animate-pulse" />
+                    <div className="h-20 bg-gray-200 rounded-xl animate-pulse" />
+                  </div>
+                ) : growth && growth.initialized === false ? (
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-sm text-amber-800">
+                    增长事件表尚未初始化：请在 Supabase SQL Editor 执行
+                    <code className="mx-1 rounded bg-amber-100 px-1 font-mono">supabase_v227_growth_events.sql</code>
+                    后刷新。
+                  </div>
+                ) : growth?.totals ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {[
+                        ["访客", growth.totals.visitors],
+                        ["新访客", growth.totals.firstVisit],
+                        ["回访", growth.totals.returnVisit],
+                        ["打开工具", growth.totals.toolOpen],
+                        ["完成工具", growth.totals.toolCompleted],
+                        ["分享点击", growth.totals.shareClick],
+                        ["改编点击", growth.totals.remixClick],
+                        ["成功发布", growth.totals.publishCompleted],
+                      ].map(([label, value]) => (
+                        <div key={String(label)} className="rounded-2xl border border-gray-200 bg-white p-4">
+                          <div className="text-xs text-gray-500">{label}</div>
+                          <div className="mt-1 text-2xl font-bold text-gray-900">{value}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                      <h3 className="mb-3 font-medium text-gray-900">按渠道（最近 {growth.days ?? 30} 天）</h3>
+                      {!growth.channels || growth.channels.length === 0 ? (
+                        <p className="text-sm text-gray-400">暂无渠道数据</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full min-w-[640px] text-left text-xs">
+                            <thead className="text-gray-400">
+                              <tr>
+                                <th className="py-2 pr-3">来源</th>
+                                <th className="py-2 pr-3">媒介</th>
+                                <th className="py-2 pr-3">活动</th>
+                                <th className="py-2 pr-3">访客</th>
+                                <th className="py-2 pr-3">打开</th>
+                                <th className="py-2 pr-3">完成</th>
+                                <th className="py-2 pr-3">分享</th>
+                                <th className="py-2 pr-3">改编</th>
+                                <th className="py-2">发布</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {growth.channels.map((channel) => (
+                                <tr key={`${channel.source}|${channel.medium}|${channel.campaign}`} className="border-t border-gray-100 text-gray-700">
+                                  <td className="py-2 pr-3">{channel.source}</td>
+                                  <td className="py-2 pr-3">{channel.medium || "—"}</td>
+                                  <td className="py-2 pr-3">{channel.campaign || "—"}</td>
+                                  <td className="py-2 pr-3 font-semibold">{channel.visitors}</td>
+                                  <td className="py-2 pr-3">{channel.toolOpen}</td>
+                                  <td className="py-2 pr-3">{channel.toolCompleted}</td>
+                                  <td className="py-2 pr-3">{channel.shareClick}</td>
+                                  <td className="py-2 pr-3">{channel.remixClick}</td>
+                                  <td className="py-2">{channel.publishCompleted}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                      <h3 className="mb-3 font-medium text-gray-900">工具表现</h3>
+                      {!growth.tools || growth.tools.length === 0 ? (
+                        <p className="text-sm text-gray-400">暂无工具数据</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {growth.tools.map((tool) => (
+                            <div key={tool.toolId} className="flex items-center justify-between gap-2 text-sm">
+                              <span className="truncate text-gray-700">{tool.toolId}</span>
+                              <span className="shrink-0 text-xs text-gray-400">
+                                打开 {tool.opens} · 完成 {tool.completions}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-400">
+                    暂无增长数据
+                  </div>
+                )}
               </div>
             )}
 

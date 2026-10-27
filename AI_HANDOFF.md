@@ -10,7 +10,7 @@
 
 - **域名**：https://we-woo.net
 - **GitHub**：https://github.com/zhaoqian0525/wetool
-- **当前版本**：v2.9.0（见 version.json）
+- **当前版本**：v2.28.0（见 version.json）
 - **文件根目录**：`D:\Workbuddy\We-woo`
 
 ---
@@ -48,7 +48,14 @@
 | **Anon Key（公开）** | `sb_publishable_HedSPsepnDWtvd3IuQhlWw_JPeVevVu` |
 | **Service Role Key（保密，仅服务端）** | `service_role_xxxx（v1.8.3 已从仓库移除，请到 Supabase Dashboard 轮换并配置环境变量）` |
 
-**Service Role Key 用途**：DELETE API（`src/app/api/tools/[id]/route.ts`）用来绕过 RLS 删除工具。代码层已做权限验证。
+**Service Role Key 用途**：DELETE API（`src/app/api/tools/[id]/route.ts`）用来绕过 RLS 删除工具；增长事件写入与后台聚合也使用 service_role。代码层已做权限验证。
+
+### 增长事件（v2.28.0）
+
+- 迁移文件：`supabase_v227_growth_events.sql`（需在 Supabase SQL Editor 执行一次）。
+- 客户端入口：`src/lib/growth.ts` + `src/components/GrowthTracker.tsx`。
+- 服务端接口：`src/app/api/growth/event/route.ts`（只存匿名访客/会话、UTM、工具 ID、设备/国家，不存任何工具输入）。
+- 管理后台：`/admin` → 渠道看板（`/api/admin/growth`）。
 
 ### DeepSeek（内置 AI 生成，v1.8）
 

@@ -88,8 +88,71 @@ export default async function ToolLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const mockTool = MOCK_TOOLS.find((tool) => tool.id === id);
+  let title = mockTool?.title ?? "";
+  let description = mockTool?.description ?? "";
+  let author = mockTool?.author ?? "";
+
+  if (!mockTool && id.length > 5) {
+    try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data } = await supabase
+        .from("tools")
+        .select("title,description,author,is_banned,visibility")
+        .eq("id", id)
+        .single();
+      if (data && !data.is_banned && data.visibility === "public") {
+        title = String(data.title ?? "");
+        description = String(data.description ?? "");
+        author = String(data.author ?? "");
+      }
+    } catch {
+      // JSON-LD 是增强项，查询失败不影响页面。
+    }
+  }
+
+  const structuredData = title
+    ? [
+        {
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: title,
+          description: description || `${title} - 微坞 WeWoo 在线小工具`,
+          url: `https://we-woo.net/tool/${id}`,
+          applicationCategory: "UtilityApplication",
+          operatingSystem: "Any",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "CNY" },
+          ...(author ? { author: { "@type": "Person", name: author } } : {}),
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "微坞 WeWoo",
+              item: "https://we-woo.net",
+            },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: title,
+              item: `https://we-woo.net/tool/${id}`,
+            },
+          ],
+        },
+      ]
+    : null;
+
   return (
     <>
+      {structuredData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+      )}
       {children}
     </>
   );

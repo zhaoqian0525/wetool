@@ -5,20 +5,21 @@ import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import InstallPrompt from "@/components/InstallPrompt";
 import SiteManifestLink from "@/components/SiteManifestLink";
 import Footer from "@/components/Footer";
+import GrowthTracker from "@/components/GrowthTracker";
 import "./globals.css";
 
 const baseUrl = "https://we-woo.net";
 
 export const metadata: Metadata = {
   title: {
-    default: "微坞 WeWoo - AI小工具分享社区",
+    default: "微坞 WeWoo - 不用下载，打开就用",
     template: "%s | 微坞 WeWoo",
   },
   description:
-    "像发朋友圈一样分享你做的 AI 小工具，别人点开链接就能直接使用。密码生成器、单位换算、旅行分账、古诗词抽查…丰富的在线小工具等你探索。",
+    "AI 小工具集市：算、记、玩都能用，不满意还能一句话改成自己的。打开即用，也可以安装到手机主屏幕。",
   keywords: [
-    "微坞", "WeWoo", "AI小工具", "在线工具", "单位换算",
-    "密码生成器", "工具分享", "小程序", "在线计算器",
+    "微坞", "WeWoo", "AI小工具", "在线工具", "真实时薪计算器",
+    "单位换算", "工具分享", "小程序", "在线计算器",
   ],
   authors: [{ name: "WeWoo Team" }],
   creator: "WeWoo",
@@ -31,16 +32,16 @@ export const metadata: Metadata = {
     locale: "zh_CN",
     url: baseUrl,
     siteName: "微坞 WeWoo",
-    title: "微坞 WeWoo - AI小工具分享社区",
-    description: "像发朋友圈一样分享你做的 AI 小工具，别人点开链接就能直接使用。",
+    title: "微坞 WeWoo - 不用下载，打开就用",
+    description: "AI 小工具集市：算、记、玩都能用，不满意还能一句话改成自己的。",
     images: [
       { url: "/og.png", width: 1200, height: 630, alt: "微坞 WeWoo - AI小工具分享社区" },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "微坞 WeWoo - AI小工具分享社区",
-    description: "像发朋友圈一样分享你做的 AI 小工具，别人点开链接就能直接使用。",
+    title: "微坞 WeWoo - 不用下载，打开就用",
+    description: "AI 小工具集市：算、记、玩都能用，不满意还能一句话改成自己的。",
     images: ["/og.png"],
   },
   robots: {
@@ -67,7 +68,7 @@ const jsonLd = {
   "@type": "WebSite",
   name: "微坞 WeWoo",
   url: baseUrl,
-  description: "AI小工具分享社区 - 像发朋友圈一样分享你做的 AI 小工具",
+  description: "AI 小工具集市 - 不用下载，打开就用；不满意还能一句话改成自己的",
   potentialAction: {
     "@type": "SearchAction",
     target: `${baseUrl}/?q={search_term_string}`,
@@ -97,6 +98,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-gray-50 text-gray-900 min-h-screen">
+        <GrowthTracker />
         <SiteManifestLink />
         <ToastProvider>
           <AuthProvider>

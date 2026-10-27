@@ -13,6 +13,57 @@ import { Badge } from "@/components/ui";
 
 // ---- Constants ----
 
+// 首页首屏只展示三个已验证的正式工具，避免把 20+ 个同等权重的卡片塞给新用户。
+const FEATURED_TOOL_IDS = [
+  "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8", // 税后真实时薪计算器
+  "a46673f0-5749-405f-a03d-4f66695a8509", // 卡西欧 991 计算器
+  "4c285279-d7cf-4852-a9e0-ed022b06dccf", // 2048 特别版
+];
+
+const FEATURED_TOOL_LINKS: Record<string, string> = {
+  "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8": "/real-hourly-wage",
+};
+
+type FeaturedTool = {
+  id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  coverUrl?: string;
+  thumbnailGradient: string;
+};
+
+// 首屏静态兜底：即使公开工具接口还没返回，也能立即看到三个真实工具。
+const FEATURED_TOOL_FALLBACKS: Record<string, FeaturedTool> = {
+  "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8": {
+    id: "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8",
+    title: "税后真实时薪计算器",
+    description: "算清五险一金、个税后的真实时薪",
+    category: "生活",
+    coverUrl:
+      "https://cvacrykzcppiflmvwwfe.supabase.co/storage/v1/object/public/tool-covers/public/c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8.png",
+    thumbnailGradient: "linear-gradient(135deg, #fa8231, #f7b731)",
+  },
+  "a46673f0-5749-405f-a03d-4f66695a8509": {
+    id: "a46673f0-5749-405f-a03d-4f66695a8509",
+    title: "卡西欧991计算器",
+    description: "工程计算与日常换算",
+    category: "生活",
+    coverUrl:
+      "https://cvacrykzcppiflmvwwfe.supabase.co/storage/v1/object/public/tool-covers/public/a46673f0-5749-405f-a03d-4f66695a8509.png",
+    thumbnailGradient: "linear-gradient(135deg, #4facfe, #00f2fe)",
+  },
+  "4c285279-d7cf-4852-a9e0-ed022b06dccf": {
+    id: "4c285279-d7cf-4852-a9e0-ed022b06dccf",
+    title: "2048",
+    description: "有撤回功能的小游戏",
+    category: "小游戏",
+    coverUrl:
+      "https://cvacrykzcppiflmvwwfe.supabase.co/storage/v1/object/public/tool-covers/public/4c285279-d7cf-4852-a9e0-ed022b06dccf.png",
+    thumbnailGradient: "linear-gradient(135deg, #f093fb, #f5576c)",
+  },
+};
+
 
 
 // ---- Component ----
@@ -202,6 +253,17 @@ export default function HomePage() {
     return list;
   }, [tools, activeCategory, search, sortBy, viewCounts, serverResults, recommendedTools]);
 
+  const featuredTools = useMemo<FeaturedTool[]>(() => {
+    const byId = new Map(tools.map((tool) => [tool.id, tool]));
+    return FEATURED_TOOL_IDS
+      .map((id) => byId.get(id) ?? FEATURED_TOOL_FALLBACKS[id])
+      .filter((tool): tool is FeaturedTool => Boolean(tool));
+  }, [tools]);
+
+  const primaryFeaturedHref = featuredTools[0]
+    ? FEATURED_TOOL_LINKS[featuredTools[0].id] || `/tool/${featuredTools[0].id}`
+    : "/real-hourly-wage";
+
   // 常用工具（从所有工具中筛选 pinned 的 ID）
   const pinnedTools = useMemo(() => {
     if (pinnedToolIds.length === 0) return [];
@@ -251,33 +313,86 @@ export default function HomePage() {
       {/* Hero / Search / Category Filter */}
       <main>
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
-        {/* 标题行：大标题 + 搜索图标（v1.9.7） */}
-        <div className="flex items-center justify-between gap-3 mb-1">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-snug">AI 工具广场</h1>
-          <button
-            onClick={() => {
-              if (searchOpen) {
+        {!isSearching ? (
+          <div className="relative overflow-hidden rounded-3xl brand-gradient px-5 py-6 text-white shadow-xl shadow-indigo-200/50 sm:px-8 sm:py-8">
+            <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-cyan-300/20 blur-3xl" />
+            <div className="relative">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-bold tracking-[0.18em] text-white/65">微坞 WeWoo</p>
+                  <h1 className="mt-1 text-2xl font-black leading-tight sm:text-4xl">不用下载，打开就用</h1>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-white/80 sm:text-base">
+                    AI 小工具集市：算、记、玩都能用，不满意还能一句话改成自己的
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (searchOpen) {
+                      setSearch("");
+                      setSearchOpen(false);
+                    } else {
+                      setSearchOpen(true);
+                      setTimeout(() => searchRef.current?.focus(), 50);
+                    }
+                  }}
+                  aria-label={searchOpen ? "关闭搜索" : "搜索工具"}
+                  className={`flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded-full border transition-all ${
+                    searchOpen
+                      ? "border-white/30 bg-white/20 text-white"
+                      : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+                  }`}
+                >
+                  {searchOpen ? (
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  ) : (
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>
+                  )}
+                </button>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href={primaryFeaturedHref}
+                  className="inline-flex min-h-[44px] items-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-50"
+                >
+                  先试一个热门工具
+                </Link>
+                <Link
+                  href="/create?new=1"
+                  className="inline-flex min-h-[44px] items-center rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-white/20"
+                >
+                  做一个我的工具
+                </Link>
+              </div>
+
+              {featuredTools.length > 0 && (
+                <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                  {featuredTools.map((tool) => (
+                    <FeaturedToolCard
+                      key={tool.id}
+                      tool={tool}
+                      href={FEATURED_TOOL_LINKS[tool.id] || `/tool/${tool.id}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-1 flex items-center justify-between gap-3">
+            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">搜索工具</h1>
+            <button
+              onClick={() => {
                 setSearch("");
                 setSearchOpen(false);
-              } else {
-                setSearchOpen(true);
-                setTimeout(() => searchRef.current?.focus(), 50);
-              }
-            }}
-            aria-label={searchOpen ? "关闭搜索" : "搜索工具"}
-            className={`min-w-[44px] min-h-[44px] flex-shrink-0 flex items-center justify-center rounded-full transition-all ${
-              searchOpen
-                ? "bg-indigo-50 text-indigo-600"
-                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-100 hover:text-gray-900"
-            }`}
-          >
-            {searchOpen ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>
-            )}
-          </button>
-        </div>
+              }}
+              className="min-h-[44px] rounded-xl px-3 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            >
+              关闭搜索
+            </button>
+          </div>
+        )}
 
         {/* 搜索框：点击图标展开（v1.9.7 压缩） */}
         {searchOpen && (
@@ -538,6 +653,35 @@ export default function HomePage() {
 }
 
 // ---- ToolCard — React.memo 防止不必要的重渲染 ----
+
+function FeaturedToolCard({ tool, href }: { tool: FeaturedTool; href: string }) {
+  return (
+    <Link
+      href={href}
+      className="group flex min-w-0 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-2.5 transition-colors hover:bg-white/15"
+    >
+      <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-white/10">
+        {tool.coverUrl ? (
+          <Image
+            src={tool.coverUrl}
+            alt={tool.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="48px"
+          />
+        ) : (
+          <div className="absolute inset-0" style={{ background: tool.thumbnailGradient }} />
+        )}
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-bold text-white">{tool.title}</p>
+        <p className="truncate text-[11px] text-white/65">
+          {tool.description || tool.category}
+        </p>
+      </div>
+    </Link>
+  );
+}
 
 const ToolCard = memo(function ToolCard({ tool, viewCount, rank }: { tool: Tool; viewCount?: number; rank?: number }) {
   return (
