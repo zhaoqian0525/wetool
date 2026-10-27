@@ -54,3 +54,4 @@ next-env.d.ts
 /public/wechat-cover.png
 /屏幕截图 *.png
 /wechat/
+/growth/

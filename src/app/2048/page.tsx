@@ -8,8 +8,7 @@ const pageUrl = `${baseUrl}/2048`;
 const title = "2048 小游戏：走错一步，可以撤回";
 const description =
   "不用下载，打开就玩。支持撤回一步、最高分自动保存，手机上也能单手玩。";
-const coverUrl =
-  "https://cvacrykzcppiflmvwwfe.supabase.co/storage/v1/object/public/tool-covers/public/4c285279-d7cf-4852-a9e0-ed022b06dccf.png";
+const coverUrl = `${baseUrl}/growth/2048-cover.png`;
 
 export const metadata: Metadata = {
   title,
@@ -23,7 +22,7 @@ export const metadata: Metadata = {
     siteName: "微坞 WeWoo",
     title,
     description,
-    images: [{ url: coverUrl, width: 375, height: 667, alt: "2048 小游戏 - 微坞 WeWoo" }],
+    images: [{ url: coverUrl, width: 1200, height: 630, alt: "2048 小游戏 - 微坞 WeWoo" }],
   },
   twitter: {
     card: "summary_large_image",

@@ -8,8 +8,7 @@ const pageUrl = `${baseUrl}/split-bill`;
 const title = "分账计算器：聚餐旅行，一算就清";
 const description =
   "输入总金额和人数，立即算出每人应付；除不尽自动提示差额。完整版还支持按项目分账、保存记录和分享。";
-const coverUrl =
-  "https://cvacrykzcppiflmvwwfe.supabase.co/storage/v1/object/public/tool-covers/public/332fbf19-2537-4af3-a36c-e82829921f54.webp";
+const coverUrl = `${baseUrl}/growth/split-bill-cover.png`;
 
 export const metadata: Metadata = {
   title,
@@ -23,7 +22,7 @@ export const metadata: Metadata = {
     siteName: "微坞 WeWoo",
     title,
     description,
-    images: [{ url: coverUrl, width: 375, height: 667, alt: "分账计算器 - 微坞 WeWoo" }],
+    images: [{ url: coverUrl, width: 1200, height: 630, alt: "分账计算器 - 微坞 WeWoo" }],
   },
   twitter: {
     card: "summary_large_image",
