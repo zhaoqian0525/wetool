@@ -1162,7 +1162,6 @@ export default function ToolDetailPage() {
             >
               改成我的版本
             </Link>
-            <ToolInstallButton compact />
             <button
               onClick={handleDownload}
               className="hidden lg:inline-flex items-center gap-1 h-11 px-3 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
@@ -1172,6 +1171,7 @@ export default function ToolDetailPage() {
             </button>
             </div>
             <div className="flex items-center gap-2 justify-end mt-2 lg:mt-0 lg:flex-shrink-0">
+            <ToolInstallButton compact />
             <button
               onClick={enterFullscreen}
               className="inline-flex items-center gap-1 h-11 px-4 brand-gradient text-white rounded-xl text-[13px] font-medium hover:opacity-90 active:scale-95 transition-all"

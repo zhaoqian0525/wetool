@@ -1,6 +1,6 @@
 {
-  "version": "2.28.0",
+  "version": "2.28.1",
   "buildDate": "2026-10-27",
-  "buildTimestamp": "2026-10-27T22:03:11+08:00",
-  "description": "v2.28.0：统一匿名增长事件、首页获客定位、工具库清理与 SEO 修复"
+  "buildTimestamp": "2026-10-27T22:18:51+08:00",
+  "description": "v2.28.1：移动端工具详情操作栏恢复两排布局"
 }
