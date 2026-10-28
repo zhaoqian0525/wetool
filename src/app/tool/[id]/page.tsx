@@ -1237,75 +1237,73 @@ export default function ToolDetailPage() {
         </div>
         )}
 
-        <div className="mt-5" inert={fullscreen} aria-hidden={fullscreen}>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Badge>{tool.category}</Badge>
-            {tool.layoutTarget === "desktop" && <Badge tone="brand">🖥️ 电脑端优化</Badge>}
-            {isJustPublished && <Badge tone="green" className="animate-pulse">刚刚发布</Badge>}
-            {isAuthor && (
-              <div className="relative">
-                <Badge
-                  tone={toolVisibility === "public" ? "green" : toolVisibility === "unlisted" ? "amber" : "red"}
-                  className="cursor-pointer select-none"
-                  onClick={() => setVisMenuOpen((v) => !v)}
-                >
-                  {toolVisibility === "public" ? "公开" : toolVisibility === "unlisted" ? "未列出" : "私密"}
-                  <span className="ml-1 text-[10px] opacity-70">⌄</span>
-                </Badge>
-                {visMenuOpen && (
+        <section className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5" inert={fullscreen} aria-hidden={fullscreen}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge>{tool.category}</Badge>
+                {tool.layoutTarget === "desktop" && <Badge tone="brand">🖥️ 电脑端优化</Badge>}
+                {isJustPublished && <Badge tone="green" className="animate-pulse">刚刚发布</Badge>}
+                {isAuthor && (
+                  <div className="relative">
+                    <Badge
+                      tone={toolVisibility === "public" ? "green" : toolVisibility === "unlisted" ? "amber" : "red"}
+                      className="cursor-pointer select-none"
+                      onClick={() => setVisMenuOpen((v) => !v)}
+                    >
+                      {toolVisibility === "public" ? "公开" : toolVisibility === "unlisted" ? "未列出" : "私密"}
+                      <span className="ml-1 text-[10px] opacity-70">⌄</span>
+                    </Badge>
+                    {visMenuOpen && (
+                      <>
+                        <div className="fixed inset-0 z-20" onClick={() => setVisMenuOpen(false)} />
+                        <div className="absolute left-0 top-full z-30 mt-1 min-w-[128px] rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                          <button onClick={() => { handleChangeVisibility("public"); setVisMenuOpen(false); }} className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs hover:bg-gray-50">
+                            <span className="h-2 w-2 rounded-full bg-green-500" /> 公开
+                          </button>
+                          <button onClick={() => { handleChangeVisibility("unlisted"); setVisMenuOpen(false); }} className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs hover:bg-gray-50">
+                            <span className="h-2 w-2 rounded-full bg-amber-500" /> 未列出
+                          </button>
+                          <button onClick={() => { handleChangeVisibility("private"); setVisMenuOpen(false); }} className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs hover:bg-gray-50">
+                            <span className="h-2 w-2 rounded-full bg-red-500" /> 私密
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
+                {tool.authorId ? (
+                  <Link href={`/user/${tool.authorId}`} className="inline-flex min-h-0 items-center font-medium text-indigo-600 hover:underline">
+                    @{tool.author}
+                  </Link>
+                ) : (
+                  <span>@{tool.author}</span>
+                )}
+                <span className="text-gray-300">·</span>
+                <span>{new Date(tool.createdAt).toLocaleDateString("zh-CN")}</span>
+                {viewCount > 0 && (
                   <>
-                    <div className="fixed inset-0 z-20" onClick={() => setVisMenuOpen(false)} />
-                    <div className="absolute left-0 top-full z-30 mt-1 min-w-[128px] rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                      <button onClick={() => { handleChangeVisibility("public"); setVisMenuOpen(false); }} className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs hover:bg-gray-50">
-                        <span className="h-2 w-2 rounded-full bg-green-500" /> 公开
-                      </button>
-                      <button onClick={() => { handleChangeVisibility("unlisted"); setVisMenuOpen(false); }} className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs hover:bg-gray-50">
-                        <span className="h-2 w-2 rounded-full bg-amber-500" /> 未列出
-                      </button>
-                      <button onClick={() => { handleChangeVisibility("private"); setVisMenuOpen(false); }} className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs hover:bg-gray-50">
-                        <span className="h-2 w-2 rounded-full bg-red-500" /> 私密
-                      </button>
-                    </div>
+                    <span className="text-gray-300">·</span>
+                    <span>{viewCount} 次浏览</span>
+                  </>
+                )}
+                {tool.sourceTool && (
+                  <>
+                    <span className="text-gray-300">·</span>
+                    <span>
+                      改编自{" "}
+                      <Link href={`/tool/${tool.sourceTool.id}`} className="inline-flex min-h-0 items-center font-medium text-indigo-600 hover:underline">
+                        《{tool.sourceTool.title}》
+                      </Link>
+                    </span>
                   </>
                 )}
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-gray-500">
-            {tool.authorId ? (
-              <Link href={`/user/${tool.authorId}`} className="inline-flex min-h-0 items-center font-medium text-indigo-600 hover:underline">
-                @{tool.author}
-              </Link>
-            ) : (
-              <span>@{tool.author}</span>
-            )}
-            <span className="text-gray-300">·</span>
-            <span>{new Date(tool.createdAt).toLocaleDateString("zh-CN")}</span>
-            {viewCount > 0 && (
-              <>
-                <span className="text-gray-300">·</span>
-                <span>👁 {viewCount}</span>
-              </>
-            )}
-            {tool.sourceTool && (
-              <>
-                <span className="text-gray-300">·</span>
-                <span className="inline-flex items-center gap-1">
-                  改编自
-                  <Link href={`/tool/${tool.sourceTool.id}`} className="inline-flex min-h-0 items-center font-medium text-indigo-600 hover:underline">
-                    《{tool.sourceTool.title}》
-                  </Link>
-                </span>
-              </>
-            )}
-          </div>
-
-          {tool.description && (
-            <p className="mt-3 text-sm leading-7 text-gray-600">{tool.description}</p>
-          )}
-
-          <div className="mt-3 flex items-center gap-2">
             {user ? (
               <button
                 onClick={async () => {
@@ -1323,7 +1321,7 @@ export default function ToolDetailPage() {
                   }
                 }}
                 disabled={liking}
-                className={`inline-flex min-h-[36px] items-center gap-1 rounded-lg border px-3 text-xs font-semibold ${
+                className={`inline-flex min-h-[34px] flex-shrink-0 items-center gap-1 rounded-lg border px-2.5 text-xs font-semibold ${
                   liked ? "border-rose-200 bg-rose-50 text-rose-600" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
                 } ${liking ? "opacity-60" : ""}`}
               >
@@ -1332,30 +1330,36 @@ export default function ToolDetailPage() {
             ) : (
               <button
                 onClick={() => router.push(`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`)}
-                className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-500 hover:bg-gray-50"
+                className="inline-flex min-h-[34px] flex-shrink-0 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-semibold text-gray-500 hover:bg-gray-50"
               >
                 ♡ 点赞
               </button>
             )}
           </div>
-        </div>
 
-        {/* v2.21.0：能力说明移到工具下方，压缩顶部信息密度 */}
-        <div className="mt-6" inert={fullscreen} aria-hidden={fullscreen}>
-          <CapabilityBadges code={tool.code ?? ""} showEmpty />
-        </div>
+          {tool.description && tool.description.length > 70 && (
+            <p className="mt-3 border-t border-gray-100 pt-3 text-sm leading-7 text-gray-600">
+              {tool.description}
+            </p>
+          )}
+
+          <div className="mt-3 border-t border-gray-100 pt-3">
+            <p className="mb-2 text-[11px] font-semibold tracking-wide text-gray-400">工具能力</p>
+            <CapabilityBadges code={tool.code ?? ""} showEmpty />
+          </div>
+        </section>
 
         {/* v2.23.0：使用记录 / 举报 / 换封面 / 删除 统一移到工具下方 */}
-        <div id="tool-utility" className="mt-4 flex items-center gap-4 text-xs text-gray-400 flex-wrap scroll-mt-24" inert={fullscreen} aria-hidden={fullscreen}>
+        <div id="tool-utility" className="mt-3 flex scroll-mt-24 flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs text-gray-500" inert={fullscreen} aria-hidden={fullscreen}>
           {user && (
             <button onClick={() => setHistoryOpen(true)} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
-              📋 使用记录
+              使用记录
             </button>
           )}
           {!isAuthor && (
             <div className="relative">
               <button onClick={() => setReportOpen((v) => !v)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
-                🚩 举报
+                举报
               </button>
               {reportOpen && (
                 <div className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2 z-30">
@@ -1381,10 +1385,10 @@ export default function ToolDetailPage() {
           {isAuthor && (
             <>
               <button onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
-                🖼️ 换封面
+                换封面
               </button>
               <button onClick={() => setDeleteOpen(true)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
-                🗑 删除
+                删除
               </button>
             </>
           )}
@@ -1393,8 +1397,8 @@ export default function ToolDetailPage() {
 
         {/* Related tools */}
         {related.length > 0 && (
-          <section className="mt-12 border-t border-gray-200 pt-8" inert={fullscreen} aria-hidden={fullscreen}>
-            <h2 className="text-lg font-bold text-gray-900 mb-4">相关工具</h2>
+          <section className="mt-8 border-t border-gray-200 pt-6" inert={fullscreen} aria-hidden={fullscreen}>
+            <h2 className="mb-3 text-base font-bold text-gray-900">相关工具</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {related.map((rt) => (
                 <Link
@@ -1427,7 +1431,7 @@ export default function ToolDetailPage() {
         )}
 
         {/* Reviews Section */}
-        <section className="mt-12 border-t border-gray-200 pt-8" inert={fullscreen} aria-hidden={fullscreen}>
+        <section className="mt-8 border-t border-gray-200 pt-6" inert={fullscreen} aria-hidden={fullscreen}>
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-lg font-bold text-gray-900">用户评价</h2>
             {avgRating.count > 0 && (

@@ -1,6 +1,6 @@
 {
-  "version": "2.38.0",
+  "version": "2.38.1",
   "buildDate": "2026-10-28",
-  "buildTimestamp": "2026-10-28T20:35:25+08:00",
-  "description": "v2.38.0：工具详情统一定制顶栏、信息下移与操作分层"
+  "buildTimestamp": "2026-10-28T20:55:29+08:00",
+  "description": "v2.38.1：工具详情下方信息分区重排"
 }
