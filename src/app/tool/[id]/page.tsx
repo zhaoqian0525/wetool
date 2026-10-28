@@ -25,6 +25,9 @@ import ToolInstallButton from "@/components/ToolInstallButton";
 import { Modal, Badge } from "@/components/ui";
 import CapabilityBadges from "@/components/CapabilityBadges";
 
+const TOOL_UTILITY_ACTION_CLASS =
+  "inline-flex h-11 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50";
+
 function renderReviewContent(content: string) {
   const parts = content.split(/(@[\w\u4e00-\u9fa5][\w\u4e00-\u9fa5-]*)/g);
   return parts.map((part, i) =>
@@ -35,7 +38,6 @@ function renderReviewContent(content: string) {
     )
   );
 }
-
 
 export default function ToolDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -1350,15 +1352,25 @@ export default function ToolDetailPage() {
         </section>
 
         {/* v2.23.0：使用记录 / 举报 / 换封面 / 删除 统一移到工具下方 */}
-        <div id="tool-utility" className="mt-3 flex scroll-mt-24 flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs text-gray-500" inert={fullscreen} aria-hidden={fullscreen}>
+        <div id="tool-utility" className="mt-3 flex scroll-mt-24 flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs text-gray-500" inert={fullscreen} aria-hidden={fullscreen}>
           {user && (
-            <button onClick={() => setHistoryOpen(true)} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
+            <button onClick={() => setHistoryOpen(true)} className={TOOL_UTILITY_ACTION_CLASS}>
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" />
+              </svg>
               使用记录
             </button>
           )}
           {!isAuthor && (
             <div className="relative">
-              <button onClick={() => setReportOpen((v) => !v)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
+              <button
+                onClick={() => setReportOpen((v) => !v)}
+                className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 21V4m0 0h10l-2 4 2 4H5" />
+                </svg>
                 举报
               </button>
               {reportOpen && (
@@ -1384,10 +1396,18 @@ export default function ToolDetailPage() {
           )}
           {isAuthor && (
             <>
-              <button onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
+              <button onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }} className={TOOL_UTILITY_ACTION_CLASS}>
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <circle cx="8.5" cy="10" r="1.5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 15-5-5L5 21" />
+                </svg>
                 换封面
               </button>
-              <button onClick={() => setDeleteOpen(true)} className="min-h-[32px] flex items-center hover:text-red-500 transition-colors">
+              <button onClick={() => setDeleteOpen(true)} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5M14 11v5" />
+                </svg>
                 删除
               </button>
             </>
