@@ -15,13 +15,13 @@ import { Badge } from "@/components/ui";
 
 // 首页首屏只展示三个已验证的正式工具，避免把 20+ 个同等权重的卡片塞给新用户。
 const FEATURED_TOOL_IDS = [
-  "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8", // 税后真实时薪计算器
+  "813b568c-adc6-4f3e-add3-46e76d9d14c4", // 税后真实时薪计算器 2.0
   "332fbf19-2537-4af3-a36c-e82829921f54", // 分账计算器
   "4c285279-d7cf-4852-a9e0-ed022b06dccf", // 2048 特别版
 ];
 
 const FEATURED_TOOL_LINKS: Record<string, string> = {
-  "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8": "/real-hourly-wage",
+  "813b568c-adc6-4f3e-add3-46e76d9d14c4": "/real-hourly-wage",
   "332fbf19-2537-4af3-a36c-e82829921f54": "/split-bill",
   "4c285279-d7cf-4852-a9e0-ed022b06dccf": "/2048",
 };
@@ -37,13 +37,12 @@ type FeaturedTool = {
 
 // 首屏静态兜底：即使公开工具接口还没返回，也能立即看到三个真实工具。
 const FEATURED_TOOL_FALLBACKS: Record<string, FeaturedTool> = {
-  "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8": {
-    id: "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8",
-    title: "税后真实时薪计算器",
-    description: "算清五险一金、个税后的真实时薪",
+  "813b568c-adc6-4f3e-add3-46e76d9d14c4": {
+    id: "813b568c-adc6-4f3e-add3-46e76d9d14c4",
+    title: "税后真实时薪计算器 2.0",
+    description: "4 个核心输入，先看税后时薪",
     category: "生活",
-    coverUrl:
-      "https://cvacrykzcppiflmvwwfe.supabase.co/storage/v1/object/public/tool-covers/public/c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8.png",
+    coverUrl: "/growth/hourly-wage-tool-result.png",
     thumbnailGradient: "linear-gradient(135deg, #fa8231, #f7b731)",
   },
   "332fbf19-2537-4af3-a36c-e82829921f54": {
@@ -68,7 +67,7 @@ const FEATURED_TOOL_FALLBACKS: Record<string, FeaturedTool> = {
 
 const FEATURED_IMAGE_OVERRIDES: Record<string, string> = {
   // 时薪页使用真实结果截图，而不是通用渐变封面。
-  "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8": "/growth/hourly-wage-tool-result.png",
+  "813b568c-adc6-4f3e-add3-46e76d9d14c4": "/growth/hourly-wage-tool-result.png",
 };
 
 const HOME_GROUPS = [

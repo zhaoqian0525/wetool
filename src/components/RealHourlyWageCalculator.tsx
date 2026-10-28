@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { trackGrowthEvent } from "@/lib/growth";
 
 const FULL_TOOL_URL =
-  "/tool/c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8?utm_source=hourly_wage&utm_medium=landing&utm_campaign=first_100";
+  "/tool/813b568c-adc6-4f3e-add3-46e76d9d14c4?utm_source=hourly_wage&utm_medium=landing&utm_campaign=first_100";
 
 function formatMoney(value: number) {
   return value.toLocaleString("zh-CN", {
