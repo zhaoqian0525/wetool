@@ -16,6 +16,12 @@ interface NavbarProps {
   actions?: React.ReactNode;
   /** Extra actions to show below the editor toolbar on mobile create page */
   mobileActions?: React.ReactNode;
+  /** 工具页移动端独立导航：返回地址 */
+  mobileBackHref?: string;
+  /** 工具页移动端独立导航：标题 */
+  mobileTitle?: string;
+  /** 需要时强制隐藏移动端底部 tab */
+  hideMobileBottomTabs?: boolean;
 }
 
 /* ---- SVG Icon Components ---- */
@@ -73,7 +79,14 @@ function useMobileTabs(userId: string | undefined) {
 
 /* ---- Component ---- */
 
-export default function Navbar({ children, actions, mobileActions }: NavbarProps) {
+export default function Navbar({
+  children,
+  actions,
+  mobileActions,
+  mobileBackHref,
+  mobileTitle,
+  hideMobileBottomTabs,
+}: NavbarProps) {
   const pathname = usePathname();
   const { user, loading, configured, signOut } = useAuth();
   // 管理员判断（M1.5）：与 api-auth.ts 的 ADMIN_EMAILS 保持一致
@@ -225,7 +238,8 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
   /* ======== Mobile Bottom Tab Bar ======== */
 
   // Hide bottom tab bar on the create page (auth page also gets a simplified one)
-  const hideBottomTabs = pathname === "/auth";
+  const hideBottomTabs =
+    hideMobileBottomTabs || pathname === "/auth" || pathname.startsWith("/tool/");
 
   const mobileBottomNav = !hideBottomTabs ? (
     <nav
@@ -257,8 +271,23 @@ export default function Navbar({ children, actions, mobileActions }: NavbarProps
   ) : null;
 
   /* ======== Mobile Top Bar (create page only) ======== */
-  const mobileTopBar =
-    pathname === "/create" ? (
+  const mobileTopBar = mobileBackHref ? (
+    <header className="lg:hidden flex items-center gap-2 h-12 px-3 bg-white border-b border-gray-200 flex-shrink-0">
+      <Link
+        href={mobileBackHref}
+        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+        aria-label="返回"
+      >
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+      </Link>
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">
+        {mobileTitle || "工具"}
+      </span>
+      {mobileActions && <div className="flex flex-shrink-0 items-center gap-1.5">{mobileActions}</div>}
+    </header>
+  ) : pathname === "/create" ? (
       <header className="lg:hidden flex items-center justify-between h-12 px-4 bg-white border-b border-gray-200 flex-shrink-0">          <Link href="/" className="flex items-center gap-1.5 text-base font-bold text-indigo-600">
             <WewooMark className="w-6 h-6" />
             微坞

@@ -25,8 +25,6 @@ import ToolInstallButton from "@/components/ToolInstallButton";
 import { Modal, Badge } from "@/components/ui";
 import CapabilityBadges from "@/components/CapabilityBadges";
 
-const TIME_WAGE_TOOL_ID = "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8";
-
 function renderReviewContent(content: string) {
   const parts = content.split(/(@[\w\u4e00-\u9fa5][\w\u4e00-\u9fa5-]*)/g);
   return parts.map((part, i) =>
@@ -89,6 +87,7 @@ export default function ToolDetailPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState("");
+  const [reviewFormOpen, setReviewFormOpen] = useState(false);
   // v1.14.0 评论系统完善：排序 + 回复
   const [reviewSort, setReviewSort] = useState<"latest" | "hot">("latest");
   const [replyingTo, setReplyingTo] = useState<Review | null>(null);
@@ -370,6 +369,7 @@ export default function ToolDetailPage() {
       setNewRating(0);
       setNewContent("");
       setNewImageUrl(null);
+      setReviewFormOpen(false);
       // v2.6.0 通知：评论了别人的工具时通知作者
       if (tool?.authorId && tool.authorId !== user.id) {
         authedFetch("/api/notifications", {
@@ -928,8 +928,34 @@ export default function ToolDetailPage() {
 
   return (
     <ToolPageErrorBoundary>
-    <div className="min-h-screen bg-page pb-20 lg:pb-0">
+    <div className="min-h-screen bg-page pb-0">
       <Navbar
+        mobileBackHref="/"
+        mobileTitle={tool.title}
+        mobileActions={
+          <>
+            <button
+              onClick={handleShare}
+              aria-label="分享"
+              className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v12M8 7l4-4 4 4M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4" />
+              </svg>
+            </button>
+            <button
+              onClick={() => document.getElementById("tool-utility")?.scrollIntoView({ behavior: "smooth" })}
+              aria-label="更多"
+              className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" />
+              </svg>
+            </button>
+          </>
+        }
         children={
           <Link
             href="/"
@@ -1068,22 +1094,6 @@ export default function ToolDetailPage() {
           </div>
         ) : (
         <div className="flex flex-col" style={{ height: "calc(100dvh - 200px)", minHeight: "400px" }}>
-          {tool.id === TIME_WAGE_TOOL_ID && (
-            <div className="mb-2.5 flex flex-col gap-2 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-bold text-indigo-900">想先快速算一下？</p>
-                <p className="mt-0.5 text-xs leading-5 text-indigo-700">
-                  4 个输入，30 秒看税前时间时薪；完整版含五险一金和个税。
-                </p>
-              </div>
-              <Link
-                href="/real-hourly-wage?utm_source=tool_detail&utm_medium=quick_entry&utm_campaign=first_100"
-                className="inline-flex min-h-[40px] flex-shrink-0 items-center justify-center rounded-xl bg-white px-4 text-xs font-bold text-indigo-700 shadow-sm transition hover:bg-indigo-100"
-              >
-                快速估算
-              </Link>
-            </div>
-          )}
           {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
           <div className="pb-2.5 lg:flex lg:items-center lg:gap-2">
             <div className="flex items-center gap-1.5 flex-wrap lg:flex-1 lg:min-w-0">
@@ -1165,21 +1175,6 @@ export default function ToolDetailPage() {
                 </svg>
               )}
             </button>
-            <button
-              onClick={() => {
-                trackGrowthEvent("share_click", { toolId: tool?.id || id, path: `/tool/${id}` });
-                setQrOpen(true);
-              }}
-              title="二维码"
-              className="inline-flex items-center justify-center gap-1 h-11 w-11 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                <path d="M14 14h4v4h-4zM19 19h2v2h-2zM14 21h2M21 14v2" strokeLinecap="round" />
-              </svg>
-            </button>
             <Link
               href={`/create?source_tool_id=${tool.id}`}
               onClick={() => trackGrowthEvent("remix_click", { toolId: tool.id, path: `/tool/${tool.id}` })}
@@ -1214,7 +1209,11 @@ export default function ToolDetailPage() {
             <WechatGuide toolUrl={`https://we-woo.net/tool/${id}`}>
               <div
                 className={`${fullscreen ? "fixed inset-0 z-50 bg-black" : "relative flex-1 min-h-0 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200"}`}
-                style={fullscreen ? { height: "100dvh" } : undefined}
+                style={
+                  fullscreen
+                    ? { height: "100dvh" }
+                    : { minHeight: "min(60dvh, 620px)" }
+                }
               >
                 {!docReady && <IframeSkeleton />}
                 {fullscreen && !appMode && (
@@ -1283,7 +1282,16 @@ export default function ToolDetailPage() {
         </div>
 
         {/* v2.23.0：使用记录 / 举报 / 换封面 / 删除 统一移到工具下方 */}
-        <div className="mt-4 flex items-center gap-4 text-xs text-gray-400 flex-wrap">
+        <div id="tool-utility" className="mt-4 flex items-center gap-4 text-xs text-gray-400 flex-wrap scroll-mt-24">
+          <button
+            onClick={() => {
+              trackGrowthEvent("share_click", { toolId: tool?.id || id, path: `/tool/${id}` });
+              setQrOpen(true);
+            }}
+            className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors"
+          >
+            🔳 二维码
+          </button>
           {user && (
             <button onClick={() => setHistoryOpen(true)} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
               📋 使用记录
@@ -1386,7 +1394,26 @@ export default function ToolDetailPage() {
 
           {/* Write review */}
           {authLoading ? (
-            <div className="bg-gray-50 rounded-2xl p-5 mb-6 h-28 animate-pulse" aria-hidden />
+            <div className="bg-gray-50 rounded-2xl p-4 mb-6 h-12 animate-pulse" aria-hidden />
+          ) : reviews.length === 0 && !reviewFormOpen ? (
+            <div className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
+              <p className="text-sm text-gray-500">还没有评价，成为第一个分享体验的人。</p>
+              {user ? (
+                <button
+                  onClick={() => setReviewFormOpen(true)}
+                  className="min-h-[36px] flex-shrink-0 rounded-lg bg-indigo-50 px-3 text-xs font-semibold text-indigo-600 hover:bg-indigo-100 transition-colors"
+                >
+                  写评价
+                </button>
+              ) : (
+                <Link
+                  href={`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`}
+                  className="min-h-[36px] flex-shrink-0 rounded-lg bg-indigo-50 px-3 text-xs font-semibold text-indigo-600 hover:bg-indigo-100 transition-colors"
+                >
+                  登录后评价
+                </Link>
+              )}
+            </div>
           ) : user ? (
             <div className="bg-white rounded-2xl p-4 sm:p-5 mb-6 shadow-sm border border-gray-100">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">写评价</h3>
@@ -1453,13 +1480,7 @@ export default function ToolDetailPage() {
                 {submitting ? "提交中..." : "发布评价"}
               </button>
             </div>
-          ) : (
-            <div className="bg-gray-50 rounded-2xl p-5 mb-6 text-center">
-              <p className="text-sm text-gray-500">
-                <Link href={`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`} className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0">登录</Link>后即可发表评价
-              </p>
-            </div>
-          )}
+          ) : null}
 
           {/* Review list */}
           {reviews.length > 0 && (
