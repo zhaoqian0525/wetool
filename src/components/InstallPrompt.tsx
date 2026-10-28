@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 /**
  * v1.8.6 安装到主屏幕提示
@@ -9,11 +10,16 @@ import { useEffect, useState } from "react";
  * - 用户关闭后不再打扰（localStorage 记录）；已安装（standalone）不显示
  */
 export default function InstallPrompt() {
+  const pathname = usePathname();
   const [deferredPrompt, setDeferredPrompt] = useState<{ prompt?: () => Promise<void> } | null>(null);
   const [show, setShow] = useState(false);
   const [isIos, setIsIos] = useState(false);
 
   useEffect(() => {
+    setShow(false);
+    if (pathname.startsWith("/tool/") || pathname === "/create" || pathname === "/auth") {
+      return;
+    }
     try {
       if (localStorage.getItem("wewoo-install-dismissed")) return;
     } catch {
@@ -26,20 +32,29 @@ export default function InstallPrompt() {
     if (standalone) return;
 
     const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    let showTimer: ReturnType<typeof setTimeout> | undefined;
+    const scheduleShow = () => {
+      showTimer = setTimeout(() => setShow(true), 10000);
+    };
     if (iOS) {
       setIsIos(true);
-      setShow(true);
-      return;
+      scheduleShow();
+      return () => {
+        if (showTimer) clearTimeout(showTimer);
+      };
     }
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as unknown as { prompt?: () => Promise<void> });
-      setShow(true);
+      scheduleShow();
     };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-  }, []);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      if (showTimer) clearTimeout(showTimer);
+    };
+  }, [pathname]);
 
   const dismiss = () => {
     setShow(false);

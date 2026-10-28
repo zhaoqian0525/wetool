@@ -1,6 +1,6 @@
 {
-  "version": "2.35.1",
+  "version": "2.36.0",
   "buildDate": "2026-10-28",
-  "buildTimestamp": "2026-10-28T20:00:34+08:00",
-  "description": "v2.35.1：首页分组按热门优先排序"
+  "buildTimestamp": "2026-10-28T20:14:11+08:00",
+  "description": "v2.36.0：工具页重复入口收口、全屏无障碍与安装提示延后"
 }

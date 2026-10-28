@@ -117,6 +117,7 @@ export default function ToolDetailPage() {
   const [retryNonce, setRetryNonce] = useState(0);
   const readyRef = useRef<Record<string, boolean>>({});
   const [fullscreen, setFullscreen] = useState(false);
+  const fullscreenButtonRef = useRef<HTMLButtonElement>(null);
   // v1.9 修复：仅单工具 PWA 入口（?app=1）自动全屏；
   // 全站 PWA 入口（standalone 但无 ?app=1）正常显示详情页，不再自动全屏
   const [appMode, setAppMode] = useState(false);
@@ -154,6 +155,9 @@ export default function ToolDetailPage() {
     });
     fullscreenScrollRef.current = y ?? 0;
     setFullscreen(true);
+    setTimeout(() => {
+      document.getElementById("tool-iframe")?.focus();
+    }, 50);
   }, []);
   const exitFullscreen = useCallback(() => {
     setFullscreen(false);
@@ -166,6 +170,7 @@ export default function ToolDetailPage() {
           } catch { /* ignore */ }
         }
         window.scrollTo({ top: pageScrollRef.current, left: 0, behavior: "auto" });
+        fullscreenButtonRef.current?.focus();
       });
     });
   }, []);
@@ -929,6 +934,7 @@ export default function ToolDetailPage() {
   return (
     <ToolPageErrorBoundary>
     <div className="min-h-screen bg-page pb-0">
+      <div inert={fullscreen} aria-hidden={fullscreen}>
       <Navbar
         mobileBackHref="/"
         mobileTitle={tool.title}
@@ -968,6 +974,7 @@ export default function ToolDetailPage() {
           </Link>
         }
       />
+      </div>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* 已下架工具：作者可见提示（M1.5） */}
@@ -977,9 +984,9 @@ export default function ToolDetailPage() {
           </div>
         )}
         {/* Tool Header（v1.9.4 压缩：标题与徽章同行、描述两行截断、改编自并入 meta 行） */}
-        <div className="mb-5 sm:mb-6">
+        <div className="mb-5 sm:mb-6" inert={fullscreen} aria-hidden={fullscreen}>
           <div className="flex items-start justify-between gap-2 flex-wrap mb-1.5">
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug flex-1 min-w-0">
+            <h1 className="sr-only sm:not-sr-only text-lg sm:text-xl font-bold text-gray-900 leading-snug flex-1 min-w-0">
               {tool.title}
             </h1>
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -1095,7 +1102,7 @@ export default function ToolDetailPage() {
         ) : (
         <div className="flex flex-col" style={{ height: "calc(100dvh - 200px)", minHeight: "400px" }}>
           {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
-          <div className="pb-2.5 lg:flex lg:items-center lg:gap-2">
+          <div className="pb-2.5 lg:flex lg:items-center lg:gap-2" inert={fullscreen} aria-hidden={fullscreen}>
             <div className="flex items-center gap-1.5 flex-wrap lg:flex-1 lg:min-w-0">
             {authLoading ? (
               <div className="h-11 w-24 rounded-xl bg-gray-100 animate-pulse" aria-hidden />
@@ -1156,14 +1163,27 @@ export default function ToolDetailPage() {
                 </button>
               </>
             ) : (
-              <Link href={`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`} className="inline-flex items-center gap-1 h-11 px-3 bg-white text-gray-500 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50">
-                登录
-              </Link>
+              <>
+                <button
+                  onClick={() => router.push(`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`)}
+                  title="登录后点赞"
+                  className="inline-flex items-center gap-1 h-11 px-2.5 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
+                >
+                  🤍
+                </button>
+                <button
+                  onClick={() => router.push(`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`)}
+                  title="登录后收藏"
+                  className="inline-flex items-center gap-1 h-11 px-2.5 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
+                >
+                  ☆
+                </button>
+              </>
             )}
             <button
               onClick={handleShare}
               title="分享"
-              className="inline-flex items-center justify-center gap-1 h-11 w-11 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
+              className="hidden lg:inline-flex items-center justify-center gap-1 h-11 w-11 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
             >
               {shareCopied ? (
                 <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1193,6 +1213,7 @@ export default function ToolDetailPage() {
             </div>
             <div className="flex items-center gap-2 mt-2 lg:mt-0 lg:flex-shrink-0">
             <button
+              ref={fullscreenButtonRef}
               onClick={enterFullscreen}
               className="inline-flex h-12 flex-1 items-center justify-center gap-1 rounded-xl brand-gradient px-5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 lg:flex-none"
             >
@@ -1253,6 +1274,7 @@ export default function ToolDetailPage() {
                     key={iframeInstanceKey}
                     {...(isWechat ? { src: previewBlobUrl } : { srcDoc: previewSrcDoc })}
                     title={tool.title}
+                    tabIndex={-1}
                     className="absolute inset-0 w-full h-full border-0"
                     sandbox={blobSandbox}
                     onLoad={() => {
@@ -1277,12 +1299,12 @@ export default function ToolDetailPage() {
         )}
 
         {/* v2.21.0：能力说明移到工具下方，压缩顶部信息密度 */}
-        <div className="mt-6">
+        <div className="mt-6" inert={fullscreen} aria-hidden={fullscreen}>
           <CapabilityBadges code={tool.code ?? ""} showEmpty />
         </div>
 
         {/* v2.23.0：使用记录 / 举报 / 换封面 / 删除 统一移到工具下方 */}
-        <div id="tool-utility" className="mt-4 flex items-center gap-4 text-xs text-gray-400 flex-wrap scroll-mt-24">
+        <div id="tool-utility" className="mt-4 flex items-center gap-4 text-xs text-gray-400 flex-wrap scroll-mt-24" inert={fullscreen} aria-hidden={fullscreen}>
           <button
             onClick={() => {
               trackGrowthEvent("share_click", { toolId: tool?.id || id, path: `/tool/${id}` });
@@ -1337,7 +1359,7 @@ export default function ToolDetailPage() {
 
         {/* Related tools */}
         {related.length > 0 && (
-          <section className="mt-12 border-t border-gray-200 pt-8">
+          <section className="mt-12 border-t border-gray-200 pt-8" inert={fullscreen} aria-hidden={fullscreen}>
             <h2 className="text-lg font-bold text-gray-900 mb-4">相关工具</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {related.map((rt) => (
@@ -1371,7 +1393,7 @@ export default function ToolDetailPage() {
         )}
 
         {/* Reviews Section */}
-        <section className="mt-12 border-t border-gray-200 pt-8">
+        <section className="mt-12 border-t border-gray-200 pt-8" inert={fullscreen} aria-hidden={fullscreen}>
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-lg font-bold text-gray-900">用户评价</h2>
             {avgRating.count > 0 && (
@@ -1691,12 +1713,7 @@ export default function ToolDetailPage() {
                   );
                 })}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-3xl mb-2">💬</p>
-              <p className="text-sm text-gray-400">还没有评价，来第一个评价吧</p>
-            </div>
-          )}
+          ) : null}
         </section>
       </main>
     </div>
