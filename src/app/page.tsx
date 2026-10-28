@@ -71,6 +71,13 @@ const FEATURED_IMAGE_OVERRIDES: Record<string, string> = {
   "c800bd9b-09bb-4dd0-a1f0-ac67f6e3a7a8": "/growth/hourly-wage-tool-result.png",
 };
 
+const HOME_GROUPS = [
+  { key: "效率计算", icon: "🔧", categories: ["工程计算"] },
+  { key: "生活记录", icon: "🏡", categories: ["生活", "旅行"] },
+  { key: "课堂工具", icon: "📚", categories: ["教育"] },
+  { key: "小游戏", icon: "🎮", categories: ["小游戏"] },
+];
+
 
 
 // ---- Component ----
@@ -82,7 +89,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const [search, setSearch] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
   const [sortBy, setSortBy] = useState<"latest" | "popular" | "recommended">("popular");
   const [myTools, setMyTools] = useState<Tool[]>([]);
@@ -276,6 +283,18 @@ export default function HomePage() {
       .map((id) => byId.get(id) ?? FEATURED_TOOL_FALLBACKS[id])
       .filter((tool): tool is FeaturedTool => Boolean(tool));
   }, [tools]);
+
+  const groupedHome = useMemo(() => {
+    if (isSearching || activeCategory !== "全部" || sortBy === "recommended") {
+      return null;
+    }
+    return HOME_GROUPS
+      .map((group) => ({
+        ...group,
+        tools: filtered.filter((tool) => group.categories.includes(tool.category)),
+      }))
+      .filter((group) => group.tools.length > 0);
+  }, [filtered, isSearching, activeCategory, sortBy]);
 
   const primaryFeaturedHref = featuredTools[0]
     ? FEATURED_TOOL_LINKS[featuredTools[0].id] || `/tool/${featuredTools[0].id}`
@@ -569,7 +588,7 @@ export default function HomePage() {
       )}
 
       {/* 分类 + 排序（v1.9.5：与广场内容在一起，位于最近使用/我的工具下方） */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-1 pb-3">
+      <section className="sticky top-0 z-20 max-w-6xl mx-auto px-4 sm:px-6 pt-2 pb-3 bg-gray-50/95 backdrop-blur-md lg:static lg:bg-transparent lg:backdrop-blur-none">
         <h2 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
           <span>{isSearching ? "🔍" : "🧩"}</span>
           {isSearching ? "搜索结果" : "广场"}
@@ -646,19 +665,37 @@ export default function HomePage() {
           ) : (
             <EmptyState category={activeCategory} search={search} />
           )
+        ) : groupedHome ? (
+          <div className="space-y-8">
+            {groupedHome.map((group) => (
+              <section key={group.key}>
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <span>{group.icon}</span>
+                  {group.key}
+                  <span className="text-xs font-normal text-gray-400">· {group.tools.length} 个</span>
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                  {group.tools.map((tool) => (
+                    <ToolCard
+                      key={tool.id}
+                      tool={tool}
+                      viewCount={viewCounts[tool.id] ?? tool.viewCount}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
         ) : (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {filtered.map((tool, idx) => (
-                <ToolCard
-                  key={tool.id}
-                  tool={tool}
-                  viewCount={viewCounts[tool.id] ?? tool.viewCount}
-                  rank={sortBy === "popular" && !isSearching ? idx + 1 : undefined}
-                />
-              ))}
-            </div>
-          </>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {filtered.map((tool) => (
+              <ToolCard
+                key={tool.id}
+                tool={tool}
+                viewCount={viewCounts[tool.id] ?? tool.viewCount}
+              />
+            ))}
+          </div>
         )}
       </section>
       </main>
@@ -708,7 +745,7 @@ function FeaturedToolCard({ tool, href }: { tool: FeaturedTool; href: string }) 
   );
 }
 
-const ToolCard = memo(function ToolCard({ tool, viewCount, rank }: { tool: Tool; viewCount?: number; rank?: number }) {
+const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewCount?: number }) {
   return (
     <Link
       href={`/tool/${tool.id}`}
@@ -716,15 +753,6 @@ const ToolCard = memo(function ToolCard({ tool, viewCount, rank }: { tool: Tool;
     >
       {/* Thumbnail: 纯净封面，不叠加任何徽章（v1.9.2） */}
       <div className="relative aspect-[4/3] overflow-hidden">
-        {rank != null && rank <= 3 && (
-          <div
-            className={`absolute top-2 left-2 z-10 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white shadow ${
-              rank === 1 ? "bg-amber-500" : rank === 2 ? "bg-slate-400" : "bg-orange-700"
-            }`}
-          >
-            {rank}
-          </div>
-        )}
         {tool.coverUrl ? (
           <Image
             src={tool.coverUrl}
@@ -751,7 +779,7 @@ const ToolCard = memo(function ToolCard({ tool, viewCount, rank }: { tool: Tool;
         </h3>
         <div className="flex items-center justify-between gap-2 mt-1.5">
           <p className="text-xs text-gray-500 truncate">@{tool.author}</p>
-          {viewCount !== undefined && viewCount > 0 && (
+          {viewCount !== undefined && viewCount >= 100 && (
             <span className="flex-shrink-0 text-[11px] text-gray-400 flex items-center gap-0.5">
               👁 {viewCount > 999 ? (viewCount / 1000).toFixed(1) + "k" : viewCount}
             </span>
@@ -779,7 +807,12 @@ function GuideBanner() {
   useEffect(() => {
     try {
       const seen = localStorage.getItem(bannerKey);
-      if (seen) setDismissed(true);
+      if (seen) {
+        const seenAt = Number(seen);
+        if (Number.isFinite(seenAt) && Date.now() - seenAt < 7 * 24 * 60 * 60 * 1000) {
+          setDismissed(true);
+        }
+      }
     } catch {
       // ignore
     }
@@ -787,7 +820,7 @@ function GuideBanner() {
 
   const dismiss = () => {
     try {
-      localStorage.setItem(bannerKey, "1");
+      localStorage.setItem(bannerKey, String(Date.now()));
     } catch {
       // ignore
     }
