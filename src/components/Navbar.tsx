@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { authedFetch } from "@/lib/api-client";
 import { WewooMark } from "@/components/WewooLogo";
@@ -67,7 +68,7 @@ function UserIcon({ active }: { active: boolean }) {
 function useMobileTabs(userId: string | undefined) {
   return [
     { path: "/", label: "首页", icon: HomeIcon, exact: true },
-    { path: "/create?new=1", label: "创建", icon: CreateIcon, exact: true },
+    { path: "/create", href: "/create?new=1", label: "创建", icon: CreateIcon, exact: true },
     {
       path: userId ? `/user/${userId}` : "/auth",
       label: "我的",
@@ -98,6 +99,11 @@ export default function Navbar({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [unread, setUnread] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const tabs = useMobileTabs(user?.id);
 
@@ -254,7 +260,8 @@ export default function Navbar({
           return (
             <Link
               key={tab.path}
-              href={tab.path}
+                  href={"href" in tab ? tab.href : tab.path}
+                  aria-current={active ? "page" : undefined}
               className={`flex flex-col items-center justify-center flex-1 min-h-[44px] py-1 transition-colors ${
                 active ? "text-indigo-600" : "text-gray-500 hover:text-gray-700"
               }`}
@@ -309,7 +316,7 @@ export default function Navbar({
             <div className="flex items-center gap-2">
               <Link
                 href="/notifications"
-                className="relative min-w-[32px] min-h-[32px] flex items-center justify-center text-gray-500 hover:text-indigo-600 transition-colors"
+                className="relative flex min-h-[44px] min-w-[44px] items-center justify-center text-gray-500 hover:text-indigo-600 transition-colors"
                 aria-label="通知"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -322,7 +329,7 @@ export default function Navbar({
                   </span>
                 )}
               </Link>
-              <Link href={`/user/${user.id}`} className="flex items-center gap-1.5 min-h-[32px]">
+              <Link href={`/user/${user.id}`} className="flex min-h-[44px] items-center gap-1.5">
                 <Avatar
                   url={user.user_metadata?.avatar_url as string | undefined}
                   name={user.user_metadata?.name || user.email || "U"}
@@ -334,7 +341,7 @@ export default function Navbar({
               </Link>
               <button
                 onClick={() => signOut()}
-                className="text-xs text-gray-400 hover:text-red-500 min-w-[44px] min-h-[32px] flex items-center justify-center"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center text-xs text-gray-400 hover:text-red-500"
               >
                 退出
               </button>
@@ -342,7 +349,7 @@ export default function Navbar({
           ) : (
             <Link
               href="/auth"
-              className="min-h-[32px] flex items-center px-4 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:opacity-90 active:scale-95 transition-all"
+              className="flex min-h-[44px] items-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-4 text-sm font-medium text-white transition-all hover:opacity-90 active:scale-95"
             >
               登录
             </Link>
@@ -355,7 +362,9 @@ export default function Navbar({
     <>
       {desktopNav}
       {mobileTopBar}
-      {mobileBottomNav}
+      {mounted && typeof document !== "undefined"
+        ? createPortal(mobileBottomNav, document.body)
+        : mobileBottomNav}
     </>
   );
 }

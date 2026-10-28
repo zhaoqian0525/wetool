@@ -1,6 +1,6 @@
 {
-  "version": "2.38.1",
+  "version": "2.39.0",
   "buildDate": "2026-10-28",
-  "buildTimestamp": "2026-10-28T20:55:29+08:00",
-  "description": "v2.38.1：工具详情下方信息分区重排"
+  "buildTimestamp": "2026-10-28T21:07:47+08:00",
+  "description": "v2.39.0：移动首页减负、单行筛选、工具卡信息重排"
 }
