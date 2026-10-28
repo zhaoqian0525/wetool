@@ -335,6 +335,12 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-page pb-20 lg:pb-0">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-indigo-600 focus:shadow-lg"
+      >
+        跳到主要内容
+      </a>
       <Navbar
         children={
           <span className="hidden sm:inline text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
@@ -363,7 +369,7 @@ export default function HomePage() {
       />
 
       {/* Hero / Search / Category Filter */}
-      <main>
+      <main id="main-content" tabIndex={-1}>
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
         {!isSearching ? (
           authLoading ? (
@@ -401,9 +407,9 @@ export default function HomePage() {
             <div className="relative">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-bold tracking-[0.18em] text-white/65">微坞 WeWoo</p>
+                  <p className="text-[11px] font-bold tracking-[0.18em] text-white/80">微坞 WeWoo</p>
                   <h1 className="mt-1 text-[26px] font-black leading-tight sm:text-4xl">不用下载，打开就用</h1>
-                  <p className="mt-1.5 max-w-xl text-sm leading-5 text-white/80 sm:text-base sm:leading-6">
+                  <p className="mt-1.5 max-w-xl text-sm leading-5 text-white/90 sm:text-base sm:leading-6">
                     AI 小工具集市：算、记、玩都能用，不满意还能一句话改成自己的
                   </p>
                 </div>
@@ -434,7 +440,7 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="/create?new=1"
-                  className="inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-white/80 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white"
+                  className="inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-white/95 underline decoration-white/50 underline-offset-4 transition-colors hover:text-white"
                 >
                   想自己做？开始创作 →
                 </Link>
@@ -519,7 +525,7 @@ export default function HomePage() {
               <button
                 onClick={() => setAuthBannerDismissed(true)}
                 aria-label="关闭提示"
-                className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center text-white/80 hover:text-white"
               >
                 ✕
               </button>
@@ -698,7 +704,7 @@ export default function HomePage() {
                 <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
                   <span>{group.icon}</span>
                   {group.key}
-                  <span className="text-xs font-normal text-gray-400">· {group.tools.length} 个</span>
+                  <span className="text-xs font-normal text-gray-500">· {group.tools.length} 个</span>
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                   {group.tools.map((tool) => (
@@ -731,7 +737,7 @@ export default function HomePage() {
         <p className="text-xs text-gray-500">
           微坞 WeWoo · 像发朋友圈一样分享你做的 AI 小工具
         </p>
-        <p className="text-[10px] text-gray-400 mt-1">
+        <p className="text-[10px] text-gray-500 mt-1">
           v{versionInfo.version} · {versionInfo.buildDate}
         </p>
       </footer>
@@ -811,7 +817,7 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
           )}
           {tool.isDownloadable && (
             <Badge tone="amber" className="flex-shrink-0 text-[10px] px-1.5 py-0.5 border border-amber-200">
-              💻 下载
+              下载
             </Badge>
           )}
         </h3>
@@ -823,8 +829,12 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <p className="text-xs text-gray-500 truncate">@{authorLabel}</p>
           {viewCount !== undefined && viewCount >= 100 && (
-            <span className="flex-shrink-0 text-[11px] text-gray-400 flex items-center gap-0.5">
-              👁 {viewCount > 999 ? (viewCount / 1000).toFixed(1) + "k" : viewCount}
+            <span className="flex-shrink-0 text-xs text-gray-500 flex items-center gap-0.5">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" />
+                <circle cx="12" cy="12" r="2.5" />
+              </svg>
+              {viewCount > 999 ? (viewCount / 1000).toFixed(1) + "k" : viewCount}
             </span>
           )}
         </div>
