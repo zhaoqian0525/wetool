@@ -70,13 +70,6 @@ const FEATURED_IMAGE_OVERRIDES: Record<string, string> = {
   "813b568c-adc6-4f3e-add3-46e76d9d14c4": "/growth/hourly-wage-tool-result.png",
 };
 
-const HOME_GROUPS = [
-  { key: "生活记录", icon: "🏡", categories: ["生活", "旅行"] },
-  { key: "小游戏", icon: "🎮", categories: ["小游戏"] },
-  { key: "效率计算", icon: "🔧", categories: ["工程计算"] },
-  { key: "课堂工具", icon: "📚", categories: ["教育"] },
-];
-
 const HOME_CATEGORY_LABELS: Record<string, string> = {
   全部: "全部",
   旅行: "旅行",
@@ -103,7 +96,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const [search, setSearch] = useState("");
-  const [searchOpen, setSearchOpen] = useState(true);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const [sortBy, setSortBy] = useState<"latest" | "popular" | "recommended">("popular");
@@ -299,22 +292,9 @@ export default function HomePage() {
       .filter((tool): tool is FeaturedTool => Boolean(tool));
   }, [tools]);
 
-  const groupedHome = useMemo(() => {
-    if (isSearching || activeCategory !== "全部" || sortBy === "recommended") {
-      return null;
-    }
-    return HOME_GROUPS
-      .map((group) => ({
-        ...group,
-        tools: filtered.filter((tool) => group.categories.includes(tool.category)),
-      }))
-      .filter((group) => group.tools.length > 0);
-  }, [filtered, isSearching, activeCategory, sortBy]);
-
   const primaryFeaturedHref = featuredTools[0]
     ? FEATURED_TOOL_LINKS[featuredTools[0].id] || `/tool/${featuredTools[0].id}`
     : "/real-hourly-wage";
-  const primaryFeaturedLabel = featuredTools[0]?.title.replace(/\s*2\.0$/, "") || "热门工具";
 
   // 常用工具（从所有工具中筛选 pinned 的 ID）
   const pinnedTools = useMemo(() => {
@@ -401,15 +381,15 @@ export default function HomePage() {
               </button>
             </div>
           ) : (
-          <div className="relative overflow-hidden rounded-3xl brand-gradient px-4 py-5 text-white shadow-lg shadow-indigo-200/40 sm:px-8 sm:py-7">
+          <div className="relative overflow-hidden rounded-3xl brand-gradient px-5 py-6 text-white shadow-xl shadow-indigo-200/50 sm:px-8 sm:py-8">
             <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-cyan-300/20 blur-3xl" />
             <div className="relative">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-bold tracking-[0.18em] text-white/80">微坞 WeWoo</p>
-                  <h1 className="mt-1 text-[26px] font-black leading-tight sm:text-4xl">不用下载，打开就用</h1>
-                  <p className="mt-1.5 max-w-xl text-sm leading-5 text-white/90 sm:text-base sm:leading-6">
+                  <p className="text-[11px] font-bold tracking-[0.18em] text-white/65">微坞 WeWoo</p>
+                  <h1 className="mt-1 text-2xl font-black leading-tight sm:text-4xl">不用下载，打开就用</h1>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-white/80 sm:text-base">
                     AI 小工具集市：算、记、玩都能用，不满意还能一句话改成自己的
                   </p>
                 </div>
@@ -436,15 +416,27 @@ export default function HomePage() {
                   href={primaryFeaturedHref}
                   className="inline-flex min-h-[44px] items-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-50"
                 >
-                  试试：{primaryFeaturedLabel}
+                  先试一个热门工具
                 </Link>
                 <Link
                   href="/create?new=1"
-                  className="inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-white/95 underline decoration-white/50 underline-offset-4 transition-colors hover:text-white"
+                  className="inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-white/80 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white"
                 >
                   想自己做？开始创作 →
                 </Link>
               </div>
+
+              {featuredTools.length > 0 && (
+                <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                  {featuredTools.map((tool) => (
+                    <FeaturedToolCard
+                      key={tool.id}
+                      tool={tool}
+                      href={FEATURED_TOOL_LINKS[tool.id] || `/tool/${tool.id}`}
+                    />
+                  ))}
+                </div>
+              )}
 
             </div>
           </div>
@@ -492,20 +484,6 @@ export default function HomePage() {
           </div>
         )}
       </section>
-
-      {!isSearching && featuredTools.length > 0 && (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-3">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {featuredTools.map((tool) => (
-              <FeaturedRecommendationCard
-                key={tool.id}
-                tool={tool}
-                href={FEATURED_TOOL_LINKS[tool.id] || `/tool/${tool.id}`}
-              />
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* v1.9 PWA 全站入口登录状态提示（仅 standalone 且未登录） */}
       {!isSearching && standalone && !user && !authLoading && !authBannerDismissed && (
@@ -697,27 +675,6 @@ export default function HomePage() {
           ) : (
             <EmptyState category={activeCategory} search={search} />
           )
-        ) : groupedHome ? (
-          <div className="space-y-8">
-            {groupedHome.map((group) => (
-              <section key={group.key}>
-                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <span>{group.icon}</span>
-                  {group.key}
-                  <span className="text-xs font-normal text-gray-500">· {group.tools.length} 个</span>
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                  {group.tools.map((tool) => (
-                    <ToolCard
-                      key={tool.id}
-                      tool={tool}
-                      viewCount={viewCounts[tool.id] ?? tool.viewCount}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {filtered.map((tool) => (
@@ -747,29 +704,29 @@ export default function HomePage() {
 
 // ---- ToolCard — React.memo 防止不必要的重渲染 ----
 
-function FeaturedRecommendationCard({ tool, href }: { tool: FeaturedTool; href: string }) {
+function FeaturedToolCard({ tool, href }: { tool: FeaturedTool; href: string }) {
   const coverUrl = FEATURED_IMAGE_OVERRIDES[tool.id] || tool.coverUrl;
   return (
     <Link
       href={href}
-      className="group flex w-[220px] flex-shrink-0 items-center gap-3 rounded-2xl border border-gray-200 bg-white p-2.5 shadow-sm transition-colors hover:bg-gray-50"
+      className="group flex min-w-0 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-2.5 transition-colors hover:bg-white/15"
     >
-      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100">
+      <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-white/10">
         {coverUrl ? (
           <Image
             src={coverUrl}
             alt={tool.title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="56px"
+            sizes="48px"
           />
         ) : (
           <div className="absolute inset-0" style={{ background: tool.thumbnailGradient }} />
         )}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-gray-900">{tool.title}</p>
-        <p className="mt-0.5 line-clamp-1 text-[11px] text-gray-500">
+        <p className="truncate text-sm font-bold text-white">{tool.title}</p>
+        <p className="truncate text-[11px] text-white/65">
           {tool.description || tool.category}
         </p>
       </div>
@@ -777,14 +734,7 @@ function FeaturedRecommendationCard({ tool, href }: { tool: FeaturedTool; href: 
   );
 }
 
-function getAuthorLabel(author: string) {
-  if (author === "1015790590") return "微坞官方";
-  if (/^\d{5,}$/.test(author)) return "创作者";
-  return author;
-}
-
 const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewCount?: number }) {
-  const authorLabel = getAuthorLabel(tool.author);
   return (
     <Link
       href={`/tool/${tool.id}`}
@@ -827,7 +777,7 @@ const ToolCard = memo(function ToolCard({ tool, viewCount }: { tool: Tool; viewC
           </p>
         )}
         <div className="mt-1.5 flex items-center justify-between gap-2">
-          <p className="text-xs text-gray-500 truncate">@{authorLabel}</p>
+          <p className="text-xs text-gray-500 truncate">@{tool.author}</p>
           {viewCount !== undefined && viewCount >= 100 && (
             <span className="flex-shrink-0 text-xs text-gray-500 flex items-center gap-0.5">
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
