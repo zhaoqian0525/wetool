@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import Avatar from "@/components/Avatar";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
+import ThemeToggle from "@/components/ThemeToggle";
 import { fetchToolsByUser, fetchUserLikedTools, type Tool } from "@/lib/data";
 import { uploadAvatar } from "@/lib/avatar";
 
@@ -134,6 +135,12 @@ export default function UserPage() {
           <p className="text-sm text-gray-500 mt-1">
             已发布 {myTools.length} 个工具
           </p>
+          {isSelf && (
+            <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-500 sm:justify-start">
+              <span>外观</span>
+              <ThemeToggle />
+            </div>
+          )}
         </div>
         {/* 收藏的工具 */}
         {likedTools.length > 0 && (

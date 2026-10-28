@@ -303,7 +303,6 @@ export default function Navbar({
             微坞
           </Link>
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
           ) : user ? (

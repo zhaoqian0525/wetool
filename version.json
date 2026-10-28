@@ -1,6 +1,6 @@
 {
-  "version": "2.34.0",
+  "version": "2.35.0",
   "buildDate": "2026-10-28",
-  "buildTimestamp": "2026-10-28T19:52:46+08:00",
-  "description": "v2.34.0：首页搜索常驻、分类吸顶、工具分组与低浏览量隐藏"
+  "buildTimestamp": "2026-10-28T19:54:23+08:00",
+  "description": "v2.35.0：视觉 token、减弱动效、移动端输入与主题入口收口"
 }
