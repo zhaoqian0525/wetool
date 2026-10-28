@@ -72,10 +72,10 @@ const FEATURED_IMAGE_OVERRIDES: Record<string, string> = {
 };
 
 const HOME_GROUPS = [
-  { key: "效率计算", icon: "🔧", categories: ["工程计算"] },
   { key: "生活记录", icon: "🏡", categories: ["生活", "旅行"] },
-  { key: "课堂工具", icon: "📚", categories: ["教育"] },
   { key: "小游戏", icon: "🎮", categories: ["小游戏"] },
+  { key: "效率计算", icon: "🔧", categories: ["工程计算"] },
+  { key: "课堂工具", icon: "📚", categories: ["教育"] },
 ];
 
 
