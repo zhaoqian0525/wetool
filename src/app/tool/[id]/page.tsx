@@ -105,6 +105,7 @@ export default function ToolDetailPage() {
   const [clearingState, setClearingState] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false); // v2.19.0：二维码分享弹窗
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Related tools
   const [related, setRelated] = useState<Tool[]>([]);
@@ -225,7 +226,19 @@ export default function ToolDetailPage() {
         // 加载关联工具
         fetchTools().then((all) => {
           if (cancelled) return;
-          setRelated(all.filter((rt) => rt.category === resolved.category && rt.id !== resolved.id).slice(0, 4));
+          const normalizeTitle = (value: string) =>
+            value.replace(/[0-9.\s（）()【】[\]]/g, "").toLowerCase();
+          const currentTitle = normalizeTitle(resolved.title);
+          setRelated(
+            all
+              .filter(
+                (rt) =>
+                  rt.category === resolved.category &&
+                  rt.id !== resolved.id &&
+                  normalizeTitle(rt.title) !== currentTitle,
+              )
+              .slice(0, 4),
+          );
         });
       } else if (networkError) {
         // 网络失败：保留已渲染内容（缓存已先行 setTool(cached)），仅从未成功时显示失败视图
@@ -934,24 +947,44 @@ export default function ToolDetailPage() {
   return (
     <ToolPageErrorBoundary>
     <div className="min-h-screen bg-page pb-0">
-      <div inert={fullscreen} aria-hidden={fullscreen}>
-      <Navbar
-        mobileBackHref="/"
-        mobileTitle={tool.title}
-        mobileActions={
-          <>
-            <button
-              onClick={handleShare}
-              aria-label="分享"
-              className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
-            >
+      <header
+        className="sticky top-0 z-30 border-b border-gray-200 bg-white/95 backdrop-blur-md"
+        inert={fullscreen}
+        aria-hidden={fullscreen}
+      >
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:px-6">
+          <Link
+            href="/"
+            aria-label="返回"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          <h1 className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 sm:text-base">
+            {tool.title}
+          </h1>
+          <button
+            onClick={handleShare}
+            aria-label="分享"
+            className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+          >
+            {shareCopied ? (
+              <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v12M8 7l4-4 4 4M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4" />
               </svg>
-            </button>
+            )}
+          </button>
+          <div className="relative">
             <button
-              onClick={() => document.getElementById("tool-utility")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() => setMoreOpen((v) => !v)}
               aria-label="更多"
+              aria-expanded={moreOpen}
               className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -960,119 +993,83 @@ export default function ToolDetailPage() {
                 <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" />
               </svg>
             </button>
-          </>
-        }
-        children={
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            返回广场
-          </Link>
-        }
-      />
-      </div>
+            {moreOpen && (
+              <div className="absolute right-0 top-full z-50 mt-2 w-40 rounded-xl border border-gray-200 bg-white p-1 shadow-xl">
+                <button
+                  onClick={() => {
+                    setQrOpen(true);
+                    setMoreOpen(false);
+                  }}
+                  className="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-600 hover:bg-gray-50"
+                >
+                  二维码
+                </button>
+                {!isAuthor && (
+                  <button
+                    onClick={() => {
+                      setMoreOpen(false);
+                      setReportOpen(true);
+                      document.getElementById("tool-utility")?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-600 hover:bg-gray-50"
+                  >
+                    举报
+                  </button>
+                )}
+                {isAuthor && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setMoreOpen(false);
+                        handleDownload();
+                      }}
+                      className="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-600 hover:bg-gray-50"
+                    >
+                      下载 HTML
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMoreOpen(false);
+                        setCoverChoice(DEFAULT_COVER_CHOICE);
+                        setCoverEditOpen(true);
+                      }}
+                      className="w-full rounded-lg px-3 py-2 text-left text-xs text-gray-600 hover:bg-gray-50"
+                    >
+                      换封面
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMoreOpen(false);
+                        setDeleteOpen(true);
+                      }}
+                      className="w-full rounded-lg px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50"
+                    >
+                      删除
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* 已下架工具：作者可见提示（M1.5） */}
         {tool.isBanned && isAuthor && (
           <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
             该工具已被平台下架（仅作者可见）。如需申诉或恢复，请联系管理员。
           </div>
         )}
-        {/* Tool Header（v1.9.4 压缩：标题与徽章同行、描述两行截断、改编自并入 meta 行） */}
-        <div className="mb-5 sm:mb-6" inert={fullscreen} aria-hidden={fullscreen}>
-          <div className="flex items-start justify-between gap-2 flex-wrap mb-1.5">
-            <h1 className="sr-only sm:not-sr-only text-lg sm:text-xl font-bold text-gray-900 leading-snug flex-1 min-w-0">
-              {tool.title}
-            </h1>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <Badge>{tool.category}</Badge>
-              {/* v2.11.0：设备适配徽章（旧工具默认移动端优化） */}
-              <Badge tone={tool.layoutTarget === "desktop" ? "brand" : "gray"}>
-                {tool.layoutTarget === "desktop" ? "🖥️ 电脑端优化" : "📱 移动端优化"}
-              </Badge>
-              {isJustPublished && (
-                <Badge tone="green" className="animate-pulse">刚刚发布</Badge>
-              )}
-              {/* 可见性徽章（仅作者可见） */}
-              {isAuthor && (
-                <div className="relative">
-                  <Badge
-                    tone={toolVisibility === "public" ? "green" : toolVisibility === "unlisted" ? "amber" : "red"}
-                    className="cursor-pointer select-none"
-                    onClick={() => setVisMenuOpen((v) => !v)}
-                  >
-                    {toolVisibility === "public" ? "公开" : toolVisibility === "unlisted" ? "未列出" : "私密"}
-                    <span className="ml-1 text-[10px] opacity-70">⌄</span>
-                  </Badge>
-                  {visMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-20" onClick={() => setVisMenuOpen(false)} />
-                      <div className="absolute top-full left-0 mt-1 z-30 bg-white rounded-xl shadow-lg border border-gray-200 py-1 min-w-[128px]">
-                        <button
-                          onClick={() => { handleChangeVisibility("public"); setVisMenuOpen(false); }}
-                          className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <span className="w-2 h-2 rounded-full bg-green-500" /> 公开
-                        </button>
-                        <button
-                          onClick={() => { handleChangeVisibility("unlisted"); setVisMenuOpen(false); }}
-                          className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <span className="w-2 h-2 rounded-full bg-amber-500" /> 未列出
-                        </button>
-                        <button
-                          onClick={() => { handleChangeVisibility("private"); setVisMenuOpen(false); }}
-                          className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <span className="w-2 h-2 rounded-full bg-red-500" /> 私密
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          {tool.description && (
-            <p className="text-sm text-gray-500 mb-2 line-clamp-2">{tool.description}</p>
-          )}
-          <div className="flex items-center gap-2 text-[13px] text-gray-500 flex-wrap">
-            {tool.authorId ? (
-              <Link href={`/user/${tool.authorId}`} className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0">
-                @{tool.author}
-              </Link>
-            ) : (
-              <span>@{tool.author}</span>
-            )}
-            <span className="text-gray-300">·</span>
-            <span>{new Date(tool.createdAt).toLocaleDateString("zh-CN")}</span>
-            {viewCount > 0 && (
-              <>
-                <span className="text-gray-300">·</span>
-                <span className="flex items-center gap-0.5">👁 {viewCount}</span>
-              </>
-            )}
-            {tool.sourceTool && (
-              <>
-                <span className="text-gray-300">·</span>
-                <span className="flex items-center gap-1">
-                  ✨ 改编自
-                  <Link
-                    href={`/tool/${tool.sourceTool.id}`}
-                    className="inline-flex items-center text-indigo-600 hover:underline font-medium min-h-0"
-                  >
-                    《{tool.sourceTool.title}》
-                  </Link>
-                </span>
-              </>
-            )}
-          </div>
-        </div>
+        {tool.description && (
+          <p
+            className="mb-3 line-clamp-1 text-sm leading-6 text-gray-600"
+            inert={fullscreen}
+            aria-hidden={fullscreen}
+          >
+            {tool.description}
+          </p>
+        )}
 
         {/* Preview & Actions */}
         {tool.isDownloadable ? (
@@ -1100,34 +1097,17 @@ export default function ToolDetailPage() {
             <p className="text-xs text-gray-400 mt-3">文件：{tool.title || "工具"}.html</p>
           </div>
         ) : (
-        <div className="flex flex-col" style={{ height: "calc(100dvh - 200px)", minHeight: "400px" }}>
-          {/* Action bar — 主操作：点赞/收藏/分享/改编/全屏/安装 */}
-          <div className="pb-2.5 lg:flex lg:items-center lg:gap-2" inert={fullscreen} aria-hidden={fullscreen}>
-            <div className="flex items-center gap-1.5 flex-wrap lg:flex-1 lg:min-w-0">
-            {authLoading ? (
-              <div className="h-11 w-24 rounded-xl bg-gray-100 animate-pulse" aria-hidden />
-            ) : user ? (
-              <>
-                <button
-                  onClick={async () => {
-                    if (liking) return;
-                    setLiking(true);
-                    try {
-                      const newLiked = await toggleLike(user.id, "tool", id, liked);
-                      setLiked(newLiked);
-                      setLikeCount(c => newLiked ? c + 1 : Math.max(0, c - 1));
-                      toast.success(newLiked ? "已点赞" : "已取消点赞");
-                    } catch (e: unknown) {
-                      toast.error(e instanceof Error ? e.message : "操作失败");
-                    } finally { setLiking(false); }
-                  }}
-                  disabled={liking}
-                  className={`inline-flex items-center gap-1 h-11 px-2.5 rounded-xl text-[13px] font-medium transition-all active:scale-95 ${
-                    liked ? "bg-red-50 text-red-600 ring-1 ring-red-200" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-                  } ${liking ? "opacity-60" : ""}`}
-                >
-                  {liked ? "❤️" : "🤍"}{likeCount > 0 ? ` ${likeCount}` : ""}
-                </button>
+        <div className="flex flex-col">
+          <div className="order-2 mt-3 flex flex-col gap-2" inert={fullscreen} aria-hidden={fullscreen}>
+            <button
+              ref={fullscreenButtonRef}
+              onClick={enterFullscreen}
+              className="inline-flex h-12 w-full items-center justify-center gap-1 rounded-xl brand-gradient px-5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
+            >
+              ⛶ 全屏使用
+            </button>
+            <div className="flex gap-2">
+              {user ? (
                 <button
                   onClick={async () => {
                     if (saving) return;
@@ -1151,75 +1131,34 @@ export default function ToolDetailPage() {
                       }
                     } catch (e: unknown) {
                       toast.error(e instanceof Error ? e.message : "操作失败");
-                    } finally { setSaving(false); }
+                    } finally {
+                      setSaving(false);
+                    }
                   }}
                   disabled={saving}
-                  title={saved ? "取消收藏" : "收藏"}
-                  className={`inline-flex items-center gap-1 h-11 px-2.5 rounded-xl text-[13px] font-medium transition-all active:scale-95 ${
-                    saved ? "bg-amber-50 text-amber-600 ring-1 ring-amber-200" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                  className={`inline-flex min-h-[44px] flex-1 items-center justify-center gap-1 rounded-xl border px-3 text-sm font-semibold transition-all active:scale-95 ${
+                    saved
+                      ? "border-amber-200 bg-amber-50 text-amber-600"
+                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                   } ${saving ? "opacity-60" : ""}`}
                 >
-                  {saved ? "⭐" : "☆"}
+                  {saved ? "★ 已收藏" : "☆ 收藏"}
                 </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => router.push(`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`)}
-                  title="登录后点赞"
-                  className="inline-flex items-center gap-1 h-11 px-2.5 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
-                >
-                  🤍
-                </button>
-                <button
-                  onClick={() => router.push(`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`)}
-                  title="登录后收藏"
-                  className="inline-flex items-center gap-1 h-11 px-2.5 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
-                >
-                  ☆
-                </button>
-              </>
-            )}
-            <button
-              onClick={handleShare}
-              title="分享"
-              className="hidden lg:inline-flex items-center justify-center gap-1 h-11 w-11 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
-            >
-              {shareCopied ? (
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
               ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v12M8 7l4-4 4 4M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4" />
-                </svg>
+                <button
+                  onClick={() => router.push(`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`)}
+                  className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-600 transition-all hover:bg-gray-50 active:scale-95"
+                >
+                  ☆ 收藏
+                </button>
               )}
-            </button>
-            <Link
-              href={`/create?source_tool_id=${tool.id}`}
-              onClick={() => trackGrowthEvent("remix_click", { toolId: tool.id, path: `/tool/${tool.id}` })}
-              title="一句话改成我的版本"
-              className="inline-flex items-center gap-1 h-11 px-2.5 bg-white text-indigo-600 border border-indigo-200 rounded-xl text-[13px] font-medium hover:bg-indigo-50 active:scale-95 transition-all"
-            >
-              改成我的版本
-            </Link>
-            <button
-              onClick={handleDownload}
-              className="hidden lg:inline-flex items-center gap-1 h-11 px-3 bg-white text-gray-600 border border-gray-200 rounded-xl text-[13px] font-medium hover:bg-gray-50 active:scale-95 transition-all"
-              title="下载工具 HTML"
-            >
-              ⬇️ 下载
-            </button>
-            </div>
-            <div className="flex items-center gap-2 mt-2 lg:mt-0 lg:flex-shrink-0">
-            <button
-              ref={fullscreenButtonRef}
-              onClick={enterFullscreen}
-              className="inline-flex h-12 flex-1 items-center justify-center gap-1 rounded-xl brand-gradient px-5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 lg:flex-none"
-            >
-              ⛶ 全屏使用
-            </button>
-            <ToolInstallButton compact />
+              <Link
+                href={`/create?source_tool_id=${tool.id}`}
+                onClick={() => trackGrowthEvent("remix_click", { toolId: tool.id, path: `/tool/${tool.id}` })}
+                className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1 rounded-xl border border-indigo-200 bg-white px-3 text-sm font-semibold text-indigo-600 transition-all hover:bg-indigo-50 active:scale-95"
+              >
+                改成我的版本
+              </Link>
             </div>
           </div>
           {/* Full-height iframe（等待状态加载完成后再挂载，确保启动快照已就绪） */}
@@ -1229,7 +1168,7 @@ export default function ToolDetailPage() {
             ) : (
             <WechatGuide toolUrl={`https://we-woo.net/tool/${id}`}>
               <div
-                className={`${fullscreen ? "fixed inset-0 z-50 bg-black" : "relative flex-1 min-h-0 rounded-xl overflow-hidden shadow-lg bg-white border border-gray-200"}`}
+                className={`${fullscreen ? "fixed inset-0 z-50 bg-black" : "order-1 relative min-h-0 rounded-xl overflow-hidden shadow-sm bg-white border border-gray-200"}`}
                 style={
                   fullscreen
                     ? { height: "100dvh" }
@@ -1298,6 +1237,109 @@ export default function ToolDetailPage() {
         </div>
         )}
 
+        <div className="mt-5" inert={fullscreen} aria-hidden={fullscreen}>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge>{tool.category}</Badge>
+            {tool.layoutTarget === "desktop" && <Badge tone="brand">🖥️ 电脑端优化</Badge>}
+            {isJustPublished && <Badge tone="green" className="animate-pulse">刚刚发布</Badge>}
+            {isAuthor && (
+              <div className="relative">
+                <Badge
+                  tone={toolVisibility === "public" ? "green" : toolVisibility === "unlisted" ? "amber" : "red"}
+                  className="cursor-pointer select-none"
+                  onClick={() => setVisMenuOpen((v) => !v)}
+                >
+                  {toolVisibility === "public" ? "公开" : toolVisibility === "unlisted" ? "未列出" : "私密"}
+                  <span className="ml-1 text-[10px] opacity-70">⌄</span>
+                </Badge>
+                {visMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-20" onClick={() => setVisMenuOpen(false)} />
+                    <div className="absolute left-0 top-full z-30 mt-1 min-w-[128px] rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                      <button onClick={() => { handleChangeVisibility("public"); setVisMenuOpen(false); }} className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs hover:bg-gray-50">
+                        <span className="h-2 w-2 rounded-full bg-green-500" /> 公开
+                      </button>
+                      <button onClick={() => { handleChangeVisibility("unlisted"); setVisMenuOpen(false); }} className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs hover:bg-gray-50">
+                        <span className="h-2 w-2 rounded-full bg-amber-500" /> 未列出
+                      </button>
+                      <button onClick={() => { handleChangeVisibility("private"); setVisMenuOpen(false); }} className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs hover:bg-gray-50">
+                        <span className="h-2 w-2 rounded-full bg-red-500" /> 私密
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-gray-500">
+            {tool.authorId ? (
+              <Link href={`/user/${tool.authorId}`} className="inline-flex min-h-0 items-center font-medium text-indigo-600 hover:underline">
+                @{tool.author}
+              </Link>
+            ) : (
+              <span>@{tool.author}</span>
+            )}
+            <span className="text-gray-300">·</span>
+            <span>{new Date(tool.createdAt).toLocaleDateString("zh-CN")}</span>
+            {viewCount > 0 && (
+              <>
+                <span className="text-gray-300">·</span>
+                <span>👁 {viewCount}</span>
+              </>
+            )}
+            {tool.sourceTool && (
+              <>
+                <span className="text-gray-300">·</span>
+                <span className="inline-flex items-center gap-1">
+                  改编自
+                  <Link href={`/tool/${tool.sourceTool.id}`} className="inline-flex min-h-0 items-center font-medium text-indigo-600 hover:underline">
+                    《{tool.sourceTool.title}》
+                  </Link>
+                </span>
+              </>
+            )}
+          </div>
+
+          {tool.description && (
+            <p className="mt-3 text-sm leading-7 text-gray-600">{tool.description}</p>
+          )}
+
+          <div className="mt-3 flex items-center gap-2">
+            {user ? (
+              <button
+                onClick={async () => {
+                  if (liking) return;
+                  setLiking(true);
+                  try {
+                    const newLiked = await toggleLike(user.id, "tool", id, liked);
+                    setLiked(newLiked);
+                    setLikeCount((c) => (newLiked ? c + 1 : Math.max(0, c - 1)));
+                    toast.success(newLiked ? "已点赞" : "已取消点赞");
+                  } catch (e: unknown) {
+                    toast.error(e instanceof Error ? e.message : "操作失败");
+                  } finally {
+                    setLiking(false);
+                  }
+                }}
+                disabled={liking}
+                className={`inline-flex min-h-[36px] items-center gap-1 rounded-lg border px-3 text-xs font-semibold ${
+                  liked ? "border-rose-200 bg-rose-50 text-rose-600" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                } ${liking ? "opacity-60" : ""}`}
+              >
+                {liked ? "♥ 已点赞" : "♡ 点赞"}{likeCount > 0 ? ` ${likeCount}` : ""}
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push(`/auth?redirect=${encodeURIComponent(`/tool/${id}`)}`)}
+                className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-500 hover:bg-gray-50"
+              >
+                ♡ 点赞
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* v2.21.0：能力说明移到工具下方，压缩顶部信息密度 */}
         <div className="mt-6" inert={fullscreen} aria-hidden={fullscreen}>
           <CapabilityBadges code={tool.code ?? ""} showEmpty />
@@ -1305,15 +1347,6 @@ export default function ToolDetailPage() {
 
         {/* v2.23.0：使用记录 / 举报 / 换封面 / 删除 统一移到工具下方 */}
         <div id="tool-utility" className="mt-4 flex items-center gap-4 text-xs text-gray-400 flex-wrap scroll-mt-24" inert={fullscreen} aria-hidden={fullscreen}>
-          <button
-            onClick={() => {
-              trackGrowthEvent("share_click", { toolId: tool?.id || id, path: `/tool/${id}` });
-              setQrOpen(true);
-            }}
-            className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors"
-          >
-            🔳 二维码
-          </button>
           {user && (
             <button onClick={() => setHistoryOpen(true)} className="min-h-[32px] flex items-center hover:text-indigo-600 transition-colors">
               📋 使用记录
@@ -1355,6 +1388,7 @@ export default function ToolDetailPage() {
               </button>
             </>
           )}
+          <ToolInstallButton compact />
         </div>
 
         {/* Related tools */}
@@ -1419,7 +1453,9 @@ export default function ToolDetailPage() {
             <div className="bg-gray-50 rounded-2xl p-4 mb-6 h-12 animate-pulse" aria-hidden />
           ) : reviews.length === 0 && !reviewFormOpen ? (
             <div className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
-              <p className="text-sm text-gray-500">还没有评价，成为第一个分享体验的人。</p>
+              <p className="text-sm text-gray-500">
+                {user ? "暂无评价 · 来写第一条" : "暂无评价 · 登录后分享使用体验"}
+              </p>
               {user ? (
                 <button
                   onClick={() => setReviewFormOpen(true)}
