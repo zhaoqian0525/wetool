@@ -84,10 +84,17 @@ export default function ToolInstallButton({ compact = false }: { compact?: boole
           }
         }}
         style={{ touchAction: "manipulation" }}
-        className={`${compact ? "h-11 px-3 rounded-xl bg-white border border-gray-200 hover:bg-gray-50" : "min-h-[44px] px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200"} flex items-center gap-1.5 text-xs font-medium text-gray-600 transition-colors`}
+        className={
+          compact
+            ? "inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-0.5 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-1 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-50 sm:flex-none sm:gap-1.5 sm:px-3 sm:text-xs"
+            : "inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-gray-100 px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200"
+        }
         title="把这个工具添加到手机主屏幕，像 App 一样打开即全屏使用"
       >
-        <span className="text-base leading-none">📲</span>
+        <svg className="h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+          <rect x="6" y="2" width="12" height="20" rx="2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v7m-3-3 3 3 3-3" />
+        </svg>
         <span className="hidden sm:inline">添加到主屏幕</span>
         <span className="sm:hidden">安装</span>
       </button>

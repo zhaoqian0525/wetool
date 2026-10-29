@@ -25,8 +25,11 @@ import ToolInstallButton from "@/components/ToolInstallButton";
 import { Modal, Badge } from "@/components/ui";
 import CapabilityBadges from "@/components/CapabilityBadges";
 
-const TOOL_UTILITY_ACTION_CLASS =
-  "inline-flex h-11 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50";
+const TOOL_UTILITY_BUTTON_BASE =
+  "inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-0.5 whitespace-nowrap rounded-xl border bg-white px-1 text-[11px] font-medium transition-colors sm:flex-none sm:gap-1.5 sm:px-3 sm:text-xs";
+const TOOL_UTILITY_ACTION_CLASS = `${TOOL_UTILITY_BUTTON_BASE} border-gray-200 text-gray-600 hover:bg-gray-50`;
+const TOOL_UTILITY_DANGER_CLASS = `${TOOL_UTILITY_BUTTON_BASE} border-rose-200 text-rose-600 hover:bg-rose-50`;
+const TOOL_UTILITY_ICON_CLASS = "h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4";
 
 function renderReviewContent(content: string) {
   const parts = content.split(/(@[\w\u4e00-\u9fa5][\w\u4e00-\u9fa5-]*)/g);
@@ -1352,10 +1355,10 @@ export default function ToolDetailPage() {
         </section>
 
         {/* v2.23.0：使用记录 / 举报 / 换封面 / 删除 统一移到工具下方 */}
-        <div id="tool-utility" className="mt-3 flex scroll-mt-24 flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs text-gray-500" inert={fullscreen} aria-hidden={fullscreen}>
+        <div id="tool-utility" className="mt-3 flex scroll-mt-24 flex-nowrap items-center gap-1 rounded-xl border border-gray-200 bg-white px-2 py-2 text-xs text-gray-500 sm:flex-wrap sm:gap-2 sm:px-4 sm:py-3" inert={fullscreen} aria-hidden={fullscreen}>
           {user && (
             <button onClick={() => setHistoryOpen(true)} className={TOOL_UTILITY_ACTION_CLASS}>
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+              <svg className={TOOL_UTILITY_ICON_CLASS} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" />
               </svg>
@@ -1363,12 +1366,12 @@ export default function ToolDetailPage() {
             </button>
           )}
           {!isAuthor && (
-            <div className="relative">
+            <div className="relative min-w-0 flex-1 sm:flex-none">
               <button
                 onClick={() => setReportOpen((v) => !v)}
-                className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                className={`${TOOL_UTILITY_ACTION_CLASS} w-full sm:w-auto`}
               >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                <svg className={TOOL_UTILITY_ICON_CLASS} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 21V4m0 0h10l-2 4 2 4H5" />
                 </svg>
                 举报
@@ -1397,15 +1400,15 @@ export default function ToolDetailPage() {
           {isAuthor && (
             <>
               <button onClick={() => { setCoverChoice(DEFAULT_COVER_CHOICE); setCoverEditOpen(true); }} className={TOOL_UTILITY_ACTION_CLASS}>
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                <svg className={TOOL_UTILITY_ICON_CLASS} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
                   <rect x="3" y="5" width="18" height="14" rx="2" />
                   <circle cx="8.5" cy="10" r="1.5" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="m21 15-5-5L5 21" />
                 </svg>
                 换封面
               </button>
-              <button onClick={() => setDeleteOpen(true)} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50">
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+              <button onClick={() => setDeleteOpen(true)} className={TOOL_UTILITY_DANGER_CLASS}>
+                <svg className={TOOL_UTILITY_ICON_CLASS} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5M14 11v5" />
                 </svg>
                 删除
